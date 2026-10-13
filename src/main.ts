@@ -1,4 +1,5 @@
 import { pages } from "./pages/index";
+import { renderAdminPage } from "./pages/admin/index";
 import "./styles/index.css";
 
 const app = document.querySelector("#app");
@@ -7,6 +8,9 @@ if (!app) {
   throw new Error("Root app element not found");
 }
 
+if (window.location.pathname === "/admin" || window.location.pathname === "/admin/") {
+  renderAdminPage(app);
+} else {
 const flowOrder = [
   "auth",
   "lobby",
@@ -114,3 +118,4 @@ function renderPage(step: FlowStep) {
 }
 
 renderPage("auth");
+}
