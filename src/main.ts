@@ -2,7 +2,7 @@ import { pages } from "./pages/index";
 import { renderAdminPage } from "./pages/admin/index";
 import "./styles/index.css";
 
-const app = document.querySelector("#app");
+const app = document.querySelector<HTMLElement>("#app");
 
 if (!app) {
   throw new Error("Root app element not found");
