@@ -1,0 +1,108 @@
+/* Temporary functional admin UI; intentionally separate from game art direction. */
+.admin-app {
+  max-width: 100%;
+  min-height: 100vh;
+}
+.admin-container {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+}
+.admin-container nav a {
+  color: var(--primary);
+}
+.admin-card {
+  display: grid;
+  gap: 14px;
+  padding: clamp(16px, 4vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg-soft);
+}
+.admin-card h1,
+.admin-mode h2 {
+  margin: 0;
+}
+.admin-card p,
+.admin-mode p,
+.admin-mode small {
+  color: var(--muted);
+  margin: 0;
+}
+.admin-card form {
+  display: grid;
+  gap: 14px;
+}
+.admin-card button {
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 12px 16px;
+  min-height: 44px;
+  background: var(--primary);
+  color: #031b2b;
+  font-weight: 700;
+}
+.admin-card button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+.admin-heading {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: start;
+  flex-wrap: wrap;
+}
+.admin-card button.admin-secondary {
+  background: transparent;
+  color: var(--text);
+}
+.admin-list {
+  display: grid;
+  gap: 10px;
+}
+.admin-mode {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+}
+.admin-mode > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-mode h2 {
+  font-size: 1rem;
+}
+.admin-card button.admin-enabled {
+  background: var(--success);
+  color: #052b21;
+}
+.admin-card button.admin-disabled {
+  background: var(--panel-alt);
+  color: var(--text);
+}
+.admin-message,
+#admin-error {
+  min-height: 1.3rem;
+}
+#admin-error {
+  color: var(--danger);
+}
+@media (max-width: 460px) {
+  .admin-mode {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-mode button {
+    width: 100%;
+  }
+}
