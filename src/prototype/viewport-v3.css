@@ -1,7 +1,12 @@
 /* TidePoint V3 — viewport-first layouts.
    This stylesheet MUST load after the original prototype and V2 corrections.
    Each gameplay view fits one visual viewport, with only repeated lists scrollable. */
-html,body,#app{height:100%;max-height:100%;overflow:hidden}
+/* Do not clip non-gameplay views (profile, registration, accessibility zoom).
+   The four game layouts below explicitly disable viewport/document scrolling. */
+html,body,#app{height:100%;max-height:100%;overflow-x:hidden}
+html,body{overflow-y:auto}
+body[data-route="lobby"],body[data-route="matchmaking"],
+body[data-route="placement"],body[data-route="match"]{overflow-y:hidden}
 body[data-route="lobby"] .screen,
 body[data-route="lobby"] .shell,
 body[data-route="matchmaking"] .screen,
