@@ -13,8 +13,9 @@ if (window.location.pathname === "/admin" || window.location.pathname === "/admi
     import("./prototype/combat-final.css"),
     import("./prototype/live.css"),
     import("./prototype/tidepoint-fixes.css"),
+    import("./prototype/viewport-v3.css"),
     import("./prototype/app.js"),
   ])
-    .then(([, , , , , { startTidepoint }]) => startTidepoint(root))
+    .then(([, , , , , , { startTidepoint }]) => startTidepoint(root))
     .catch(error => { console.error(error); root.textContent = "Não foi possível carregar o TidePoint."; });
 }
