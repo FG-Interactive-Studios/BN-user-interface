@@ -193,3 +193,39 @@ git checkout -b feature/lobby-page
 Antes de contribuir, leia:
 - [CONTRIBUTING.md](./CONTRIBUTING.md)
 - [AGENTS.md](./AGENTS.md)
+
+## Painel administrativo mínimo (temporário)
+
+Acesse `/admin` (por exemplo, `http://localhost:5173/admin`) para entrar
+com **e-mail e senha de uma conta administradora real**. O painel chama
+`POST /api/auth/login`, lista modos registrados em
+`GET /api/admin/game-modes` e envia
+`PUT /api/admin/game-modes/{modeId}/availability` ao clicar no status
+de um tabuleiro. O backend valida acesso `is_admin`, persiste as alterações
+e impede desabilitar o último modo ativo. Um jogador comum recebe 403.
+
+Esta tela **não altera o design das páginas do jogo**, que continuam
+protótipos simulados até o Game Design aprovar o visual. A UI administrativa
+usa estilos mínimos responsivos e não adiciona dependências.
+
+Credenciais JWT/refresh são mantidas **somente em memória**; atualizar a
+página exige novo login. Em caso de 401, a sessão é renovada uma vez
+com o refresh token enquanto a página permanecer aberta.
+
+### API no ambiente local
+
+O `vite.config.ts` faz o proxy do caminho `/api` para
+`http://localhost:8080` em **desenvolvimento**, sem CORS cruzado.
+O `.env.example` agora sugere `VITE_API_URL=/api`.
+Se algum `.env` preexistente definir URL absoluta,
+ajuste-o para `/api` durante o desenvolvimento local.
+
+Em produção (inclusive Firebase Hosting), o proxy do Vite **não existe**.
+Para o painel funcionar fora do ambiente local, configure um
+reverse proxy de `/api` ou uma URL explícita via `VITE_API_URL`,
+com HTTPS e política CORS do backend adequada. O deploy de hospedagem
+e a política cross-origin serão definidos separadamente.
+
+A primeira conta admin é criada pela API na inicialização com um banco
+sem administradores, mediante senha aleatória salva em arquivo protegido.
+Veja a documentação da API sobre o bootstrap.
