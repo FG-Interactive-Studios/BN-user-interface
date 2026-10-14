@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+const listeners=new Map();
+const root={innerHTML:'',classList:{add(){},remove(){}},addEventListener(type,fn){listeners.set(type,fn);}};
+globalThis.location={hash:''};
+globalThis.window={addEventListener(){}};
+globalThis.document={body:{dataset:{}}};
+const {startTidepoint}=await import('../src/prototype/app.js');
+startTidepoint(root);
+assert.match(root.innerHTML,/Entrar no comando/);
+assert.match(root.innerHTML,/data-form="login"/);
+assert.match(root.innerHTML,/TIDEPOINT/);
+for (const event of ['submit','click','change','keydown']) assert.ok(listeners.has(event),`Missing ${event} listener`);
+console.log('TidePoint UI: inicialização e formulário real: OK');
