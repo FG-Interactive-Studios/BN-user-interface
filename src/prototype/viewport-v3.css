@@ -1,0 +1,389 @@
+/* TidePoint V3 — viewport-first layouts.
+   This stylesheet MUST load after the original prototype and V2 corrections.
+   Each gameplay view fits one visual viewport, with only repeated lists scrollable. */
+html,body,#app{height:100%;max-height:100%;overflow:hidden}
+body[data-route="lobby"] .screen,
+body[data-route="lobby"] .shell,
+body[data-route="matchmaking"] .screen,
+body[data-route="matchmaking"] .shell,
+.combat-screen,.combat-screen .match-layout{height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important}
+
+/* The first lobby also has no document-level scroll, including the join-code form. */
+body[data-route="lobby"] .shell{display:flex;flex-direction:column}
+body[data-route="lobby"] .topbar{flex:0 0 clamp(50px,9dvh,64px)!important;height:clamp(50px,9dvh,64px)!important;min-height:0}
+body[data-route="lobby"] .main{display:flex!important;flex:1 1 0!important;min-height:0!important;overflow:hidden!important;
+ padding:8px clamp(8px,2vw,22px) 72px!important}
+body[data-route="lobby"] .home-grid{display:grid!important;align-self:stretch;min-height:0!important;height:100%!important;
+ grid-template-columns:minmax(0,1.72fr) minmax(220px,.72fr);gap:9px;align-items:stretch}
+body[data-route="lobby"] .home-hero,body[data-route="lobby"] .home-missions{
+ height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important}
+body[data-route="lobby"] .home-hero-grid{height:100%!important;min-height:0;grid-template-columns:minmax(0,1.1fr) minmax(145px,.65fr)}
+body[data-route="lobby"] .home-copy{min-height:0!important;overflow:hidden!important;justify-content:center;
+ padding:clamp(8px,1.8dvh,22px) clamp(12px,2vw,28px)!important;gap:0}
+body[data-route="lobby"] .hero-title{font-size:clamp(36px,min(5vw,8.8dvh),77px)!important;
+ line-height:.86!important;margin:clamp(5px,.9dvh,10px) 0!important}
+body[data-route="lobby"] .hero-desc{font-size:clamp(10px,.9vw,13px)!important;line-height:1.3!important}
+body[data-route="lobby"] .home-status-row{gap:5px}
+body[data-route="lobby"] .home-status-row .hero-kicker{font-size:clamp(9px,.82vw,11px)}
+body[data-route="lobby"] .home-copy>div[style*="margin:12px"]{margin:8px 0!important}
+body[data-route="lobby"] .tp-mode-select{min-height:31px;padding:5px 9px;font-size:12px}
+body[data-route="lobby"] .hero-actions{margin-top:5px!important;gap:7px;grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-route="lobby"] .hero-actions>.btn{height:auto;min-height:44px!important;padding:6px 9px!important;gap:6px;min-width:0}
+body[data-route="lobby"] .hero-actions .home-btn-icon{width:27px;height:27px;flex-basis:27px;font-size:16px}
+body[data-route="lobby"] .hero-actions b{font-size:14px}
+body[data-route="lobby"] .hero-actions small{font-size:9px}
+body[data-route="lobby"] form[data-form="join"]{display:grid;gap:5px!important;margin-top:8px!important;max-width:100%!important}
+body[data-route="lobby"] form[data-form="join"] .field{gap:4px}
+body[data-route="lobby"] form[data-form="join"] label{font-size:10px;letter-spacing:.65px}
+body[data-route="lobby"] form[data-form="join"] input{min-height:32px;height:34px;padding:5px 11px}
+body[data-route="lobby"] form[data-form="join"] button{min-height:34px;padding:6px 11px}
+body[data-route="lobby"] .home-missions{display:flex!important;flex-direction:column;gap:6px!important;justify-content:flex-start;
+ padding:clamp(8px,1.6dvh,13px)!important}
+body[data-route="lobby"] .home-mission-head .panel-title{font-size:clamp(14px,1.3vw,18px)}
+body[data-route="lobby"] .home-mission-list{display:grid!important;gap:6px!important;flex:0 1 auto;min-height:0;overflow:auto}
+body[data-route="lobby"] .home-mission-list .mission{padding:7px 10px!important;min-height:0}
+body[data-route="lobby"] .tp-mission-info{gap:1px}
+body[data-route="lobby"] .tp-mission-info b{font-size:13px!important;line-height:1.2}
+body[data-route="lobby"] .home-event-card{flex:0 1 auto;padding:8px 10px!important}
+body[data-route="lobby"] .home-event-copy b{font-size:13px}
+body[data-route="lobby"] .home-event-copy small{font-size:10px}
+body[data-route="lobby"] .bottom-nav{bottom:8px!important}
+
+/* The waiting-room radar must really sweep. A legacy CSS declaration disabled
+   all animations and expected JS to supply --radar-angle, which never happened. */
+body[data-route="matchmaking"] .mm-card .radar::before,
+body[data-route="matchmaking"] .mm-card .radar::after{
+ animation:tp-waiting-sweep 2.65s linear infinite!important;transform-origin:center!important}
+body[data-route="matchmaking"] .mm-card .radar::after{transform-origin:left center!important}
+@keyframes tp-waiting-sweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+body[data-route="matchmaking"] .main{flex:1 1 0!important;min-height:0!important;display:flex!important;overflow:hidden!important;
+ padding:6px 12px 10px!important}
+body[data-route="matchmaking"] .tp-content{width:100%;height:100%;min-height:0;margin:0!important;padding:0!important;
+ display:flex;align-items:center;justify-content:center;overflow:hidden}
+body[data-route="matchmaking"] .matchmaking-wrap{width:100%;height:100%;min-height:0!important;max-height:100%;
+ padding:0!important;display:flex;align-items:center!important;justify-content:center!important;overflow:hidden!important}
+body[data-route="matchmaking"] .mm-card{width:min(100%,680px)!important;max-height:100%;min-height:0!important;
+ padding:clamp(10px,1.9dvh,18px)!important;display:flex;flex-direction:column;align-items:center;gap:5px;overflow:hidden!important}
+body[data-route="matchmaking"] .mm-card .form-title{font-size:clamp(23px,3.5dvh,32px)!important;line-height:1.05;margin:0}
+body[data-route="matchmaking"] .mm-card .form-sub{margin:0;line-height:1.3}
+body[data-route="matchmaking"] .mm-card .radar{height:auto!important;width:min(172px,25dvh,41vw)!important;
+ flex:0 1 auto;margin:3px auto!important;min-height:60px}
+body[data-route="matchmaking"] .mm-card .tp-list{width:min(100%,410px);min-height:0;max-height:23dvh;
+ overflow-y:auto;margin:3px auto!important;gap:5px}
+body[data-route="matchmaking"] .mm-card .tp-list>div{padding:5px 9px!important}
+body[data-route="matchmaking"] .mm-card .tp-actions{margin-top:3px!important;gap:7px}
+body[data-route="matchmaking"] .mm-card .tp-actions>.btn{min-height:36px;padding:7px 11px}
+
+/* Combat and placement: a real flex/grid viewport budget, never an overflowing document. */
+.combat-screen .match-layout{display:flex!important;flex-direction:column}
+.combat-screen .match-head{flex:0 0 58px!important;height:58px!important;min-height:0!important;padding:2px 14px!important}
+.combat-screen .match-head .brand-name{font-size:clamp(19px,2.2vw,28px)}
+.combat-screen .turn-box{min-width:0;padding:5px 15px}
+.combat-screen .turn-box b{font-size:clamp(16px,1.9vw,21px)}
+.combat-screen .match-foot{flex:0 0 23px!important;height:23px!important;min-height:0!important;font-size:9px}
+.combat-screen .match-grid{flex:1 1 0!important;height:auto!important;min-height:0!important;max-height:100%!important;
+ display:grid!important;grid-template-columns:clamp(175px,20vw,285px) minmax(0,1fr) clamp(178px,19vw,290px)!important;
+ grid-template-rows:minmax(0,1fr)!important;align-items:stretch!important;gap:9px!important;
+ padding:0 10px 7px!important;overflow:hidden!important}
+.combat-screen .match-grid>.side-stack{grid-area:1/1!important;display:flex!important;flex-direction:column!important;
+ height:100%!important;min-height:0!important;overflow:hidden!important;gap:8px}
+.combat-screen .match-grid>.premium-board-panel{grid-area:1/2!important;display:flex!important;
+ flex-direction:column!important;align-self:stretch!important;height:100%!important;min-height:0!important;padding:9px!important;overflow:hidden!important}
+.combat-screen .match-grid>.premium-hud{grid-area:1/3!important;display:flex!important;flex-direction:column!important;
+ justify-content:flex-start!important;align-items:stretch!important;position:static!important;
+ height:100%!important;min-height:0!important;overflow:hidden!important;gap:6px;padding:0!important;background:none!important}
+.combat-screen .board-head{flex:0 0 auto;padding:0 0 5px!important;gap:6px}
+.combat-screen .board-meta{flex:0 0 27px!important;min-height:0!important;max-height:27px;
+ margin-top:3px!important;padding:3px 1px 0!important;display:flex;align-items:center}
+.combat-screen .board-meta .meta-block{min-width:0}
+.combat-screen .board-meta .meta-block small{white-space:normal}
+.combat-screen .board-wrap-primary.combat-board-wrap{flex:1 1 0!important;height:0!important;min-height:0!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;overflow:hidden!important;
+ container-type:normal!important;margin:0!important;padding:2px!important}
+.combat-screen .combat-board-wrap .tactical-board-frame,
+.placement-screen .placement-board-wrap .setup-board-frame{width:min(100%,calc(100dvh - 166px),570px)!important;
+ max-width:100%!important;max-height:100%!important;aspect-ratio:1!important;height:auto!important;
+ flex:0 1 auto!important;margin:0 auto!important;align-self:center!important;min-width:0!important}
+.combat-screen .tactical-board-frame .board-main{width:100%!important;height:100%!important;
+ max-height:100%!important;aspect-ratio:1!important}
+.combat-screen .board-main .cell{aspect-ratio:auto!important}
+.combat-screen .combat-left-rail>.combat-side-card:not(.preview-panel),
+.placement-screen .placement-fleet-card{flex:0 1 auto;min-height:0;overflow:hidden!important;padding:8px!important}
+.combat-screen .tp-ships{min-height:0;max-height:27dvh!important;overflow-y:auto!important;margin:5px 0!important;gap:5px}
+.combat-screen .tp-ships>div{min-height:29px;padding:5px 7px!important;gap:5px;font-size:11px}
+.combat-screen .tp-ships .tp-tag{margin:0;font-size:10px;padding:4px 5px}
+.combat-screen .preview-panel{display:flex!important;flex-direction:column!important;flex:1 1 auto!important;
+ min-height:0!important;overflow:hidden!important;padding:8px!important}
+.combat-screen .board-wrap-preview{display:flex!important;justify-content:center!important;align-items:center!important;
+ flex:1 1 0!important;height:0!important;min-height:0!important;overflow:hidden!important;container-type:normal!important;margin-top:3px!important}
+.combat-screen .tp-board-small .board{width:min(100%,23dvh,205px)!important;height:auto!important;aspect-ratio:1!important}
+.combat-screen .enemy-intel-panel{display:flex!important;flex-direction:column!important;flex:0 1 auto!important;
+ min-height:0!important;max-height:calc(100% - 122px)!important;overflow:hidden!important;padding:8px!important}
+.combat-screen .enemy-intel-head{flex:0 0 auto}
+.combat-screen .enemy-intel-list{display:flex!important;flex-direction:column!important;flex:0 1 auto!important;
+ min-height:0!important;width:100%!important;gap:5px!important;padding:5px 0!important;
+ max-height:100%!important;overflow-y:auto!important}
+.combat-screen .enemy-intel-list .intel-ship{flex:0 0 auto!important;display:flex!important;
+ align-items:center!important;width:100%!important;min-height:54px!important;height:auto!important;
+ padding:6px 9px!important;overflow:hidden!important}
+.combat-screen .enemy-intel-list .intel-ship-copy{flex:1 1 auto!important;width:100%!important;max-width:none!important;
+ min-width:0!important;display:flex!important;flex-direction:column;align-items:flex-start}
+.combat-screen .enemy-intel-list .intel-ship-copy b{font-size:12px!important;line-height:1.15}
+.combat-screen .enemy-intel-list .intel-ship-copy small{font-size:9px!important;line-height:1.15}
+.combat-screen .combat-actions{display:flex!important;flex-direction:column!important;gap:5px!important;min-height:0!important}
+.combat-screen .combat-actions .btn{height:auto!important;min-height:33px!important;padding:6px 9px!important;
+ flex:0 0 auto!important;font-size:12px!important;white-space:normal}
+.combat-screen .combat-actions .action-copy small{font-size:9px}
+.placement-screen .placement-hud>.placement-protocol-card{display:block!important;flex:0 1 auto!important;
+ min-height:0!important;max-height:calc(100% - 126px)!important;overflow:hidden!important;padding:9px!important}
+.placement-screen .placement-protocol-card .tp-space{gap:7px!important;margin-top:7px!important}
+.placement-screen .placement-protocol-card .tp-actions{margin-top:6px!important;gap:5px}
+.placement-screen .placement-protocol-card .tp-actions>.btn{min-width:0!important;padding:5px 7px!important;font-size:11px}
+.placement-screen .placement-protocol-card .tp-small{font-size:11px;line-height:1.22}
+.placement-screen .placement-actions{display:flex!important;flex-direction:column!important;gap:5px!important;flex:0 0 auto!important}
+.placement-screen .placement-actions .btn{width:100%;min-height:34px!important;font-size:11px!important}
+.placement-screen .placement-left-rail .placement-tip-card{flex:0 0 auto;padding:8px!important}
+.placement-screen .placement-tip-card .tp-list{margin:6px 0!important;gap:5px}
+.placement-screen .placement-tip-card .tp-list>div{padding:5px 8px!important}
+.placement-screen .placement-tip-card p{font-size:10px!important;line-height:1.25}
+
+/* Narrow screens: central full-size board above two compact side rails.
+   Both the enemy and the user's boards remain entirely visible. */
+@media(max-width:760px){
+ .combat-screen .match-head{flex-basis:51px!important;height:51px!important;display:flex!important;
+  flex-wrap:nowrap!important;justify-content:space-between;gap:5px;padding:2px 7px!important}
+ .combat-screen .match-head .brand-name{font-size:17px}
+ .combat-screen .match-head .brand-sub{display:none}
+ .combat-screen .match-head .turn-box{flex:1 1 auto;min-width:0;padding:3px 7px}
+ .combat-screen .match-head .turn-box b{font-size:13px}
+ .combat-screen .match-head .turn-box small{font-size:7px;line-height:1.2}
+ .combat-screen .match-head .enemy-meta{display:none}
+ .combat-screen .match-foot{flex-basis:17px!important;height:17px!important;font-size:8px;padding:0 6px}
+ .combat-screen .match-foot span:nth-child(3){display:none}
+ .combat-screen .match-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr) minmax(0,42%)!important;gap:5px!important;padding:0 5px 4px!important}
+ .combat-screen .match-grid>.premium-board-panel{grid-area:1/1/2/3!important;width:100%;min-width:0;padding:6px!important}
+ .combat-screen .match-grid>.side-stack{grid-area:2/1!important;width:100%;gap:4px!important}
+ .combat-screen .match-grid>.premium-hud{grid-area:2/2!important;width:100%;gap:4px!important}
+ .combat-screen .board-head{padding-bottom:3px!important;min-height:0!important}
+ .combat-screen .board-head b{font-size:13px}
+ .combat-screen .board-head .eyebrow{font-size:8px}
+ .combat-screen .board-head .placement-readout,.combat-screen .board-head .target-readout{padding:4px 6px;font-size:10px}
+ .combat-screen .board-meta{flex-basis:19px!important;max-height:19px;padding:1px!important;margin:0!important}
+ .combat-screen .board-meta .meta-block b{font-size:8px}
+ .combat-screen .board-meta .meta-block small{display:none}
+ .combat-screen .combat-board-wrap .tactical-board-frame,
+ .placement-screen .placement-board-wrap .setup-board-frame{
+  width:min(calc(100dvw - 32px),calc(58dvh - 95px),380px)!important;
+  height:auto!important;max-height:100%!important;max-width:100%!important}
+ .combat-screen .tp-board .board{padding:4px!important;gap:1px!important;
+  grid-template-columns:15px repeat(var(--size),minmax(0,1fr))!important;
+  grid-template-rows:15px repeat(var(--size),minmax(0,1fr))!important}
+ .combat-screen .tp-board .board .coord{font-size:8px}
+ .combat-screen .combat-left-rail .player-status-card{flex:0 0 auto;height:35px!important;min-height:35px!important;
+  max-height:35px!important;padding:3px!important}
+ .combat-screen .player-id .avatar{width:27px;height:27px;min-width:27px}
+ .combat-screen .player-id b{font-size:10px}
+ .combat-screen .player-id small{display:none}
+ .combat-screen .loss-pill{font-size:8px;padding:3px}
+ .combat-screen .tp-ships{max-height:20dvh!important;gap:3px!important;margin:4px 0!important}
+ .combat-screen .tp-ships>div{padding:4px!important;min-height:26px;display:block!important}
+ .combat-screen .tp-ships>div .tp-tag{display:block;width:max-content;max-width:100%;margin-top:3px;font-size:8px}
+ .combat-screen .side-stack .eyebrow{font-size:9px}
+ .combat-screen .preview-panel{padding:5px!important}
+ .combat-screen .tp-board-small .board{width:min(100%,18dvh,155px)!important}
+ .combat-screen .enemy-intel-panel{max-height:calc(100% - 113px)!important;padding:5px!important}
+ .combat-screen .enemy-intel-head{font-size:10px}
+ .combat-screen .enemy-intel-list{gap:3px!important;padding:3px 0!important}
+ .combat-screen .enemy-intel-list .intel-ship{min-height:40px!important;padding:3px 5px!important}
+ .combat-screen .enemy-intel-list .intel-ship-copy b{font-size:10px!important}
+ .combat-screen .enemy-intel-list .intel-ship-copy small{font-size:8px!important}
+ .combat-screen .enemy-intel-list .intel-state-label{font-size:7px}
+ .combat-screen .combat-actions{gap:3px!important}
+ .combat-screen .combat-actions .btn{min-height:30px!important;padding:4px!important;font-size:10px!important}
+ .combat-screen .combat-actions .action-copy small{display:none}
+ .placement-screen .placement-tip-card{padding:5px!important}
+ .placement-screen .placement-tip-card .tp-list>div{font-size:10px;padding:3px 4px!important}
+ .placement-screen .placement-tip-card p{display:none}
+ .placement-screen .placement-protocol-card{max-height:calc(100% - 114px)!important;padding:5px!important}
+ .placement-screen .placement-protocol-card b{font-size:12px}
+ .placement-screen .placement-protocol-card .tp-space p{font-size:9px!important;line-height:1.15}
+ .placement-screen .placement-protocol-card .tp-mode-select{padding:4px;font-size:10px}
+ .placement-screen .placement-protocol-card .tp-actions>.btn{font-size:9px!important;padding:4px!important}
+ .placement-screen .placement-actions .btn{min-height:31px!important;font-size:10px!important}
+}
+
+@media(max-width:760px) and (max-height:710px){
+ .combat-screen .match-grid{grid-template-rows:minmax(0,1fr) minmax(0,40%)!important}
+ .combat-screen .combat-board-wrap .tactical-board-frame,.placement-screen .placement-board-wrap .setup-board-frame{
+  width:min(calc(100dvw - 32px),calc(60dvh - 105px),380px)!important}
+ .combat-screen .tp-board-small .board{width:min(100%,15dvh,120px)!important}
+ .combat-screen .enemy-intel-panel{max-height:calc(100% - 106px)!important}
+ .placement-screen .placement-protocol-card .tp-space p{display:none}
+}
+@media(max-width:760px){
+ body[data-route="lobby"] .main{padding:5px 7px 63px!important}
+ body[data-route="lobby"] .home-grid{grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr) auto;gap:5px!important}
+ body[data-route="lobby"] .home-hero-grid{grid-template-columns:1fr!important}
+ body[data-route="lobby"] .home-ocean-art{display:none!important}
+ body[data-route="lobby"] .home-copy{padding:9px 13px!important;gap:0}
+ body[data-route="lobby"] .hero-title{font-size:clamp(36px,7dvh,58px)!important;line-height:.83!important}
+ body[data-route="lobby"] .hero-desc{font-size:11px!important}
+ body[data-route="lobby"] .home-missions{height:auto!important;max-height:192px!important;
+  display:grid!important;grid-template-rows:auto auto auto;padding:7px!important;gap:5px!important}
+ body[data-route="lobby"] .home-mission-head .panel-title{font-size:14px}
+ body[data-route="lobby"] .home-mission-list{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px!important}
+ body[data-route="lobby"] .home-mission-list .mission{padding:5px!important}
+ body[data-route="lobby"] .tp-mission-info small{font-size:8px}
+ body[data-route="lobby"] .tp-mission-info b{font-size:10px!important;line-height:1.14}
+ body[data-route="lobby"] .home-event-card{padding:5px 7px!important}
+ body[data-route="lobby"] .home-event-copy .eyebrow{font-size:7px}
+ body[data-route="lobby"] .home-event-copy b{font-size:11px}
+ body[data-route="lobby"] .home-event-copy small{font-size:9px}
+ body[data-route="lobby"] .bottom-nav{bottom:5px!important;padding:5px}
+}
+@media(max-width:760px) and (max-height:710px){
+ body[data-route="lobby"] .home-missions{max-height:155px!important}
+ body[data-route="lobby"] .hero-title{font-size:37px!important}
+ body[data-route="lobby"] .hero-actions>.btn{min-height:38px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ body[data-route="matchmaking"] .mm-card .radar::before,
+ body[data-route="matchmaking"] .mm-card .radar::after{animation:none!important}
+}
+
+/* Both the height and width of the primary board are governed by its _actual_
+   allocated board well, rather than by raw viewport values. This ensures a
+   square and prevents Chrome's row tracks from being vertically compressed. */
+.combat-screen .board-wrap-primary.combat-board-wrap{container-type:size!important}
+.combat-screen .combat-board-wrap .tactical-board-frame,
+.placement-screen .placement-board-wrap .setup-board-frame{
+ width:min(100cqw,100cqh,570px)!important;height:min(100cqw,100cqh,570px)!important;
+ max-width:100%!important;max-height:100%!important;flex:0 0 auto!important}
+.combat-screen .tactical-board-frame .board-main{width:100%!important;height:100%!important}
+
+@media(max-width:760px){
+ /* V2 had a more-specific !important rule for .combat-grid that forced a tall
+    column on mobile; explicitly restore the 2-column/two-row composition. */
+ .combat-screen:not(.placement-screen) .match-grid.combat-grid,
+ .combat-screen.placement-screen .match-grid.premium-placement-grid{
+  display:grid!important;flex-direction:initial!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr) minmax(0,42%)!important;
+  align-items:stretch!important;height:auto!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .combat-left-rail,
+ .combat-screen.placement-screen .placement-left-rail{
+  grid-area:2/1!important;height:100%!important;min-height:0!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .premium-board-panel,
+ .combat-screen.placement-screen .placement-board-panel{
+  grid-area:1/1/2/3!important;height:100%!important;min-height:0!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .premium-hud,
+ .combat-screen.placement-screen .placement-hud{
+  grid-area:2/2!important;display:flex!important;flex-direction:column!important;
+  height:100%!important;min-height:0!important;overflow:hidden!important}
+ .combat-screen .combat-board-wrap .tactical-board-frame,
+ .placement-screen .placement-board-wrap .setup-board-frame{
+  width:min(100cqw,100cqh,570px)!important;height:min(100cqw,100cqh,570px)!important;
+  max-height:100%!important;max-width:100%!important}
+}
+
+/* Mobile rails must have their own, non-overlapping height budgets. Keep the
+   entire little friendly board visible; only the SHIP LIST may scroll. */
+@media(max-width:760px){
+ .combat-screen:not(.placement-screen) .combat-left-rail>.combat-side-card:not(.preview-panel){
+  flex:0 0 auto!important;max-height:calc(100% - 215px)!important;
+  min-height:0!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .combat-left-rail>.combat-side-card:not(.preview-panel) .tp-ships{
+  max-height:100%!important;overflow-y:auto!important}
+ .combat-screen:not(.placement-screen) .combat-left-rail>.preview-panel{
+  flex:1 1 0!important;min-height:0!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .combat-left-rail>.preview-panel .board-wrap-preview{
+  flex:1 1 0!important;min-height:0!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .tp-board-small .board{
+  width:min(100%,15dvh,135px)!important;height:auto!important}
+ .combat-screen:not(.placement-screen) .premium-hud .enemy-intel-panel{
+  flex:1 1 0!important;max-height:none!important;min-height:0!important;
+  height:auto!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .premium-hud .enemy-intel-list{
+  flex:1 1 0!important;min-height:0!important;max-height:none!important;
+  height:auto!important;overflow-y:auto!important;overflow-x:hidden!important}
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions{
+  flex:0 0 auto!important;position:static!important;height:auto!important;overflow:hidden!important}
+ .placement-screen .placement-left-rail .placement-fleet-card{
+  flex:1 1 0!important;min-height:0!important;overflow:hidden!important}
+ .placement-screen .placement-left-rail .placement-fleet-card .tp-ships{
+  max-height:100%!important;overflow-y:auto!important}
+ .placement-screen .placement-left-rail .placement-tip-card{flex:0 0 auto!important}
+ .placement-screen .placement-hud>.placement-protocol-card{
+  flex:1 1 0!important;max-height:none!important;min-height:0!important;overflow:hidden!important}
+ .placement-screen .placement-hud>.placement-actions{flex:0 0 auto!important}
+}
+
+/* Explicitly override the legacy 761-1150px responsive rules. The older
+   two-column layout placed the right HUD outside the available viewport. */
+@media(min-width:761px){
+ .combat-screen:not(.placement-screen) .match-grid.combat-grid,
+ .combat-screen.placement-screen .match-grid.premium-placement-grid{
+  display:grid!important;grid-template-columns:clamp(175px,20vw,285px) minmax(0,1fr) clamp(178px,19vw,290px)!important;
+  grid-template-rows:minmax(0,1fr)!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .combat-left-rail,
+ .combat-screen.placement-screen .placement-left-rail{
+  grid-area:1/1!important;grid-column:1!important;grid-row:1!important;
+  height:100%!important;min-height:0!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .premium-board-panel,
+ .combat-screen.placement-screen .placement-board-panel{
+  grid-area:1/2!important;grid-column:2!important;grid-row:1!important;
+  height:100%!important;min-height:0!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .premium-hud,
+ .combat-screen.placement-screen .placement-hud{
+  grid-area:1/3!important;grid-column:3!important;grid-row:1!important;
+  display:flex!important;flex-direction:column!important;grid-template-columns:none!important;
+  height:100%!important;min-height:0!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .premium-hud .enemy-intel-panel{
+  flex:0 1 auto!important;max-height:calc(100% - 132px)!important;min-height:0!important;overflow:hidden!important}
+ .combat-screen:not(.placement-screen) .premium-hud .enemy-intel-list{
+  overflow-y:auto!important;max-height:100%!important;min-height:0!important}
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions{
+  flex:0 0 auto!important;display:flex!important;flex-direction:column!important;gap:5px!important}
+}
+/* Ship information grows left-to-right inside each card; it must NOT force the
+   card to stretch vertically or create a pseudo fourth column. */
+.combat-screen .enemy-intel-head{min-width:0;gap:4px}
+.combat-screen .enemy-intel-head>div{min-width:0}
+.combat-screen .enemy-intel-head b{font-size:clamp(10px,.92vw,15px)!important;
+ line-height:1.1!important;white-space:normal!important;overflow-wrap:anywhere!important}
+.combat-screen .enemy-intel-list .intel-ship-copy{align-items:stretch!important;text-align:left!important}
+.combat-screen .enemy-intel-list .intel-ship-copy b,
+.combat-screen .enemy-intel-list .intel-ship-copy small{width:100%;max-width:100%;white-space:normal!important}
+@media(max-width:760px){
+ .combat-screen .enemy-intel-head b{font-size:11px!important}
+}
+@media(max-width:760px) and (max-height:710px){
+ /* Keep every lobby element visible on small phone heights. */
+ body[data-route="lobby"] .home-missions{max-height:142px!important}
+ body[data-route="lobby"] .home-copy{padding:5px 11px!important}
+ body[data-route="lobby"] .hero-title{font-size:34px!important;margin:3px 0!important}
+ body[data-route="lobby"] .hero-actions{margin-top:3px!important}
+}
+
+/* A previous 1024px notebook override constrained the entire right rail to
+   92px max-height. Releasing it is essential for the intelligence cards. */
+.combat-screen:not(.placement-screen) .match-grid.combat-grid>.premium-hud,
+.combat-screen.placement-screen .match-grid.premium-placement-grid>.placement-hud{
+ height:100%!important;max-height:100%!important;min-height:0!important;
+ align-self:stretch!important;flex:0 1 auto!important}
+
+/* Some older laptop media queries assigned 100% height to the action group,
+   starving enemy intelligence and hiding it in an 18px sliver. */
+.combat-screen:not(.placement-screen) .premium-hud .combat-actions{
+ height:auto!important;min-height:0!important;max-height:none!important;
+ flex:0 0 auto!important;display:flex!important;flex-direction:column!important;
+ grid-template-columns:none!important;grid-template-rows:none!important;gap:5px!important;
+ padding:0!important;overflow:hidden!important}
+.combat-screen:not(.placement-screen) .premium-hud .enemy-intel-panel{
+ height:auto!important;flex:1 1 0!important;min-height:0!important;
+ max-height:100%!important;display:flex!important;overflow:hidden!important}
+.combat-screen:not(.placement-screen) .premium-hud .enemy-intel-list{
+ flex:1 1 auto!important;min-height:0!important;max-height:100%!important;
+ overflow-y:auto!important;overflow-x:hidden!important}
