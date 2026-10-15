@@ -158,35 +158,41 @@ body[data-route="result"] .tp-result > .tp-actions .btn {
   }
 }
 
-/* Clockwise sweep (0 -> 360): the illuminated trail follows behind,
-   at -82..0 degrees. Do not create a hard, bright leading edge: the trail
-   ramps up well behind the scan line, then fades BEFORE reaching the line. */
-body[data-route="lobby"] .home-radar-sweep {
-  background: conic-gradient(from 0deg,
-    transparent 0deg 278deg,
-    rgb(81 219 255 / 10%) 287deg,
-    rgb(81 219 255 / 40%) 301deg,
-    rgb(81 219 255 / 30%) 315deg,
-    rgb(81 219 255 / 13%) 339deg,
-    rgb(81 219 255 / 3%) 353deg,
-    transparent 360deg) !important;
-  animation: tp-radar-sweep 3.4s linear infinite;
+/* Both screens render radarMarkup(): reuse the exact waiting-room radar
+   background, sweep beam and contacts. Only positioning/size differ here.
+   No separate conic-gradient or home-only sweep to get out of sync. */
+body[data-route="lobby"] .home-ocean-art .tp-home-radar {
+  position: absolute !important;
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+  width: min(84%, 400px) !important;
+  height: auto !important;
+  aspect-ratio: 1 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  opacity: 1 !important;
+  border: 2px solid #52d6ff88;
+  background:
+    repeating-radial-gradient(circle,#52d6ff11 0 1px,transparent 2px 32px),
+    linear-gradient(90deg,transparent 49.6%,#52d6ff2a 50%,transparent 50.4%),
+    linear-gradient(transparent 49.6%,#52d6ff2a 50%,transparent 50.4%);
+  box-shadow: 0 0 35px #52d6ff2b inset;
+  overflow: hidden;
 }
-/* A subtle reference line shows where the radar is pointing. The bright
-   region sits behind it, so it cannot be mistaken for the leading edge. */
-body[data-route="lobby"] .home-radar-sweep::after {
-  content: "";
-  position: absolute;
-  left: calc(50% - .5px);
-  bottom: 50%;
-  width: 1px;
-  height: 50%;
-  pointer-events: none;
-  background: linear-gradient(to top,
-    rgb(103 224 255 / 16%), rgb(103 224 255 / 8%));
+
+/* Match the animation used in viewport-v3.css for matchmaking / .radar. */
+body[data-route="lobby"] .tp-home-radar::before,
+body[data-route="lobby"] .tp-home-radar::after {
+  animation: tp-waiting-sweep 2.65s linear infinite !important;
+  transform-origin: center !important;
+}
+body[data-route="lobby"] .tp-home-radar::after {
+  transform-origin: left center !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  body[data-route="lobby"] .home-radar-sweep {
+  body[data-route="lobby"] .tp-home-radar::before,
+  body[data-route="lobby"] .tp-home-radar::after {
     animation: none !important;
   }
 }
