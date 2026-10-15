@@ -20,3 +20,5 @@ jobs:
       - run: node tools/test-lobby.mjs
 
       - run: node tools/test-mobile-typography.mjs
+
+      - run: node tools/test-mobile-presenters.mjs
