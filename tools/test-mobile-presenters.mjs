@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { roomPlayerCard,compactEnemyContacts } from '../src/prototype/mobile-presenters.js';
+assert.match(roomPlayerCard({nickname:'A',connected:true,ready:true},{role:'Anfitrião'}),/is-online/);
+assert.match(roomPlayerCard({nickname:'B',connected:false,ready:false},{role:'Convidado'}),/is-offline/);
+assert.match(roomPlayerCard(null),/Vaga disponível/);
+assert.ok(!roomPlayerCard({nickname:'<img>',connected:true}).includes('<img>'));
+const c=compactEnemyContacts([{id:'A'},{id:'B'},{id:'C'}],[{sunkShip:'B'}]);
+assert.match(c,/1 \/ 3 afundados/);
+assert.equal((c.match(/tp-contact-dot/g)||[]).length,3);
+console.log('V8: jogadores, avatares, estado e contatos: OK');
