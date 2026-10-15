@@ -229,3 +229,18 @@ e a política cross-origin serão definidos separadamente.
 A primeira conta admin é criada pela API na inicialização com um banco
 sem administradores, mediante senha aleatória salva em arquivo protegido.
 Veja a documentação da API sobre o bootstrap.
+
+
+## WebSocket de desenvolvimento (Vite)
+
+Durante o desenvolvimento local, o navegador deve usar o proxy do Vite:
+
+- `VITE_API_URL=/api` (evite apontar para outra origem sem configurar CORS);
+- `VITE_WS_URL` **não deve** ser definido (o frontend usa `ws://localhost:5173/ws`);
+- `vite.config.ts` encaminha `/ws` para `http://localhost:8080`, valida a origem local e reescreve o cabeçalho `Origin` para a API Spring aceitar o upgrade WebSocket.
+
+O Vite aplica isso apenas em modo de desenvolvimento. **Não use** a reescrita de `Origin` para um proxy público: ela enfraquece a verificação contra WebSocket cross-site. Em produção, use TLS, um reverse proxy configurado corretamente e `REALTIME_ALLOWED_ORIGINS` restrito aos domínios do frontend.
+
+Para diagnosticar: em DevTools → Network → WS, o pedido a `/ws` precisa retornar **101 Switching Protocols** e permanecer aberto. Um `POST /api/realtime/ticket` com status 201 **não prova** que o WebSocket conectou. `BOTH_DISCONNECTED` é a consequência de dois prazos de 120s expirados sem presença WebSocket — requests REST não contam como conexão.
+
+Com socket funcionando, os eventos disparam atualização de estado. Há ainda uma sincronização REST de segurança a cada 60 segundos enquanto online, ou a cada 20 segundos quando o socket está offline. Não recarregue a página durante a partida: tokens estão só em memória e o reload exigirá login novamente.
