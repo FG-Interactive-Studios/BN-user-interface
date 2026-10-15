@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { renderBoard, occupiedCells, esc } from '../src/prototype/board.js';
+const geometry={kind:'RECTANGULAR',rows:8,columns:8,cells:Array.from({length:64},(_,i)=>({row:Math.floor(i/8),col:i%8}))};
+const mode={name:'Rápido',geometry,fleet:[{id:'DESTROYER',length:2}],placementDirections:['HORIZONTAL','VERTICAL']};
+const html=renderBoard(mode,{interactive:true,hits:[{row:0,col:0}],selected:{row:0,col:1}});
+assert.equal((html.match(/class="cell/g)||[]).length,64);
+assert.ok(html.includes('data-coord="0,1"'));
+assert.ok(!html.includes('data-coord="0,0"'));
+assert.deepEqual([...occupiedCells([{type:'DESTROYER',row:1,col:3,orientation:'HORIZONTAL'}],mode)],['1,3','1,4']);
+const hex={...mode,geometry:{kind:'HEXAGONAL',rows:2,columns:2,cells:[{row:0,col:0}],tiles:[{cell:{row:0,col:0},shape:'HEXAGON',vertices:[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}]}]}};
+assert.ok(renderBoard(hex,{interactive:true}).includes('<svg'));
+assert.ok(renderBoard(hex,{interactive:true}).includes('data-coord="0,0"'));
+assert.ok(esc('<img src=x onerror=alert(1)>').includes('&lt;img'));
+assert.deepEqual([...occupiedCells([{type:'DESTROYER',row:1,col:0,orientation:'HEX_DIAGONAL_DOWN'}],mode)],['1,0','1,1']);
+assert.deepEqual([...occupiedCells([{type:'DESTROYER',row:1,col:1,orientation:'TRI_DOWN_RIGHT'}],mode)],['1,1','1,2']);
+console.log('TidePoint: render de grades, polígonos, tiro repetido, escaping e pegadas: OK');

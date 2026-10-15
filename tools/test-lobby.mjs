@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const app=readFileSync(new URL('../src/prototype/app.js',import.meta.url),'utf8');
+const css=readFileSync(new URL('../src/prototype/home-flow-v6.css',import.meta.url),'utf8');
+assert.ok(app.includes('Diário de bordo'));
+assert.ok(app.includes('Minha jornada'));
+for (const label of ['Situação','Ranking','Missões','Pronto para jogar','Em breve']) assert.ok(app.includes(label),label);
+assert.ok(!app.includes('Informações da conta'));
+assert.ok(css.includes('white-space:normal!important'));
+assert.ok(css.includes('tp-action-copy small'));
+assert.ok(css.includes('font-size:12px!important'));
+console.log('TidePoint: painel de jornada e descrição dos botões: OK');

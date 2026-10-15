@@ -1,0 +1,64 @@
+/* TidePoint V4: home simplificado, selecao de modo e menu mobile. */
+.tp-account-menu{display:none;position:relative;flex:0 0 auto;z-index:120}
+.tp-account-menu summary{list-style:none;cursor:pointer;display:grid;place-items:center;width:38px;height:38px;border:1px solid #5edcff55;border-radius:10px;color:#6cddff;background:#092538;font-size:20px}
+.tp-account-menu summary::-webkit-details-marker{display:none}
+.tp-account-menu[open] summary{background:#143c53}
+.tp-account-popover{position:absolute;top:calc(100% + 8px);right:0;min-width:185px;display:grid;gap:3px;border:1px solid #5ad7ff69;border-radius:12px;background:#061925;padding:7px;box-shadow:0 18px 40px #000a}
+.tp-account-popover>:is(button,a){display:block;border:0;border-radius:8px;width:100%;min-height:38px;padding:10px 12px;background:transparent;color:#ddf4ff;font-size:13px;font-weight:650;text-align:left;text-decoration:none;cursor:pointer}
+.tp-account-popover>:is(button,a):hover,.tp-account-popover>:is(button,a):focus-visible{background:#134059}
+body[data-route="lobby"] .home-copy{justify-content:center}
+body[data-route="lobby"] .home-copy .hero-title{margin:0 0 clamp(12px,3dvh,26px)!important}
+body[data-route="lobby"] .tp-lobby-actions{width:min(100%,560px);margin:0!important}
+body[data-route="lobby"] .tp-lobby-actions>.btn{min-width:0!important;display:flex;flex:1 1 0;white-space:normal}
+body[data-route="lobby"] .tp-lobby-actions .home-btn-icon{flex:none}
+.tp-join-dialog{box-sizing:border-box;position:fixed;inset:0;margin:auto;width:100%;max-width:min(430px,calc(100vw - 28px));max-height:calc(100dvh - 32px);padding:22px;overflow:auto;border:1px solid #5bdcff88;border-radius:18px;color:#ecf8ff;background:linear-gradient(165deg,#102b3e,#061723);box-shadow:0 24px 70px #000d}
+.tp-join-dialog:not([open]){display:none}
+.tp-join-dialog::backdrop{background:#010913d9;backdrop-filter:blur(5px)}
+.tp-modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.tp-modal-header h2{margin:6px 0 0;font:900 25px/1.1 Inter,sans-serif}
+.tp-modal-header>button{flex:0 0 34px;width:34px;height:34px;border:1px solid #ffffff35;border-radius:8px;background:#102e40;font-size:23px;cursor:pointer}
+.tp-join-dialog .tp-form{margin-top:13px}
+.tp-join-dialog .field input{min-height:48px;font-size:18px;letter-spacing:3px;font-weight:800}
+.tp-modal-feedback{color:#ffada3;font-size:12px;margin:8px 0 0}
+.tp-modal-feedback:empty{display:none}
+.tp-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.tp-modal-actions .btn{padding:10px 13px;font-size:12px;min-height:42px}
+body[data-route="matchmaking"] .tp-create-room-card{width:min(100%,560px)!important;align-items:stretch!important;gap:clamp(10px,2dvh,18px)!important;text-align:center}
+.tp-create-room-card .form-sub{max-width:440px;align-self:center}
+.tp-create-mode{display:grid;width:min(100%,420px);align-self:center;gap:9px;text-align:left}
+.tp-create-mode .tp-mode-select{width:100%;font-size:15px;min-height:45px}
+body[data-route="matchmaking"] .tp-create-actions{display:flex;width:min(100%,420px);align-self:center;justify-content:stretch!important;margin:10px 0 0!important}
+body[data-route="matchmaking"] .tp-create-actions .btn{flex:1 1 0;min-height:44px}
+@media(max-width:760px){
+ .topbar .tp-top-actions{display:none!important}
+ .topbar .tp-account-menu{display:block}
+ .topbar .player-strip{gap:7px;min-width:0;flex:0 0 auto;margin-left:auto}
+ .topbar .player-strip .avatar{flex:0 0 35px!important;width:35px!important;height:35px!important;min-width:35px!important;aspect-ratio:1!important;padding:0;line-height:1}
+ .topbar .player-strip .avatar:after{display:none}
+ .topbar .player-strip .name{max-width:85px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px}
+ .topbar .player-strip .name b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .topbar .player-strip .name>div{display:none}
+ body[data-route="lobby"] .topbar{padding-inline:10px!important;gap:8px!important}
+ .topbar .brand{gap:6px;min-width:0}
+ .topbar .brand-mark{width:34px;height:34px;min-width:34px;border-radius:10px}
+ .topbar .brand-mark svg{width:21px;height:21px}
+ .topbar .brand-name{font-size:clamp(15px,4.5vw,20px);letter-spacing:1.1px;white-space:nowrap}
+ .topbar .brand-sub{font-size:clamp(6px,1.55vw,8px);letter-spacing:.7px}
+ .topbar .currencies{display:none!important}
+ body[data-route="lobby"] .home-copy{align-items:stretch;justify-content:center}
+ body[data-route="lobby"] .home-copy .hero-title{font-size:clamp(29px,9.5vw,42px)!important;line-height:.9!important;letter-spacing:-1px!important}
+ body[data-route="lobby"] .tp-lobby-actions{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:9px!important}
+ body[data-route="lobby"] .tp-lobby-actions>.btn{width:100%;min-height:50px!important;padding:8px 12px!important}
+ body[data-route="lobby"] .tp-lobby-actions b{font-size:15px!important}
+ body[data-route="lobby"] .tp-lobby-actions small{font-size:10px!important}
+ .tp-join-dialog{padding:17px}
+}
+@media(max-width:390px){
+ .topbar .player-strip .name{display:none}
+ body[data-route="lobby"] .home-copy .hero-title{font-size:clamp(28px,9vw,36px)!important}
+}
+@media(max-height:680px) and (max-width:760px){
+ body[data-route="lobby"] .home-copy .hero-title{font-size:clamp(27px,7dvh,35px)!important;margin-bottom:9px!important}
+ body[data-route="lobby"] .tp-lobby-actions>.btn{min-height:42px!important}
+ body[data-route="lobby"] .home-missions{max-height:139px!important}
+}
