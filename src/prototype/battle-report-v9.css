@@ -158,17 +158,32 @@ body[data-route="result"] .tp-result > .tp-actions .btn {
   }
 }
 
-/* Clockwise animation: the trail belongs COUNTERCLOCKWISE behind the
-   scan line. Its most opaque segment is farthest from the travel direction,
-   then fades as it approaches the rotating line at 0 / 360 degrees. */
+/* Clockwise sweep (0 -> 360): the illuminated trail follows behind,
+   at -82..0 degrees. Do not create a hard, bright leading edge: the trail
+   ramps up well behind the scan line, then fades BEFORE reaching the line. */
 body[data-route="lobby"] .home-radar-sweep {
   background: conic-gradient(from 0deg,
-    transparent 0deg 270deg,
-    rgb(81 219 255 / 32%) 275deg,
-    rgb(81 219 255 / 18%) 305deg,
-    rgb(81 219 255 / 7%) 335deg,
+    transparent 0deg 278deg,
+    rgb(81 219 255 / 10%) 287deg,
+    rgb(81 219 255 / 40%) 301deg,
+    rgb(81 219 255 / 30%) 315deg,
+    rgb(81 219 255 / 13%) 339deg,
+    rgb(81 219 255 / 3%) 353deg,
     transparent 360deg) !important;
   animation: tp-radar-sweep 3.4s linear infinite;
+}
+/* A subtle reference line shows where the radar is pointing. The bright
+   region sits behind it, so it cannot be mistaken for the leading edge. */
+body[data-route="lobby"] .home-radar-sweep::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - .5px);
+  bottom: 50%;
+  width: 1px;
+  height: 50%;
+  pointer-events: none;
+  background: linear-gradient(to top,
+    rgb(103 224 255 / 16%), rgb(103 224 255 / 8%));
 }
 @media (prefers-reduced-motion: reduce) {
   body[data-route="lobby"] .home-radar-sweep {

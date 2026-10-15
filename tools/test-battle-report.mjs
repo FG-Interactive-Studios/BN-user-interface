@@ -14,8 +14,17 @@ assert.ok(css.includes('grid-template-columns: repeat(3, minmax(0, 1fr)) !import
 assert.ok(app.includes('Relatório pós-batalha'));
 assert.ok(app.includes('data-action="leave-lobby"'));
 const radar=css.slice(css.indexOf('body[data-route="lobby"] .home-radar-sweep'));
-assert.ok(radar.includes('transparent 0deg 270deg'));
-assert.ok(radar.includes('rgb(81 219 255 / 32%) 275deg'));
+assert.ok(radar.includes('transparent 0deg 278deg'));
 assert.ok(radar.includes('transparent 360deg'));
 assert.ok(radar.includes('tp-radar-sweep 3.4s linear infinite'));
+assert.ok(radar.includes('.home-radar-sweep::after'), 'line and trail must share the same rotation');
+const stops = [...radar.matchAll(/rgb\(81 219 255 \/ (\d+)%\) (\d+)deg/g)].map(([_,opacity,angle])=>({opacity:Number(opacity),angle:Number(angle)}));
+assert.deepEqual(stops,[
+  {opacity:10,angle:287},{opacity:40,angle:301},{opacity:30,angle:315},
+  {opacity:13,angle:339},{opacity:3,angle:353}
+]);
+// The strongest echo lies 59 degrees BEHIND a clockwise sweep at 360,
+// with ever lower opacity in the direction the sweep travels.
+assert.ok(stops[1].angle < 360);
+assert.ok(stops.slice(1).every((s,i,a)=>i===0 || s.opacity<a[i-1].opacity));
 console.log('TidePoint V9: painel de resultado e gradiente do radar: OK');
