@@ -158,41 +158,15 @@ body[data-route="result"] .tp-result > .tp-actions .btn {
   }
 }
 
-/* Both screens render radarMarkup(): reuse the exact waiting-room radar
-   background, sweep beam and contacts. Only positioning/size differ here.
-   No separate conic-gradient or home-only sweep to get out of sync. */
-body[data-route="lobby"] .home-ocean-art .tp-home-radar {
-  position: absolute !important;
-  left: 50%;
-  top: 44%;
-  transform: translate(-50%, -50%);
-  width: min(84%, 400px) !important;
-  height: auto !important;
-  aspect-ratio: 1 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  opacity: 1 !important;
-  border: 2px solid #52d6ff88;
-  background:
-    repeating-radial-gradient(circle,#52d6ff11 0 1px,transparent 2px 32px),
-    linear-gradient(90deg,transparent 49.6%,#52d6ff2a 50%,transparent 50.4%),
-    linear-gradient(transparent 49.6%,#52d6ff2a 50%,transparent 50.4%);
-  box-shadow: 0 0 35px #52d6ff2b inset;
-  overflow: hidden;
-}
-
-/* Match the animation used in viewport-v3.css for matchmaking / .radar. */
-body[data-route="lobby"] .tp-home-radar::before,
-body[data-route="lobby"] .tp-home-radar::after {
+/* Original lobby radar visuals remain owned by home-final.css:
+   subtle rings, crosshair, positions, contacts, glow, and border.
+   Only sweep behavior matches the waiting-room radar in viewport-v3.css. */
+body[data-route="lobby"] .home-radar-sweep {
+  background: conic-gradient(from 0deg, #52d6ff45, transparent 25%) !important;
   animation: tp-waiting-sweep 2.65s linear infinite !important;
-  transform-origin: center !important;
-}
-body[data-route="lobby"] .tp-home-radar::after {
-  transform-origin: left center !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  body[data-route="lobby"] .tp-home-radar::before,
-  body[data-route="lobby"] .tp-home-radar::after {
+  body[data-route="lobby"] .home-radar-sweep {
     animation: none !important;
   }
 }
