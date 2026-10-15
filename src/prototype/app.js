@@ -1,6 +1,6 @@
 import * as api from './client.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
-import { roomPartnerDeparted, resolvedRoute } from './room-flow.js';
+import { roomDeparture, resolvedRoute } from './room-flow.js';
 
 const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20l-3-6H5l-3 6zM8 12V8h4v4M12 6V4"/></svg>`;
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">TIDEPOINT</div><div class="brand-sub">Estratégia • Navios • Vitória</div></div></div>`;
@@ -85,9 +85,12 @@ async function reconcile() {
     const previousRoom=state.lobby;
     const previous=previousRoom?.status;
     let changed=JSON.stringify(previousRoom)!==JSON.stringify(room);
-    if (!state.leavingRoom && !state.roomExitNotice && roomPartnerDeparted(previousRoom,room)) {
-      state.roomExitNotice={requiresLeave:Boolean(room)};
-      changed=true;
+    if (!state.leavingRoom && !state.roomExitNotice) {
+      const departure = roomDeparture(previousRoom, room, state.profile?.id);
+      if (departure) {
+        state.roomExitNotice={type:departure};
+        changed=true;
+      }
     }
     state.lobby=room;
     if (!room) {
@@ -193,7 +196,14 @@ function profileScreen(){const p=state.profile;return mainContent(`<div class="t
 
 function roomExitDialog() {
   if (!state.roomExitNotice) return "";
-  return `<dialog id="tp-room-exit-dialog" class="tp-room-exit-dialog" aria-labelledby="tp-room-exit-title" aria-describedby="tp-room-exit-description"><div class="tp-room-exit-symbol" aria-hidden="true">⚓</div><div class="eyebrow">Sala encerrada</div><h2 id="tp-room-exit-title">O outro capitão deixou a sala</h2><p id="tp-room-exit-description">O outro jogador saiu antes da partida começar. A sala será encerrada e você voltará à tela inicial.</p><p class="tp-room-exit-error" role="alert">${esc(state.roomExitNotice.error || "")}</p><button type="button" class="btn btn-primary" data-action="ack-room-exit">Voltar ao início</button></dialog>`;
+  const hostLeft=state.roomExitNotice.type==='host-left';
+  const eyebrow=hostLeft?'Sala encerrada':'Sala disponível';
+  const heading=hostLeft?'O anfitrião encerrou a sala':'O convidado deixou a sala';
+  const description=hostLeft
+    ? 'O anfitrião saiu. Esta sala foi encerrada e você voltará à tela inicial.'
+    : 'Você continua como anfitrião. A sala e o código de convite permanecem ativos para receber outro jogador.';
+  const button=hostLeft?'Voltar ao início':'Continuar aguardando';
+  return `<dialog id="tp-room-exit-dialog" class="tp-room-exit-dialog" aria-labelledby="tp-room-exit-title" aria-describedby="tp-room-exit-description"><div class="tp-room-exit-symbol" aria-hidden="true">⚓</div><div class="eyebrow">${eyebrow}</div><h2 id="tp-room-exit-title">${heading}</h2><p id="tp-room-exit-description">${description}</p><button type="button" class="btn btn-primary" data-action="ack-room-exit">${button}</button></dialog>`;
 }
 function render(){ if (!root) return;
   let route=currentRoute();
@@ -253,18 +263,18 @@ async function runAction(action) {
   switch(action) {
     case 'ack-room-exit': {
       if (!state.roomExitNotice || state.busy) break;
-      state.busy=true;render();
-      try {
-        if (state.roomExitNotice.requiresLeave) {
-          try { await api.remove('/matchmaking/lobbies/me'); }
-          catch (error) { if (!(error instanceof api.ApiError && error.status===404)) throw error; }
-        }
-        state.roomExitNotice=null;state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;
+      const hostLeft=state.roomExitNotice.type==='host-left';
+      state.roomExitNotice=null;
+      if (hostLeft) {
+        // Backend removed the lobby and both memberships when the host left.
+        state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;
         go('lobby');
-      } catch(error) {
-        if (error instanceof api.ApiError && error.status===401) {api.clearSession();reset();go('auth');}
-        else if(state.roomExitNotice) state.roomExitNotice.error=error?.message||'Não foi possível encerrar a sala. Tente novamente.';
-      } finally {state.busy=false;render();}
+      } else {
+        // Backend already kept the host's room open and reset readiness.
+        // Never DELETE the surviving room; it may receive a new guest.
+        go(state.lobby ? routeForLobby(state.lobby.status) : 'lobby');
+      }
+      render();
       break;
     }
     case 'dismiss':state.notice='';updateNotice();break;
