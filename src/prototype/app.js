@@ -13,6 +13,7 @@ const state = {
 };
 let root;
 let refreshTimer;
+let lastFallbackReconcileAt=0;
 let loading=false;
 let renderedRoute='';
 function updateNotice() {
@@ -68,11 +69,22 @@ async function sessionInit() {
     }
   }, online => {
     state.socketOnline=online; updateConnectionIndicator();
-    if(online) void reconcile();
+    if(online) {
+      lastFallbackReconcileAt=Date.now();
+      void reconcile();
+    }
   });
+  // Event-first synchronization: server events prompt an immediate authoritative
+  // snapshot. REST is a safety net, not a substitute for websocket presence.
+  // 60s when online; 20s while recovering from a websocket outage.
   if (!refreshTimer) refreshTimer=setInterval(()=>{
-    if (api.isAuthenticated() && state.lobby) void reconcile();
-  }, 7000);
+    if (!api.isAuthenticated() || !state.lobby) return;
+    const now=Date.now();
+    if (!state.socketOnline || now-lastFallbackReconcileAt >= 60000) {
+      lastFallbackReconcileAt=now;
+      void reconcile();
+    }
+  }, 20000);
 }
 async function reconcile() {
   if (!api.isAuthenticated() || loading) return;
