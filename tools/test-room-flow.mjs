@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { roomPartnerDeparted, resolvedRoute } from '../src/prototype/room-flow.js';
+const together = { code:'ABC234', status:'WAITING', players:[{id:1},{id:2}] };
+const alone = { ...together, players:[{id:1}] };
+assert.equal(roomPartnerDeparted(together,alone), true);
+assert.equal(roomPartnerDeparted(together,null), true);
+assert.equal(roomPartnerDeparted({...together,status:'PREPARING'},alone), true);
+assert.equal(roomPartnerDeparted(alone,alone), false);
+assert.equal(roomPartnerDeparted(together,together), false);
+assert.equal(roomPartnerDeparted({...together,status:'PLAYING'},null), false);
+assert.equal(roomPartnerDeparted(together,{...alone,code:'OTHER1'}), false);
+assert.equal(resolvedRoute('auth',true),'lobby');
+assert.equal(resolvedRoute('register',true,'WAITING'),'matchmaking');
+assert.equal(resolvedRoute('auth',true,'PLAYING'),'match');
+assert.equal(resolvedRoute('auth',false),'auth');
+console.log('TidePoint: abandono de sala e rotas protegidas: OK');

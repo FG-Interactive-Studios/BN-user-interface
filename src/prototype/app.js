@@ -1,5 +1,6 @@
 import * as api from './client.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
+import { roomPartnerDeparted, resolvedRoute } from './room-flow.js';
 
 const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20l-3-6H5l-3 6zM8 12V8h4v4M12 6V4"/></svg>`;
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">TIDEPOINT</div><div class="brand-sub">Estratégia • Navios • Vitória</div></div></div>`;
@@ -7,6 +8,7 @@ const state = {
   profile: null, modes: [], lobby: null, preparation: null, battle: null,
   modeId: 'classic', selected: null, draft: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
+  roomExitNotice: null, leavingRoom: false,
 };
 let root;
 let refreshTimer;
@@ -25,7 +27,10 @@ function updateConnectionIndicator() {
 function notice(message, error=false) { state.notice=message; state.error=error; updateNotice(); }
 function activeMode() { return state.battle?.mode || state.preparation?.mode || state.lobby?.mode || state.modes.find(m=>m.id===state.modeId) || null; }
 function currentRoute() { return decodeURIComponent(location.hash.slice(1).split('?')[0] || 'auth'); }
-function go(route) { if (currentRoute()===route) render(); else location.hash=route; }
+function go(route) {
+  route = resolvedRoute(route, api.isAuthenticated(), state.lobby?.status);
+  if (currentRoute()===route) render(); else location.hash=route;
+}
 function nav(active='play') { return `<nav class="bottom-nav"><button class="nav-btn ${active==='fleet'?'active':''}" data-go="fleet">⚓ Frota</button><button class="nav-btn play ${active==='play'?'active':''}" data-go="lobby">⌁ Jogar</button><button class="nav-btn ${active==='store'?'active':''}" data-go="store">◈ Arsenal</button></nav>`; }
 function header() { const player=state.profile; return `<header class="topbar">${brand()}<div class="currencies"><span class="pill">● TidePoint V1</span><span class="pill" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span></div><div class="player-strip"><div class="avatar" aria-hidden="true">⚓</div><div class="name"><b>${esc(player?.nickname || 'Capitão')}</b><div style="font-size:10px;color:var(--muted)">Conta de jogador</div></div><div class="tp-top-actions"><button data-go="profile">Perfil</button><button data-action="logout">Sair</button><a href="/admin" class="tp-small" style="color:var(--cyan)">Admin</a></div><details class="tp-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary><div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div></details></div></header>`; }
 function screen(content,{active='play',noNav=false}={}) { return `<div class="screen"><div class="shell">${header()}<main class="main">${content}</main>${noNav?'':nav(active)}</div></div>`; }
@@ -34,6 +39,8 @@ function mainContent(inner,{active='play',noNav=false}={}) {return screen(`<div 
 function alertNode() { return state.notice ? `<div class="tp-notice ${state.error?'error':''}" role="alert">${esc(state.notice)} <button type="button" data-action="dismiss" style="float:right;background:transparent;color:inherit;border:0;cursor:pointer">×</button></div>` : ''; }
 function routeForLobby(status) {return status==='WAITING'?'matchmaking':status==='PREPARING'?'placement':status==='PLAYING'?'match':status==='FINISHED'?'result':'lobby';}
 function synchronizeRoute() {
+  // Keep the departure dialog open until acknowledged, including after a room closes.
+  if (state.roomExitNotice) { if (!state.lobby && currentRoute()!=='lobby') go('lobby'); return; }
   if (!state.lobby) { if (['placement','match','result'].includes(currentRoute())) go('lobby'); return; }
   const route=routeForLobby(state.lobby.status);
   if (currentRoute()!==route && ['matchmaking','placement','match','result','lobby'].includes(currentRoute())) go(route);
@@ -47,7 +54,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;}
+function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -75,8 +82,13 @@ async function reconcile() {
     catch(e) { if (e instanceof api.ApiError && e.status===404) room=null; else throw e; }
     if (!api.isAuthenticated()) return;
     if (room && state.lobby?.code===room.code && room.revision < state.lobby.revision) return;
-    const previous=state.lobby?.status;
-    let changed=JSON.stringify(state.lobby)!==JSON.stringify(room);
+    const previousRoom=state.lobby;
+    const previous=previousRoom?.status;
+    let changed=JSON.stringify(previousRoom)!==JSON.stringify(room);
+    if (!state.leavingRoom && !state.roomExitNotice && roomPartnerDeparted(previousRoom,room)) {
+      state.roomExitNotice={requiresLeave:Boolean(room)};
+      changed=true;
+    }
     state.lobby=room;
     if (!room) {
       if (state.preparation || state.battle || state.draft) changed=true;
@@ -121,7 +133,7 @@ function authForm(isRegister=false) {
 
 function lobbyScreen() {
   if (state.lobby) return waitingScreen();
-  return screen(`<div class="hero-grid home-grid"><section class="panel hero-card home-hero"><div class="home-hero-grid"><div class="hero-copy home-copy"><h1 class="hero-title">Domine a<br><span>linha d'água.</span></h1><div class="hero-actions tp-lobby-actions"><button class="btn btn-orange home-primary-action" type="button" data-go="matchmaking" ${state.modes.length?'':'disabled'}><span class="home-btn-icon">◎</span><span><b>Criar sala</b><small>Escolher modo de jogo</small></span></button><button class="btn btn-ghost home-ranked-action" type="button" data-action="open-join-modal"><span class="home-btn-icon">↗</span><span><b>Entrar na sala</b><small>Usar código de convite</small></span></button></div></div><div class="home-ocean-art" aria-hidden="true"><div class="home-radar-disc"><i class="home-radar-ring ring-a"></i><i class="home-radar-ring ring-b"></i><i class="home-radar-axis axis-x"></i><i class="home-radar-axis axis-y"></i><i class="home-radar-sweep"></i><span class="home-radar-contact contact-a"></span><span class="home-radar-contact contact-b"></span><span class="home-radar-contact contact-c"></span></div><div class="home-ship-silhouette"><i class="home-ship-hull"></i><i class="home-ship-deck"></i><i class="home-ship-tower"></i><i class="home-ship-gun"></i></div><div class="home-art-label"><span>Seu próximo desafio</span><b>1 × 1</b></div></div></div></section><aside class="panel mission-card home-missions"><div class="home-mission-head"><div><div class="eyebrow">Diário de bordo</div><div class="panel-title">Informações da conta</div></div></div><div class="mission-list home-mission-list"><div class="mission"><div class="tp-mission-info"><small>Capitão</small><b>${esc(state.profile?.nickname)}</b></div></div><div class="mission"><div class="tp-mission-info"><small>Modos habilitados</small><b>${state.modes.length}</b></div></div><div class="mission"><div class="tp-mission-info"><small>Multiplayer</small><b>Sala privada para dois</b></div></div></div><div class="home-event-card"><div class="home-event-copy"><div class="eyebrow">Em breve</div><b>Missões, ranking e skins</b><small>A API ainda não oferece esses recursos.</small></div></div></aside></div><dialog id="tp-join-dialog" class="tp-join-dialog" aria-labelledby="tp-join-title"><div class="tp-modal-header"><div><div class="eyebrow">Convite de partida</div><h2 id="tp-join-title">Entrar em uma sala</h2></div><button type="button" data-action="close-join-modal" aria-label="Fechar janela">×</button></div><form data-form="join" class="tp-form"><div class="field"><label for="room-code">Código de seis caracteres</label><input id="room-code" name="code" placeholder="ABC234" maxlength="6" minlength="6" pattern="[a-zA-Z0-9]{6}" autocomplete="off" required style="text-transform:uppercase" /></div><p class="tp-modal-feedback" role="alert" aria-live="polite"></p><div class="tp-modal-actions"><button class="btn btn-ghost" type="button" data-action="close-join-modal">Cancelar</button><button class="btn btn-primary" type="submit">Entrar na sala</button></div></form></dialog>`);
+  return screen(`<div class="hero-grid home-grid"><section class="panel hero-card home-hero"><div class="home-hero-grid"><div class="hero-copy home-copy"><h1 class="hero-title">Domine a<br><span>linha d'água.</span></h1><div class="tp-lobby-intro"><span class="tp-lobby-sign">⚓ PONTO DE PARTIDA</span><span class="tp-lobby-sign-line" aria-hidden="true"></span></div><div class="hero-actions tp-lobby-actions" aria-label="Escolha sua próxima ação"><button class="btn btn-orange home-primary-action tp-launch-card" type="button" data-go="matchmaking" ${state.modes.length?'':'disabled'}><span class="home-btn-icon">◎</span><span class="tp-action-copy"><b>Criar sala</b><small>Escolha o cenário e convoque um capitão</small></span><span class="tp-action-chevron" aria-hidden="true">↗</span></button><button class="btn btn-ghost home-ranked-action tp-join-card" type="button" data-action="open-join-modal"><span class="home-btn-icon">⌁</span><span class="tp-action-copy"><b>Entrar na sala</b><small>Recebeu um convite? Embarque aqui</small></span><span class="tp-action-chevron" aria-hidden="true">→</span></button></div><div class="tp-lobby-dock" aria-label="Características das partidas"><span><i aria-hidden="true">◈</i> Duelo 1×1</span><span><i aria-hidden="true">◎</i> Estratégia por turnos</span></div></div><div class="home-ocean-art" aria-hidden="true"><div class="home-radar-disc"><i class="home-radar-ring ring-a"></i><i class="home-radar-ring ring-b"></i><i class="home-radar-axis axis-x"></i><i class="home-radar-axis axis-y"></i><i class="home-radar-sweep"></i><span class="home-radar-contact contact-a"></span><span class="home-radar-contact contact-b"></span><span class="home-radar-contact contact-c"></span></div><div class="home-ship-silhouette"><i class="home-ship-hull"></i><i class="home-ship-deck"></i><i class="home-ship-tower"></i><i class="home-ship-gun"></i></div><div class="home-art-label"><span>Seu próximo desafio</span><b>1 × 1</b></div></div></div></section><aside class="panel mission-card home-missions"><div class="home-mission-head"><div><div class="eyebrow">Diário de bordo</div><div class="panel-title">Informações da conta</div></div></div><div class="mission-list home-mission-list"><div class="mission"><div class="tp-mission-info"><small>Capitão</small><b>${esc(state.profile?.nickname)}</b></div></div><div class="mission"><div class="tp-mission-info"><small>Modos habilitados</small><b>${state.modes.length}</b></div></div><div class="mission"><div class="tp-mission-info"><small>Multiplayer</small><b>Sala privada para dois</b></div></div></div><div class="home-event-card"><div class="home-event-copy"><div class="eyebrow">Em breve</div><b>Missões, ranking e skins</b><small>A API ainda não oferece esses recursos.</small></div></div></aside></div><dialog id="tp-join-dialog" class="tp-join-dialog" aria-labelledby="tp-join-title"><div class="tp-modal-header"><div><div class="eyebrow">Convite de partida</div><h2 id="tp-join-title">Entrar em uma sala</h2></div><button type="button" data-action="close-join-modal" aria-label="Fechar janela">×</button></div><form data-form="join" class="tp-form"><div class="field"><label for="room-code">Código de seis caracteres</label><input id="room-code" name="code" placeholder="ABC234" maxlength="6" minlength="6" pattern="[a-zA-Z0-9]{6}" autocomplete="off" required style="text-transform:uppercase" /></div><p class="tp-modal-feedback" role="alert" aria-live="polite"></p><div class="tp-modal-actions"><button class="btn btn-ghost" type="button" data-action="close-join-modal">Cancelar</button><button class="btn btn-primary" type="submit">Entrar na sala</button></div></form></dialog>`);
 }
 
 function waitingScreen() {
@@ -179,16 +191,26 @@ function fleetScreen(){const mode=activeMode()||state.modes[0];return mainConten
 function storeScreen(){return mainContent(`<div class="tp-page-header"><div class="eyebrow">Arsenal TidePoint</div><h2 class="form-title">Loja e coleções</h2></div>${panel('Em construção','<p>O layout de cosméticos do protótipo foi reservado para o futuro catálogo. Compras, moedas, skins e pacotes de som ainda não existem na API e, portanto, não há preços ou saldos fictícios aqui.</p><p class="tp-muted">As partidas reais e os tabuleiros estão disponíveis no lobby.</p><button class="btn btn-orange" data-go="lobby">Voltar para jogar</button>')}`,{active:'store'});}
 function profileScreen(){const p=state.profile;return mainContent(`<div class="tp-page-header"><button class="btn btn-ghost tp-back" type="button" data-go="lobby">← Voltar</button><div class="eyebrow">Conta de jogador</div><h2 class="form-title">Meu perfil</h2></div><div class="tp-flow"><section class="panel tp-panel"><div class="eyebrow">Identidade</div><form class="tp-form" data-form="profile"><div class="field"><label for="profile-name">Nickname</label><input id="profile-name" name="nickname" maxlength="30" minlength="3" required value="${esc(p?.nickname)}" /></div><div class="field"><label for="avatar">Avatar</label><select name="avatarId" id="avatar" class="tp-mode-select">${['captain','submarine','destroyer','carrier'].map(id=>`<option value="${id}" ${p?.avatarId===id?'selected':''}>${esc(shipName(id.toUpperCase()))}</option>`).join('')}</select></div><button class="btn btn-primary" type="submit">Salvar perfil</button></form><p class="tp-muted tp-small" style="margin-top:12px">E-mail: ${esc(p?.email||'—')}</p></section><section class="panel tp-panel"><div class="eyebrow">Segurança</div><h2 class="panel-title">Alterar senha</h2><form class="tp-form" data-form="password"><div class="field"><label>Senha atual<input name="currentPassword" type="password" autocomplete="current-password" required /></label></div><div class="field"><label>Nova senha<input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></label></div><button class="btn btn-orange" type="submit">Alterar senha</button></form><p class="tp-muted tp-small">A sessão continua ativa após a troca de senha.</p></section></div>`,{noNav:true});}
 
+function roomExitDialog() {
+  if (!state.roomExitNotice) return "";
+  return `<dialog id="tp-room-exit-dialog" class="tp-room-exit-dialog" aria-labelledby="tp-room-exit-title" aria-describedby="tp-room-exit-description"><div class="tp-room-exit-symbol" aria-hidden="true">⚓</div><div class="eyebrow">Sala encerrada</div><h2 id="tp-room-exit-title">O outro capitão deixou a sala</h2><p id="tp-room-exit-description">O outro jogador saiu antes da partida começar. A sala será encerrada e você voltará à tela inicial.</p><p class="tp-room-exit-error" role="alert">${esc(state.roomExitNotice.error || "")}</p><button type="button" class="btn btn-primary" data-action="ack-room-exit">Voltar ao início</button></dialog>`;
+}
 function render(){ if (!root) return;
   let route=currentRoute();
   if (!api.isAuthenticated() && !['auth','register'].includes(route)) { if (location.hash!=='#auth') {location.hash='auth';return;} route='auth'; }
-  if (api.isAuthenticated() && ['auth','register'].includes(route)) { location.hash='lobby';return; }
+  if (api.isAuthenticated() && ['auth','register'].includes(route)) {
+    // Replace the history entry: Back must not expose the login screen to an active session.
+    route=resolvedRoute(route,true,state.lobby?.status);
+    history.replaceState(null,'',`${location.pathname}${location.search}#${route}`);
+  }
   const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen};
-  root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)();
+  root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
   renderedRoute=route;
   updateNotice();
   if (state.busy) root.classList.add('tp-loading'); else root.classList.remove('tp-loading');
   document.body.dataset.route=route;
+  const exitDialog=root.querySelector('#tp-room-exit-dialog');
+  if (exitDialog && !exitDialog.open) exitDialog.showModal();
 }
 
 async function joinFromModal(form, code) {
@@ -229,6 +251,22 @@ async function handleForm(form) {
 
 async function runAction(action) {
   switch(action) {
+    case 'ack-room-exit': {
+      if (!state.roomExitNotice || state.busy) break;
+      state.busy=true;render();
+      try {
+        if (state.roomExitNotice.requiresLeave) {
+          try { await api.remove('/matchmaking/lobbies/me'); }
+          catch (error) { if (!(error instanceof api.ApiError && error.status===404)) throw error; }
+        }
+        state.roomExitNotice=null;state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;
+        go('lobby');
+      } catch(error) {
+        if (error instanceof api.ApiError && error.status===401) {api.clearSession();reset();go('auth');}
+        else if(state.roomExitNotice) state.roomExitNotice.error=error?.message||'Não foi possível encerrar a sala. Tente novamente.';
+      } finally {state.busy=false;render();}
+      break;
+    }
     case 'dismiss':state.notice='';updateNotice();break;
     case 'open-join-modal': { const dialog=root.querySelector('#tp-join-dialog'); if (dialog && !dialog.open) { dialog.showModal(); dialog.querySelector('input[name=code]')?.focus(); } break; }
     case 'close-join-modal':root.querySelector('#tp-join-dialog')?.close();break;
@@ -238,7 +276,10 @@ async function runAction(action) {
     case 'ready':await guard(async()=>{const me=state.lobby?.players.find(p=>p.id===state.profile.id);state.lobby=await api.put('/matchmaking/lobbies/me/ready',{ready:!me?.ready});await reconcile();});break;
     case 'leave-lobby':{
       if (state.lobby?.status==='PLAYING' && !confirm('Sair agora significa desistir e perder a partida. Continuar?')) return;
-      await guard(async()=>{await api.remove('/matchmaking/lobbies/me');state.lobby=null;state.battle=null;state.preparation=null;state.draft=null;go('lobby');});break;}
+      state.leavingRoom=true;
+      try {await guard(async()=>{await api.remove('/matchmaking/lobbies/me');state.lobby=null;state.battle=null;state.preparation=null;state.draft=null;go('lobby');});}
+      finally {state.leavingRoom=false;}
+      break;}
     case 'random-placement':await guard(async()=>{state.preparation=await api.post('/matches/me/placement/random');state.draft=[...state.preparation.yourShips];});break;
     case 'save-placement':await guard(async()=>{state.preparation=await api.put('/matches/me/placement',{ships:state.draft});state.draft=[...state.preparation.yourShips];notice('Frota validada e salva pela API.');});break;
     case 'confirm-placement':await guard(async()=>{
@@ -287,6 +328,9 @@ function selectCell(row,col){
   }
 }
 function bindEvents() {
+  root.addEventListener('cancel', event=>{
+    if (event.target?.id==='tp-room-exit-dialog') event.preventDefault();
+  });
   root.addEventListener('submit', event=>{
     const form=event.target.closest('form[data-form]');if(!form)return;
     event.preventDefault(); void handleForm(form);

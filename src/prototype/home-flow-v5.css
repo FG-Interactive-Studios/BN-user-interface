@@ -1,0 +1,62 @@
+/* TidePoint V5 — compact nautical mission cards and departure overlay */
+body[data-route="lobby"] .tp-lobby-intro{display:flex;align-items:center;gap:12px;max-width:560px;width:100%;margin:0 0 clamp(8px,1.6dvh,15px)}
+body[data-route="lobby"] .tp-lobby-sign{color:#76dffc;font-size:clamp(9px,.87vw,11px);font-weight:850;white-space:nowrap;letter-spacing:2px}
+body[data-route="lobby"] .tp-lobby-sign-line{height:1px;flex:1;background:linear-gradient(90deg,#66d9ff78,transparent)}
+body[data-route="lobby"] .tp-lobby-actions{gap:clamp(7px,1vw,13px)!important;width:min(100%,570px)!important}
+body[data-route="lobby"] .tp-lobby-actions .tp-launch-card,
+body[data-route="lobby"] .tp-lobby-actions .tp-join-card{
+ position:relative;overflow:hidden;isolation:isolate;
+ justify-content:flex-start;align-items:center;gap:clamp(7px,1.1vw,13px);
+ min-height:clamp(65px,10dvh,94px)!important;
+ padding:clamp(9px,1.5dvh,17px)!important;border-radius:15px!important;
+ text-align:left;box-shadow:0 10px 24px #0005, inset 0 1px #ffffff25;
+ transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+body[data-route="lobby"] .tp-lobby-actions .tp-launch-card{
+ border:1px solid #ffb28a!important;background:linear-gradient(118deg,#fa744b,#d74d38)!important;color:white!important}
+body[data-route="lobby"] .tp-lobby-actions .tp-join-card{
+ border:1px solid #47ccf483!important;background:linear-gradient(120deg,#0c3045,#092232)!important;color:#e2f9ff!important}
+body[data-route="lobby"] .tp-lobby-actions .tp-launch-card:before,
+body[data-route="lobby"] .tp-lobby-actions .tp-join-card:before{
+ content:"";pointer-events:none;position:absolute;inset:0;z-index:-1;opacity:.65;
+ background:repeating-linear-gradient(145deg,transparent 0,transparent 14px,#ffffff09 14px,#ffffff09 15px)}
+body[data-route="lobby"] .tp-lobby-actions .tp-launch-card:hover:not(:disabled),
+body[data-route="lobby"] .tp-lobby-actions .tp-join-card:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 17px 32px #0007}
+body[data-route="lobby"] .tp-lobby-actions .tp-action-copy{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex:1 1 auto;min-width:0}
+body[data-route="lobby"] .tp-lobby-actions .tp-action-copy b{font-size:clamp(15px,1.35vw,19px)!important;letter-spacing:.25px;color:inherit}
+body[data-route="lobby"] .tp-lobby-actions .tp-action-copy small{font-size:clamp(9px,.83vw,11px)!important;line-height:1.25;color:inherit!important;opacity:.88;text-align:left}
+body[data-route="lobby"] .tp-lobby-actions .home-btn-icon{width:clamp(31px,3vw,43px);height:clamp(31px,3vw,43px);flex-basis:clamp(31px,3vw,43px);border:1px solid #ffffff55;background:#ffffff17;border-radius:13px}
+body[data-route="lobby"] .tp-action-chevron{display:grid;place-items:center;opacity:.65;font-size:18px;align-self:center}
+body[data-route="lobby"] .tp-lobby-dock{display:flex;align-items:center;gap:clamp(12px,2vw,28px);width:min(100%,570px);margin-top:clamp(8px,1.4dvh,17px);color:#9bbed0;font-size:clamp(10px,.85vw,12px);font-weight:600}
+body[data-route="lobby"] .tp-lobby-dock>span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+body[data-route="lobby"] .tp-lobby-dock i{font-style:normal;color:#65d7fa}
+.tp-room-exit-dialog{position:fixed;inset:0;margin:auto;width:min(425px,calc(100vw - 26px));max-height:calc(100dvh - 30px);overflow:auto;padding:clamp(16px,3vw,30px);
+ border:1px solid #63dfff88;border-radius:17px;background:linear-gradient(150deg,#102f45,#061725);color:#ecfbff;text-align:center;box-shadow:0 24px 72px #000c;z-index:300}
+.tp-room-exit-dialog:not([open]){display:none}
+.tp-room-exit-dialog::backdrop{background:#000b;backdrop-filter:blur(6px)}
+.tp-room-exit-symbol{display:grid;place-items:center;width:62px;height:62px;border:1px solid #58d8f7a8;border-radius:50%;margin:0 auto 15px;background:#16aad31c;color:#8ee6ff;font-size:30px}
+.tp-room-exit-dialog .eyebrow{color:#62dff7}
+.tp-room-exit-dialog h2{font-size:clamp(19px,4vw,26px);line-height:1.15;margin:10px 0 13px}
+.tp-room-exit-dialog p{font-size:13px;color:#b4d4e0;line-height:1.5}
+.tp-room-exit-dialog .tp-room-exit-error{color:#ffaaa8;min-height:0}
+.tp-room-exit-dialog .tp-room-exit-error:empty{display:none}
+.tp-room-exit-dialog .btn{margin-top:16px;min-height:46px;width:100%;justify-content:center}
+@media(max-width:760px){
+ body[data-route="lobby"] .tp-lobby-intro{margin-bottom:7px}
+ body[data-route="lobby"] .tp-lobby-actions .tp-launch-card,
+ body[data-route="lobby"] .tp-lobby-actions .tp-join-card{min-height:61px!important;padding:9px 11px!important}
+ body[data-route="lobby"] .tp-lobby-actions .tp-action-copy b{font-size:15px!important}
+ body[data-route="lobby"] .tp-lobby-actions .tp-action-copy small{font-size:10px!important}
+ body[data-route="lobby"] .tp-lobby-actions .home-btn-icon{width:34px;height:34px;flex-basis:34px}
+ body[data-route="lobby"] .tp-lobby-dock{gap:12px;flex-wrap:wrap;margin-top:9px;font-size:10px}
+}
+@media(max-width:390px),(max-height:675px){
+ body[data-route="lobby"] .tp-lobby-intro{margin-bottom:5px}
+ body[data-route="lobby"] .tp-lobby-actions .tp-launch-card,
+ body[data-route="lobby"] .tp-lobby-actions .tp-join-card{min-height:49px!important;padding:6px 9px!important}
+ body[data-route="lobby"] .tp-lobby-actions .tp-action-copy small{font-size:9px!important}
+ body[data-route="lobby"] .tp-lobby-dock{margin-top:6px;font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ body[data-route="lobby"] .tp-lobby-actions .tp-launch-card,
+ body[data-route="lobby"] .tp-lobby-actions .tp-join-card{transition:none}
+}
