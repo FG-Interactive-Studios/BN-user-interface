@@ -27,14 +27,14 @@ function activeMode() { return state.battle?.mode || state.preparation?.mode || 
 function currentRoute() { return decodeURIComponent(location.hash.slice(1).split('?')[0] || 'auth'); }
 function go(route) { if (currentRoute()===route) render(); else location.hash=route; }
 function nav(active='play') { return `<nav class="bottom-nav"><button class="nav-btn ${active==='fleet'?'active':''}" data-go="fleet">⚓ Frota</button><button class="nav-btn play ${active==='play'?'active':''}" data-go="lobby">⌁ Jogar</button><button class="nav-btn ${active==='store'?'active':''}" data-go="store">◈ Arsenal</button></nav>`; }
-function header() { const player=state.profile; return `<header class="topbar">${brand()}<div class="currencies"><span class="pill">● TidePoint V1</span><span class="pill" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span></div><div class="player-strip"><div class="avatar">⚓</div><div class="name"><b>${esc(player?.nickname || 'Capitão')}</b><div style="font-size:10px;color:var(--muted)">Conta de jogador</div></div><div class="tp-top-actions"><button data-go="profile">Perfil</button><button data-action="logout">Sair</button><a href="/admin" class="tp-small" style="color:var(--cyan)">Admin</a></div></div></header>`; }
+function header() { const player=state.profile; return `<header class="topbar">${brand()}<div class="currencies"><span class="pill">● TidePoint V1</span><span class="pill" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span></div><div class="player-strip"><div class="avatar" aria-hidden="true">⚓</div><div class="name"><b>${esc(player?.nickname || 'Capitão')}</b><div style="font-size:10px;color:var(--muted)">Conta de jogador</div></div><div class="tp-top-actions"><button data-go="profile">Perfil</button><button data-action="logout">Sair</button><a href="/admin" class="tp-small" style="color:var(--cyan)">Admin</a></div><details class="tp-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary><div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div></details></div></header>`; }
 function screen(content,{active='play',noNav=false}={}) { return `<div class="screen"><div class="shell">${header()}<main class="main">${content}</main>${noNav?'':nav(active)}</div></div>`; }
 function panel(title,body,cls='') { return `<section class="panel tp-panel ${cls}"><div class="eyebrow">Comando naval</div><h2 class="panel-title" style="margin:8px 0 16px">${title}</h2>${body}</section>`; }
 function mainContent(inner,{active='play',noNav=false}={}) {return screen(`<div class="tp-content">${inner}</div>`,{active,noNav});}
 function alertNode() { return state.notice ? `<div class="tp-notice ${state.error?'error':''}" role="alert">${esc(state.notice)} <button type="button" data-action="dismiss" style="float:right;background:transparent;color:inherit;border:0;cursor:pointer">×</button></div>` : ''; }
 function routeForLobby(status) {return status==='WAITING'?'matchmaking':status==='PREPARING'?'placement':status==='PLAYING'?'match':status==='FINISHED'?'result':'lobby';}
 function synchronizeRoute() {
-  if (!state.lobby) { if (['matchmaking','placement','match','result'].includes(currentRoute())) go('lobby'); return; }
+  if (!state.lobby) { if (['placement','match','result'].includes(currentRoute())) go('lobby'); return; }
   const route=routeForLobby(state.lobby.status);
   if (currentRoute()!==route && ['matchmaking','placement','match','result','lobby'].includes(currentRoute())) go(route);
 }
@@ -121,13 +121,15 @@ function authForm(isRegister=false) {
 
 function lobbyScreen() {
   if (state.lobby) return waitingScreen();
-  const options=state.modes.map(mode=>`<option value="${esc(mode.id)}" ${state.modeId===mode.id?'selected':''}>${esc(mode.name)} • ${mode.geometry?.cells?.length||0} casas</option>`).join('');
-  return screen(`<div class="hero-grid home-grid"><section class="panel hero-card home-hero"><div class="home-hero-grid"><div class="hero-copy home-copy"><div class="home-status-row"><div class="hero-kicker">TidePoint • Combate privado</div><span class="home-online"><i></i> API conectada</span></div><h1 class="hero-title">Domine a<br><span>linha d'água.</span></h1><p class="hero-desc">Desafie um amigo. Crie uma sala, compartilhe o código e prepare sua frota para o confronto.</p><div style="margin:12px 0"><label for="mode-picker" class="eyebrow">Modo de jogo disponível</label><div style="margin-top:8px"><select class="tp-mode-select" id="mode-picker" ${options?'':'disabled'}>${options||'<option>Sem modos habilitados</option>'}</select></div></div><div class="hero-actions"><button class="btn btn-orange home-primary-action" data-action="create-lobby" ${options?'':'disabled'}><span class="home-btn-icon">◎</span><span><b>Criar sala</b><small>Convide outro jogador</small></span></button><button class="btn btn-ghost home-ranked-action tp-disabled" disabled title="Ainda não implementado na API"><span class="home-btn-icon">◆</span><span><b>Classificada</b><small>Em desenvolvimento</small></span></button></div><form data-form="join" class="tp-form" style="max-width:410px;margin-top:16px"><div class="field"><label for="room-code">Entrar em uma sala</label><input id="room-code" name="code" placeholder="Código de 6 caracteres" maxlength="6" minlength="6" required style="text-transform:uppercase" /></div><button class="btn btn-primary" type="submit">Entrar pelo código</button></form></div><div class="home-ocean-art" aria-hidden="true"><div class="home-radar-disc"><i class="home-radar-ring ring-a"></i><i class="home-radar-ring ring-b"></i><i class="home-radar-axis axis-x"></i><i class="home-radar-axis axis-y"></i><i class="home-radar-sweep"></i><span class="home-radar-contact contact-a"></span><span class="home-radar-contact contact-b"></span><span class="home-radar-contact contact-c"></span></div><div class="home-ship-silhouette"><i class="home-ship-hull"></i><i class="home-ship-deck"></i><i class="home-ship-tower"></i><i class="home-ship-gun"></i></div><div class="home-art-label"><span>Seu próximo desafio</span><b>1 × 1</b></div></div></div></section><aside class="panel mission-card home-missions"><div class="home-mission-head"><div><div class="eyebrow">Diário de bordo</div><div class="panel-title">Informações da conta</div></div></div><div class="mission-list home-mission-list"><div class="mission"><div class="tp-mission-info"><small>Capitão</small><b>${esc(state.profile?.nickname)}</b></div></div><div class="mission"><div class="tp-mission-info"><small>Modos habilitados</small><b>${state.modes.length}</b></div></div><div class="mission"><div class="tp-mission-info"><small>Multiplayer</small><b>Sala privada para dois</b></div></div></div><div class="home-event-card"><div class="home-event-copy"><div class="eyebrow">Em breve</div><b>Missões, ranking e skins</b><small>A API ainda não oferece esses recursos.</small></div></div></aside></div>`);
+  return screen(`<div class="hero-grid home-grid"><section class="panel hero-card home-hero"><div class="home-hero-grid"><div class="hero-copy home-copy"><h1 class="hero-title">Domine a<br><span>linha d'água.</span></h1><div class="hero-actions tp-lobby-actions"><button class="btn btn-orange home-primary-action" type="button" data-go="matchmaking" ${state.modes.length?'':'disabled'}><span class="home-btn-icon">◎</span><span><b>Criar sala</b><small>Escolher modo de jogo</small></span></button><button class="btn btn-ghost home-ranked-action" type="button" data-action="open-join-modal"><span class="home-btn-icon">↗</span><span><b>Entrar na sala</b><small>Usar código de convite</small></span></button></div></div><div class="home-ocean-art" aria-hidden="true"><div class="home-radar-disc"><i class="home-radar-ring ring-a"></i><i class="home-radar-ring ring-b"></i><i class="home-radar-axis axis-x"></i><i class="home-radar-axis axis-y"></i><i class="home-radar-sweep"></i><span class="home-radar-contact contact-a"></span><span class="home-radar-contact contact-b"></span><span class="home-radar-contact contact-c"></span></div><div class="home-ship-silhouette"><i class="home-ship-hull"></i><i class="home-ship-deck"></i><i class="home-ship-tower"></i><i class="home-ship-gun"></i></div><div class="home-art-label"><span>Seu próximo desafio</span><b>1 × 1</b></div></div></div></section><aside class="panel mission-card home-missions"><div class="home-mission-head"><div><div class="eyebrow">Diário de bordo</div><div class="panel-title">Informações da conta</div></div></div><div class="mission-list home-mission-list"><div class="mission"><div class="tp-mission-info"><small>Capitão</small><b>${esc(state.profile?.nickname)}</b></div></div><div class="mission"><div class="tp-mission-info"><small>Modos habilitados</small><b>${state.modes.length}</b></div></div><div class="mission"><div class="tp-mission-info"><small>Multiplayer</small><b>Sala privada para dois</b></div></div></div><div class="home-event-card"><div class="home-event-copy"><div class="eyebrow">Em breve</div><b>Missões, ranking e skins</b><small>A API ainda não oferece esses recursos.</small></div></div></aside></div><dialog id="tp-join-dialog" class="tp-join-dialog" aria-labelledby="tp-join-title"><div class="tp-modal-header"><div><div class="eyebrow">Convite de partida</div><h2 id="tp-join-title">Entrar em uma sala</h2></div><button type="button" data-action="close-join-modal" aria-label="Fechar janela">×</button></div><form data-form="join" class="tp-form"><div class="field"><label for="room-code">Código de seis caracteres</label><input id="room-code" name="code" placeholder="ABC234" maxlength="6" minlength="6" pattern="[a-zA-Z0-9]{6}" autocomplete="off" required style="text-transform:uppercase" /></div><p class="tp-modal-feedback" role="alert" aria-live="polite"></p><div class="tp-modal-actions"><button class="btn btn-ghost" type="button" data-action="close-join-modal">Cancelar</button><button class="btn btn-primary" type="submit">Entrar na sala</button></div></form></dialog>`);
 }
 
 function waitingScreen() {
   const room=state.lobby;
-  if (!room) return lobbyScreen();
+  if (!room) {
+    const options=state.modes.map(mode=>`<option value="${esc(mode.id)}" ${state.modeId===mode.id?'selected':''}>${esc(mode.name)} · ${mode.geometry?.cells?.length||0} casas</option>`).join('');
+    return mainContent(`<div class="matchmaking-wrap tp-create-room-wrap"><section class="panel mm-card tp-create-room-card"><div class="eyebrow">Canal de combate</div><h2 class="form-title">Criar sala privada</h2><p class="form-sub">Escolha o modo de jogo antes de criar sua sala. Depois você receberá um código para convidar outro jogador.</p><div class="tp-create-mode"><label class="eyebrow" for="mode-picker">Modo de jogo</label><select class="tp-mode-select" id="mode-picker" ${options?'':'disabled'}>${options||'<option>Sem modos habilitados</option>'}</select></div><div class="tp-actions tp-create-actions"><button type="button" class="btn btn-ghost" data-go="lobby">← Voltar</button><button type="button" class="btn btn-orange" data-action="create-lobby" ${options?'':'disabled'}>Criar sala</button></div></section></div>`,{noNav:true});
+  }
   const me=room.players.find(p=>p.id===state.profile?.id);
   const other=room.players.find(p=>p.id!==state.profile?.id);
   const players=room.players.map(p=>`<div><span><span class="tp-live-dot ${p.connected?'online':''}"></span> ${esc(p.nickname)} ${p.id===state.profile?.id?'(você)':''}</span><span class="tp-tag">${p.ready?'Pronto':'Aguardando'} · ${p.connected?'Online':'Offline'}</span></div>`).join('');
@@ -189,6 +191,29 @@ function render(){ if (!root) return;
   document.body.dataset.route=route;
 }
 
+async function joinFromModal(form, code) {
+  if (state.busy) return;
+  const input=form.querySelector('input[name="code"]');
+  const submit=form.querySelector('button[type="submit"]');
+  const feedback=form.querySelector('.tp-modal-feedback');
+  if (feedback) feedback.textContent='';
+  if (submit) submit.disabled=true;
+  state.busy=true;
+  try {
+    state.lobby=await api.post('/matchmaking/lobbies/join',{code:code.trim().toUpperCase()});
+    root.querySelector('#tp-join-dialog')?.close();
+    go('matchmaking');
+  } catch(error) {
+    if (error instanceof api.ApiError && error.status===401) {
+      api.clearSession();reset();go('auth');
+    } else {
+      const alert=form.querySelector('.tp-modal-feedback');
+      if (alert) alert.textContent=error?.message||'Não foi possível entrar nesta sala.';
+      input?.focus();
+    }
+  } finally {state.busy=false;if (submit?.isConnected) submit.disabled=false;}
+}
+
 async function handleForm(form) {
   const values=Object.fromEntries(new FormData(form).entries());
   switch(form.dataset.form) {
@@ -196,7 +221,7 @@ async function handleForm(form) {
     case 'register':
       if (values.password!==values.repeat) return notice('As senhas digitadas são diferentes.',true);
       await guard(async()=>{await api.register(values.nickname.trim(),values.email.trim(),values.password);await api.login(values.email.trim(),values.password);await sessionInit();go('lobby');});break;
-    case 'join':await guard(async()=>{state.lobby=await api.post('/matchmaking/lobbies/join',{code:values.code.trim().toUpperCase()});go('matchmaking');});break;
+    case 'join':await joinFromModal(form,values.code);break;
     case 'profile':await guard(async()=>{state.profile=await api.patch('/users/me',{nickname:values.nickname.trim(),avatarId:values.avatarId});notice('Perfil atualizado com sucesso.');});break;
     case 'password':await guard(async()=>{await api.post('/auth/change-password',{currentPassword:values.currentPassword,newPassword:values.newPassword});notice('Senha atualizada. Sua sessão permanece ativa.');});break;
   }
@@ -205,6 +230,8 @@ async function handleForm(form) {
 async function runAction(action) {
   switch(action) {
     case 'dismiss':state.notice='';updateNotice();break;
+    case 'open-join-modal': { const dialog=root.querySelector('#tp-join-dialog'); if (dialog && !dialog.open) { dialog.showModal(); dialog.querySelector('input[name=code]')?.focus(); } break; }
+    case 'close-join-modal':root.querySelector('#tp-join-dialog')?.close();break;
     case 'logout':await guard(async()=>{await api.logout();reset();clearInterval(refreshTimer);refreshTimer=null;go('auth');});break;
     case 'create-lobby':await guard(async()=>{state.lobby=await api.post('/matchmaking/lobbies',{modeId:state.modeId});go('matchmaking');});break;
     case 'copy-code':if(state.lobby){try{await navigator.clipboard.writeText(state.lobby.code);notice('Código copiado para a área de transferência.');}catch{notice(`Código da sala: ${state.lobby.code}`);}}break;
