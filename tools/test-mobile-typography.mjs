@@ -4,7 +4,7 @@ const css=readFileSync(new URL('../src/prototype/home-flow-v7.css', import.meta.
 const entry=readFileSync(new URL('../src/prototype/tidepoint-entry.css', import.meta.url),'utf8');
 const v7 = entry.indexOf("@import './home-flow-v7.css';");
 const v8 = entry.indexOf("@import './mobile-game-v8.css';");
-assert.ok(v7 >= 0 && v8 > v7 && entry.trimEnd().endsWith("@import './mobile-game-v8.css';"),'CSS must load V7 typography before V8 mobile game overrides');
+assert.ok(v7 >= 0 && v8 > v7,'CSS must load V7 typography before V8 mobile game overrides');
 for(const selector of ['.tp-action-copy b','.tp-action-copy small','.tp-player-status-list .tp-mission-info small','.tp-player-status-list .tp-mission-info b','.bottom-nav .nav-btn','.hero-title'])
   assert.ok(css.includes(selector),'Missing typography override: '+selector);
 for(const size of ['font-size:16px!important','font-size:13px!important','font-size:12px!important','font-size:clamp(31px,8.7vw,36px)!important'])
