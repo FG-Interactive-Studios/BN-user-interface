@@ -64,6 +64,9 @@ async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
   if (!state.modes.some(m=>m.id===state.modeId)) state.modeId=state.modes[0]?.id||'';
+  // Restore a saved skin after login even if the user does not open the store.
+  // A missing store endpoint (older API) must not break authentication.
+  void loadStore({quiet:true});
   await reconcile();
   await api.connectRealtime((message)=>{
     if (['LOBBY_UPDATED','LOBBY_CLOSED','LOBBY_LEFT','PREPARATION_UPDATED','BATTLE_UPDATED'].includes(message.type)) {
@@ -215,14 +218,17 @@ function fleetScreen(){const mode=activeMode()||state.modes[0];return mainConten
 function storeScreen(){
   return mainContent(renderCosmeticStore(state.store,{loading:state.storeLoading,filter:state.storeFilter}),{active:'store'});
 }
-async function loadStore(){
+async function loadStore({quiet=false}={}){
   if (!api.isAuthenticated() || state.storeLoading) return;
   state.storeLoading=true;
   if (currentRoute()==='store') render();
-  try { state.store=await api.get('/store'); }
+  try {
+    state.store=await api.get('/store');
+    document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
+  }
   catch(error) {
     if (error instanceof api.ApiError && error.status===401) { api.clearSession();reset();go('auth'); }
-    else notice(error?.message||'Não foi possível carregar o catálogo.',true);
+    else if (!quiet) notice(error?.message||'Não foi possível carregar o catálogo.',true);
   }
   finally {state.storeLoading=false;if(currentRoute()==='store')render();}
 }
