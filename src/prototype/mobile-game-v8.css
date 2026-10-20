@@ -1,0 +1,345 @@
+/* TidePoint V8 — clear room flow, captain cards, compact combat HUD. */
+body[data-route="matchmaking"] .tp-room-setup,
+body[data-route="matchmaking"] .tp-waiting-card{
+ width:min(100%,590px)!important;min-width:0!important;box-sizing:border-box
+}
+body[data-route="matchmaking"] .tp-room-setup .tp-setup-description,
+body[data-route="matchmaking"] .tp-waiting-card .tp-waiting-description{
+ font-size:14px!important;line-height:1.45!important;color:#b9d2e0;
+ max-width:370px;align-self:center;text-align:center
+}
+body[data-route="matchmaking"] .tp-room-setup .tp-create-mode{
+ width:min(100%,390px)!important;gap:8px!important
+}
+body[data-route="matchmaking"] .tp-room-setup .tp-create-mode .eyebrow{font-size:12px!important}
+body[data-route="matchmaking"] .tp-room-setup .tp-mode-select{
+ min-height:46px!important;font-size:15px!important
+}
+body[data-route="matchmaking"] .tp-room-setup .tp-create-actions .btn{
+ min-height:46px!important;font-size:13px!important
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-code{
+ display:flex;align-items:center;justify-content:center;gap:12px;flex:0 0 auto;
+ min-height:53px;padding:8px 14px!important;border-radius:10px;
+ font-size:clamp(19px,3vw,24px)!important;letter-spacing:3px!important
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-code strong{
+ font-size:inherit!important;letter-spacing:inherit!important
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-code span{
+ font-size:21px;letter-spacing:0
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-waiting-radar{
+ flex:0 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;width:100%
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-waiting-radar .radar{
+ width:min(150px,22dvh,38vw)!important;height:auto!important;
+ aspect-ratio:1!important;min-height:58px;margin:4px auto!important
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-slots{
+ display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+ gap:7px;width:min(100%,440px);flex:0 1 auto;min-height:0;
+ max-height:36dvh;overflow-y:auto
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-player-slot{
+ display:flex!important;align-items:center;gap:10px;min-width:0;
+ min-height:62px;padding:8px 10px!important;background:#092536!important;
+ border:1px solid #5ad7ff45;border-radius:12px
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-avatar{
+ display:grid;place-items:center;flex:0 0 43px;width:43px;height:43px;
+ border-radius:11px;border:1px solid #5edbff70;background:#163c52;
+ font-size:23px;line-height:1
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-identity{
+ display:grid;gap:4px;flex:1;min-width:0;text-align:left
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-role{
+ font-size:11px!important;font-weight:800;color:#6edffa;letter-spacing:.4px;line-height:1.1
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-name{
+ display:flex;align-items:center;gap:6px;min-width:0
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-name strong{
+ font-size:15px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-presence-dot{
+ flex:0 0 9px;width:9px;height:9px;border-radius:50%
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-presence-dot.is-online{
+ background:#36e0a9;box-shadow:0 0 9px #36e0a977
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-presence-dot.is-offline{
+ background:#ff6673;box-shadow:0 0 9px #ff667377
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-ready-chip{
+ flex:0 0 auto;padding:5px 7px;min-width:0;font-size:11px!important;
+ line-height:1.15;font-weight:800;border:1px solid #55d5f65c;border-radius:7px;color:#c1deec
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-ready-chip.is-ready{
+ color:#70edb2;border-color:#54e5ac77
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-seat-empty{
+ border-style:dashed!important;opacity:.85
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-avatar-empty{
+ border-style:dashed!important;color:#7fbed7
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-seat-placeholder{
+ color:#a1becd;font-size:12px!important
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-hint{
+ font-size:12px!important;line-height:1.35!important;color:#a5c5d5;
+ text-align:center;margin:4px 0 0!important
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-controls{
+ display:grid!important;grid-template-columns:1fr 1fr!important;
+ width:min(100%,440px);gap:8px;margin:5px 0 0!important;flex:0 0 auto
+}
+body[data-route="matchmaking"] .tp-waiting-card .tp-room-controls .btn{
+ font-size:13px!important;line-height:1.18!important;
+ padding:8px 5px!important;min-height:44px!important;white-space:normal!important
+}
+/* Battle: only the ship icon remains in the header, with centered turn status. */
+.combat-screen:not(.placement-screen) .tp-battle-head{
+ display:grid!important;grid-template-columns:minmax(44px,1fr) auto minmax(44px,1fr)!important;
+ align-items:center!important
+}
+.combat-screen:not(.placement-screen) .tp-battle-brand{
+ grid-column:1!important;justify-self:start
+}
+.combat-screen:not(.placement-screen) .tp-battle-brand .brand-name,
+.combat-screen:not(.placement-screen) .tp-battle-brand .brand-sub{display:none!important}
+.combat-screen:not(.placement-screen) .tp-battle-head .turn-box{
+ grid-column:2!important;justify-self:center!important;text-align:center!important;
+ min-width:0!important
+}
+.combat-screen:not(.placement-screen) .tp-battle-head .enemy-meta{display:none!important}
+.tp-mobile-intel,.tp-mobile-forfeit{display:none}
+@media(max-width:760px){
+ body[data-route="matchmaking"] .main{padding:6px 8px 8px!important}
+ body[data-route="matchmaking"] .tp-room-setup,
+ body[data-route="matchmaking"] .tp-waiting-card{
+  width:100%!important;max-height:100%!important;min-height:0!important;
+  padding:clamp(10px,2dvh,16px)!important;gap:clamp(6px,1.2dvh,10px)!important
+ }
+ body[data-route="matchmaking"] .tp-room-setup .form-title,
+ body[data-route="matchmaking"] .tp-waiting-card .form-title{
+  font-size:clamp(23px,7vw,30px)!important;line-height:1.12!important;margin:0!important
+ }
+ body[data-route="matchmaking"] .tp-room-setup>.eyebrow,
+ body[data-route="matchmaking"] .tp-waiting-card>.eyebrow{
+  font-size:11px!important;letter-spacing:1px!important
+ }
+ body[data-route="matchmaking"] .tp-room-setup .tp-setup-description,
+ body[data-route="matchmaking"] .tp-waiting-card .tp-waiting-description{
+  font-size:13px!important;line-height:1.35!important
+ }
+ body[data-route="matchmaking"] .tp-room-setup .tp-create-mode{
+  width:100%!important;gap:7px!important
+ }
+ body[data-route="matchmaking"] .tp-room-setup .tp-create-mode .eyebrow{
+  font-size:12px!important
+ }
+ body[data-route="matchmaking"] .tp-room-setup .tp-mode-select{
+  font-size:15px!important;min-height:44px!important
+ }
+ body[data-route="matchmaking"] .tp-room-setup .tp-create-actions{
+  display:grid!important;grid-template-columns:1fr 1fr!important;
+  width:100%!important;gap:7px!important;margin:5px 0 0!important
+ }
+ body[data-route="matchmaking"] .tp-room-setup .tp-create-actions .btn{
+  font-size:13px!important;min-height:43px!important;padding:7px 4px!important
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-room-code{
+  font-size:20px!important;min-height:46px!important;
+  padding:7px 12px!important;letter-spacing:2px!important
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-waiting-radar .radar{
+  width:min(112px,19dvh,43vw)!important;min-height:55px!important;
+  margin:1px auto!important
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-room-slots{
+  width:100%!important;gap:5px!important;max-height:38dvh
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-player-slot{
+  min-height:56px!important;padding:6px 7px!important;gap:7px!important
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-room-avatar{
+  width:35px!important;height:35px!important;flex-basis:35px!important;font-size:19px
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-room-name strong{
+  font-size:14px!important
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-room-role{font-size:10px!important}
+ body[data-route="matchmaking"] .tp-waiting-card .tp-room-controls{
+  width:100%!important;gap:5px!important;margin-top:3px!important
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-room-controls .btn{
+  font-size:12px!important;min-height:42px!important;padding:7px 4px!important
+ }
+ /* Compact tactical view: enemy board, own mini-map, readable intel and controls. */
+ .combat-screen:not(.placement-screen) .tp-battle-head{
+  height:43px!important;flex-basis:43px!important;
+  grid-template-columns:34px minmax(0,1fr) 34px!important;padding:3px 6px!important
+ }
+ .combat-screen:not(.placement-screen) .tp-battle-brand .brand-mark{
+  width:31px!important;height:31px!important;min-width:31px!important;border-radius:9px!important
+ }
+ .combat-screen:not(.placement-screen) .tp-battle-brand .brand-mark svg{
+  width:20px!important;height:20px!important
+ }
+ .combat-screen:not(.placement-screen) .tp-battle-head .turn-box{
+  max-width:100%!important;min-width:0!important;padding:3px 8px!important
+ }
+ .combat-screen:not(.placement-screen) .tp-battle-head .turn-box b{
+  font-size:clamp(14px,4.1vw,17px)!important;line-height:1.1!important
+ }
+ .combat-screen:not(.placement-screen) .tp-battle-head .turn-box small{
+  font-size:11px!important;line-height:1.12!important
+ }
+ .combat-screen:not(.placement-screen) .match-foot{display:none!important;height:0!important;flex-basis:0!important}
+ .combat-screen:not(.placement-screen) .combat-left-rail>.combat-side-card:not(.preview-panel){
+  display:none!important
+ }
+ .combat-screen:not(.placement-screen) .combat-left-rail{gap:0!important}
+ .combat-screen:not(.placement-screen) .match-grid.combat-grid{
+  grid-template-rows:minmax(0,1fr) minmax(0,35%)!important;
+  gap:5px!important;padding:0 5px 5px!important
+ }
+ .combat-screen:not(.placement-screen) .premium-board-panel{
+  min-height:0!important;padding:5px!important
+ }
+ .combat-screen:not(.placement-screen) .premium-board-panel .board-head{
+  min-height:22px!important;padding-bottom:2px!important
+ }
+ .combat-screen:not(.placement-screen) .premium-board-panel .board-head .eyebrow{
+  display:none!important
+ }
+ .combat-screen:not(.placement-screen) .premium-board-panel .board-head b{
+  font-size:14px!important;line-height:1.1!important
+ }
+ .combat-screen:not(.placement-screen) .premium-board-panel .target-readout{
+  padding:3px 5px!important;min-width:0!important
+ }
+ .combat-screen:not(.placement-screen) .premium-board-panel .target-readout span{
+  display:none!important
+ }
+ .combat-screen:not(.placement-screen) .premium-board-panel .target-readout strong{
+  font-size:12px!important
+ }
+ .combat-screen:not(.placement-screen) .board-meta{display:none!important}
+ .combat-screen:not(.placement-screen) .preview-panel{
+  display:flex!important;flex-direction:column!important;
+  min-height:0!important;height:100%!important;padding:6px!important;overflow:hidden!important
+ }
+ .combat-screen:not(.placement-screen) .preview-panel .eyebrow{
+  font-size:12px!important
+ }
+ .combat-screen:not(.placement-screen) .board-wrap-preview{
+  flex:1 1 0!important;display:flex!important;align-items:center!important;
+  justify-content:center!important;min-height:0!important;max-height:100%!important;overflow:hidden!important
+ }
+ .combat-screen:not(.placement-screen) .tp-board-small .board,
+ .combat-screen:not(.placement-screen) .tp-board-small .board-preview{
+  width:min(100%,19dvh,144px)!important;height:auto!important;
+  aspect-ratio:1!important;max-height:100%!important
+ }
+ .combat-screen:not(.placement-screen) .premium-hud .enemy-intel-panel{
+  display:block!important;position:relative!important;
+  flex:1 1 0!important;min-height:0!important;max-height:none!important;
+  height:auto!important;padding:6px!important;overflow:visible!important
+ }
+ .combat-screen:not(.placement-screen) .premium-hud .enemy-intel-head,
+ .combat-screen:not(.placement-screen) .premium-hud .enemy-intel-list{
+  display:none!important
+ }
+ .combat-screen:not(.placement-screen) .premium-hud .tp-mobile-intel{
+  display:block!important;position:relative;max-height:100%;z-index:50
+ }
+ .combat-screen:not(.placement-screen) .tp-mobile-intel>summary{
+  list-style:none;cursor:pointer;display:grid;
+  grid-template-columns:1fr auto;gap:3px;align-items:center;
+  min-height:59px;padding:3px 4px
+ }
+ .combat-screen:not(.placement-screen) .tp-mobile-intel>summary::-webkit-details-marker{
+  display:none
+ }
+ .combat-screen:not(.placement-screen) .tp-mobile-intel>summary>span:first-child{
+  display:grid;gap:5px;min-width:0
+ }
+ .combat-screen:not(.placement-screen) .tp-mobile-intel>summary b{
+  font-size:12px!important;line-height:1.2!important;white-space:normal
+ }
+ .combat-screen:not(.placement-screen) .tp-mobile-intel>summary small{
+  font-size:11px!important;line-height:1.2!important;color:#84dbe9
+ }
+ .combat-screen:not(.placement-screen) .tp-intel-counter{
+  display:flex;gap:3px;align-items:center;grid-column:1/3
+ }
+ .combat-screen:not(.placement-screen) .tp-contact-dot{
+  width:10px;height:10px;border-radius:50%;border:1px solid #4ad5f46b;background:#112f40
+ }
+ .combat-screen:not(.placement-screen) .tp-contact-dot.is-sunk{
+  background:#ff716b;border-color:#ff716b
+ }
+ .combat-screen:not(.placement-screen) .tp-intel-expand{
+  position:absolute;top:2px;right:3px;color:#75e1fb;font-size:14px
+ }
+ .combat-screen:not(.placement-screen) .tp-mobile-intel-list{
+  position:absolute;right:-3px;bottom:calc(100% + 7px);
+  width:min(215px,85vw);max-height:min(180px,32dvh);overflow-y:auto;
+  padding:7px;border:1px solid #57d9ff77;border-radius:12px;
+  background:#061d2b;z-index:100;box-shadow:0 14px 27px #000b
+ }
+ .combat-screen:not(.placement-screen) .tp-mobile-intel-list>div{
+  display:grid;gap:3px;padding:6px;border-bottom:1px solid #ffffff16
+ }
+ .combat-screen:not(.placement-screen) .tp-mobile-intel-list>div:last-child{border-bottom:0}
+ .combat-screen:not(.placement-screen) .tp-mobile-intel-list span{
+  font-size:12px!important;color:#a1c9d5
+ }
+ .combat-screen:not(.placement-screen) .tp-mobile-intel-list b{font-size:13px!important}
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions{
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+  flex:0 0 auto!important;gap:5px!important;padding:0!important
+ }
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions .skill-btn{
+  display:none!important
+ }
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions .attack-btn,
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions .tp-forfeit-btn{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  height:39px!important;min-height:39px!important;
+  padding:6px!important;font-size:13px!important
+ }
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions .attack-btn b{
+  font-size:14px!important
+ }
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions .attack-btn small{
+  display:none!important
+ }
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions .tp-desktop-forfeit{
+  display:none!important
+ }
+ .combat-screen:not(.placement-screen) .premium-hud .combat-actions .tp-mobile-forfeit{
+  display:inline!important
+ }
+}
+@media(max-width:340px){
+ body[data-route="matchmaking"] .tp-waiting-card .tp-ready-chip{padding:4px 5px}
+ body[data-route="matchmaking"] .tp-room-setup .tp-setup-description{
+  font-size:13px!important
+ }
+}
+@media(max-width:760px) and (max-height:610px){
+ body[data-route="matchmaking"] .tp-waiting-card .tp-waiting-radar .radar{
+  width:min(96px,15dvh,37vw)!important;min-height:52px!important
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-player-slot{
+  min-height:50px!important
+ }
+ body[data-route="matchmaking"] .tp-waiting-card .tp-room-hint{
+  display:none!important
+ }
+}
