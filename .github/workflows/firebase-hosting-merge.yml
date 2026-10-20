@@ -2,10 +2,10 @@
 # https://github.com/firebase/firebase-tools
 
 name: Deploy to Firebase Hosting on merge
+# Production release is intentionally a manual action.
+# Merging feature PRs must not deploy the public live website.
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
