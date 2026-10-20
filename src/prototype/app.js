@@ -2,6 +2,7 @@ import * as api from './client.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
 import { roomPlayerCard, compactEnemyContacts } from './mobile-presenters.js';
+import { renderCosmeticStore } from './store-ui.js';
 
 const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20l-3-6H5l-3 6zM8 12V8h4v4M12 6V4"/></svg>`;
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">TIDEPOINT</div><div class="brand-sub">Estratégia • Navios • Vitória</div></div></div>`;
@@ -10,6 +11,7 @@ const state = {
   modeId: 'classic', selected: null, draft: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
+  store: null, storeLoading: false, storeFilter: 'ALL',
 };
 let root;
 let refreshTimer;
@@ -32,6 +34,7 @@ function currentRoute() { return decodeURIComponent(location.hash.slice(1).split
 function go(route) {
   route = resolvedRoute(route, api.isAuthenticated(), state.lobby?.status);
   if (currentRoute()===route) render(); else location.hash=route;
+  if (route==='store' && !state.store) void loadStore();
 }
 function nav(active='play') { return `<nav class="bottom-nav"><button class="nav-btn ${active==='fleet'?'active':''}" data-go="fleet">⚓ Frota</button><button class="nav-btn play ${active==='play'?'active':''}" data-go="lobby">⌁ Jogar</button><button class="nav-btn ${active==='store'?'active':''}" data-go="store">◈ Arsenal</button></nav>`; }
 function header() { const player=state.profile; return `<header class="topbar">${brand()}<div class="currencies"><span class="pill">● TidePoint V1</span><span class="pill" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span></div><div class="player-strip"><div class="avatar" aria-hidden="true">⚓</div><div class="name"><b>${esc(player?.nickname || 'Capitão')}</b><div style="font-size:10px;color:var(--muted)">Conta de jogador</div></div><div class="tp-top-actions"><button data-go="profile">Perfil</button><button data-action="logout">Sair</button><a href="/admin" class="tp-small" style="color:var(--cyan)">Admin</a></div><details class="tp-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary><div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div></details></div></header>`; }
@@ -56,7 +59,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;}
+function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -209,7 +212,20 @@ function resultScreen(){
   return mainContent(`<section class="panel result-card tp-result"><div class="eyebrow">Relatório pós-batalha</div><div class="result-stamp">${label}</div><h2 class="form-title">${won?'O mar ficou com você.':draw?'O oceano segue sem dono.':'Uma batalha, uma lição.'}</h2><p class="tp-muted">Resultado confirmado pela API · ${esc(b.finishReason||'Batalha finalizada')}</p><div class="result-grid"><div class="result-stat"><b>${shots.length?Math.round(hits/shots.length*100):0}%</b><span>Precisão</span></div><div class="result-stat"><b>${hits}</b><span>Acertos</span></div><div class="result-stat"><b>${shots.length}</b><span>Disparos</span></div></div><div class="tp-actions" style="justify-content:center;margin-top:26px"><button class="btn btn-orange" data-action="leave-lobby">Voltar ao lobby</button></div></section>`,{noNav:true});
 }
 function fleetScreen(){const mode=activeMode()||state.modes[0];return mainContent(`<div class="tp-page-header"><div class="eyebrow">Frota / Arsenal pessoal</div><h2 class="form-title">Navios do ${esc(mode?.name||'TidePoint')}</h2></div><div class="tp-flow">${panel('Catálogo de embarcações',mode?fleetPanel(mode,[],false):'Não há modos disponíveis.')}${panel('Configuração atual','<p class="tp-muted">A frota de cada modo é definida no servidor e posicionada para cada partida. Inventário, skins equipáveis e habilidades personalizadas ainda não possuem endpoints na API.</p><button class="btn btn-orange" data-go="lobby">Preparar partida</button>')}</div>`,{active:'fleet'});}
-function storeScreen(){return mainContent(`<div class="tp-page-header"><div class="eyebrow">Arsenal TidePoint</div><h2 class="form-title">Loja e coleções</h2></div>${panel('Em construção','<p>O layout de cosméticos do protótipo foi reservado para o futuro catálogo. Compras, moedas, skins e pacotes de som ainda não existem na API e, portanto, não há preços ou saldos fictícios aqui.</p><p class="tp-muted">As partidas reais e os tabuleiros estão disponíveis no lobby.</p><button class="btn btn-orange" data-go="lobby">Voltar para jogar</button>')}`,{active:'store'});}
+function storeScreen(){
+  return mainContent(renderCosmeticStore(state.store,{loading:state.storeLoading,filter:state.storeFilter}),{active:'store'});
+}
+async function loadStore(){
+  if (!api.isAuthenticated() || state.storeLoading) return;
+  state.storeLoading=true;
+  if (currentRoute()==='store') render();
+  try { state.store=await api.get('/store'); }
+  catch(error) {
+    if (error instanceof api.ApiError && error.status===401) { api.clearSession();reset();go('auth'); }
+    else notice(error?.message||'Não foi possível carregar o catálogo.',true);
+  }
+  finally {state.storeLoading=false;if(currentRoute()==='store')render();}
+}
 function profileScreen(){const p=state.profile;return mainContent(`<div class="tp-page-header"><button class="btn btn-ghost tp-back" type="button" data-go="lobby">← Voltar</button><div class="eyebrow">Conta de jogador</div><h2 class="form-title">Meu perfil</h2></div><div class="tp-flow"><section class="panel tp-panel"><div class="eyebrow">Identidade</div><form class="tp-form" data-form="profile"><div class="field"><label for="profile-name">Nickname</label><input id="profile-name" name="nickname" maxlength="30" minlength="3" required value="${esc(p?.nickname)}" /></div><div class="field"><label for="avatar">Avatar</label><select name="avatarId" id="avatar" class="tp-mode-select">${['captain','submarine','destroyer','carrier'].map(id=>`<option value="${id}" ${p?.avatarId===id?'selected':''}>${esc(shipName(id.toUpperCase()))}</option>`).join('')}</select></div><button class="btn btn-primary" type="submit">Salvar perfil</button></form><p class="tp-muted tp-small" style="margin-top:12px">E-mail: ${esc(p?.email||'—')}</p></section><section class="panel tp-panel"><div class="eyebrow">Segurança</div><h2 class="panel-title">Alterar senha</h2><form class="tp-form" data-form="password"><div class="field"><label>Senha atual<input name="currentPassword" type="password" autocomplete="current-password" required /></label></div><div class="field"><label>Nova senha<input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></label></div><button class="btn btn-orange" type="submit">Alterar senha</button></form><p class="tp-muted tp-small">A sessão continua ativa após a troca de senha.</p></section></div>`,{noNav:true});}
 
 function roomExitDialog() {
@@ -237,6 +253,7 @@ function render(){ if (!root) return;
   updateNotice();
   if (state.busy) root.classList.add('tp-loading'); else root.classList.remove('tp-loading');
   document.body.dataset.route=route;
+  document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
   const exitDialog=root.querySelector('#tp-room-exit-dialog');
   if (exitDialog && !exitDialog.open) exitDialog.showModal();
 }
@@ -277,7 +294,7 @@ async function handleForm(form) {
   }
 }
 
-async function runAction(action) {
+async function runAction(action,itemId=null) {
   switch(action) {
     case 'ack-room-exit': {
       if (!state.roomExitNotice || state.busy) break;
@@ -295,6 +312,16 @@ async function runAction(action) {
       render();
       break;
     }
+    case 'store-buy':await guard(async()=>{
+      if (!itemId) return;
+      state.store=await api.post('/store/purchase/'+encodeURIComponent(itemId));
+      notice('Cosmético adquirido! Agora você pode equipá-lo.');
+    });break;
+    case 'store-equip':await guard(async()=>{
+      if (!itemId) return;
+      state.store=await api.put('/store/equip/'+encodeURIComponent(itemId));
+      notice('Cosmético equipado.');
+    });break;
     case 'dismiss':state.notice='';updateNotice();break;
     case 'open-join-modal': { const dialog=root.querySelector('#tp-join-dialog'); if (dialog && !dialog.open) { dialog.showModal(); dialog.querySelector('input[name=code]')?.focus(); } break; }
     case 'close-join-modal':root.querySelector('#tp-join-dialog')?.close();break;
@@ -366,7 +393,7 @@ function bindEvents() {
   root.addEventListener('click',event=>{
     const target=event.target.closest('[data-coord]');
     if(target){const [row,col]=target.dataset.coord.split(',').map(Number);selectCell(row,col);return;}
-    const action=event.target.closest('[data-action]');if(action){void runAction(action.dataset.action);return;}
+    const action=event.target.closest('[data-action]');if(action){void runAction(action.dataset.action,action.dataset.itemId);return;}
     const link=event.target.closest('[data-go]');if(link){go(link.dataset.go);}
   });
   root.addEventListener('keydown',event=>{
@@ -375,11 +402,13 @@ function bindEvents() {
     }
   });
   root.addEventListener('change',event=>{
+    if(event.target.id==='store-filter'){state.storeFilter=event.target.value;render();}
     if(event.target.id==='mode-picker')state.modeId=event.target.value;
     if(event.target.id==='orientation')state.orientation=event.target.value;
   });
   window.addEventListener('hashchange',()=>{
     if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();render();
+    if(currentRoute()==='store' && !state.store) void loadStore();
   });
 }
 export function startTidepoint(element) {
