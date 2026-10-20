@@ -1,0 +1,62 @@
+/* Store V1: native TidePoint tones, fit within viewport with internal product list scroll only. */
+body[data-route="store"]{overflow:hidden!important}
+body[data-route="store"] .shell,body[data-route="store"] .screen{height:100dvh!important;max-height:100dvh!important;overflow:hidden!important}
+body[data-route="store"] .main{display:flex!important;flex:1 1 0!important;min-height:0!important;padding:clamp(7px,1dvh,13px)!important;overflow:hidden!important}
+body[data-route="store"] .tp-content{display:flex!important;flex:1 1 0!important;height:100%!important;max-width:none!important;width:100%!important;margin:0!important;padding:0 0 63px!important;min-height:0!important;overflow:hidden!important}
+.tp-store-page{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;gap:12px;padding:clamp(9px,1.4vw,20px);border:1px solid #32758c73;border-radius:18px;background:linear-gradient(145deg,#0a2535ed,#071624f5)}
+.tp-store-header{display:flex;gap:12px;justify-content:space-between;align-items:center;flex:0 0 auto}
+.tp-store-header h1{font-size:clamp(23px,3.3vw,43px);margin:5px 0;line-height:1.12;color:#f3fcff}
+.tp-store-header p,.tp-store-footnote{font-size:clamp(12px,1.1vw,14px);line-height:1.3;color:#add0de}
+.tp-store-wallet{min-width:130px;flex:0 0 auto;display:grid;gap:6px;padding:13px 16px;border:1px solid #50d9f474;background:#082735;border-radius:12px;text-align:right}
+.tp-store-wallet small{color:#8ed9ed;font-size:12px}.tp-store-wallet strong{font-size:clamp(20px,2vw,28px);color:#60e6ef}.tp-store-wallet strong span{font-size:11px;color:#bbe6ef}
+.tp-store-toolbar{display:flex;align-items:center;gap:12px;flex:0 0 auto;flex-wrap:wrap}
+.tp-store-toolbar label{color:#93d7ef;font-size:12px;font-weight:700}
+.tp-store-toolbar select{min-height:42px;font-size:14px;padding:7px 10px}
+.tp-store-beta{margin-left:auto;color:#89c0d0;font-size:12px}
+.tp-store-grid{flex:1 1 0;min-height:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));align-content:start;gap:12px;overflow-y:auto;overflow-x:hidden;padding:2px 4px 4px 1px}
+.tp-store-card{display:flex;flex-direction:column;overflow:hidden;min-width:0;min-height:260px;border:1px solid #3d87a96a;border-radius:15px;background:linear-gradient(135deg,#0b3044,#081d2c)}
+.tp-store-preview{position:relative;display:grid;place-items:center;min-height:85px;background:repeating-linear-gradient(165deg,#ffffff08 0 1px,transparent 1px 18px),radial-gradient(circle at 50% 100%,#1dd8ee4a,#0b2435 70%)}
+.tp-store-preview>span{font-size:47px;filter:drop-shadow(0 0 13px #1daac8)}
+.tp-store-card.is-coral .tp-store-preview{background:radial-gradient(circle at 50% 90%,#fd7d6688,#28364a 65%)}
+.tp-store-card.is-abyss .tp-store-preview{background:radial-gradient(circle at 50% 90%,#b692f988,#19213e 65%)}
+.tp-store-card.is-sound .tp-store-preview{background:radial-gradient(circle at 50% 90%,#2088cd66,#0a2639 65%)}
+.tp-store-card-text{display:grid;gap:7px;padding:12px 13px;flex:1}
+.tp-store-card-meta{display:flex;align-items:center;justify-content:space-between;gap:7px;color:#6fcee6;font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:.7px}
+.tp-store-tag{font-size:10px;padding:4px 7px;border-radius:20px;border:1px solid #5edaf361;color:#b5e8f4;text-transform:none;letter-spacing:0}
+.tp-store-tag.is-equipped{color:#75efbe;border-color:#75efbe6e}.tp-store-tag.is-future{color:#eac495;border-color:#eac4955c}
+.tp-store-card h3{margin:0;color:#f0fbff;font-size:18px;line-height:1.1}
+.tp-store-card p{margin:0;color:#a0c1d2;font-size:13px;line-height:1.4}
+.tp-store-card-footer{display:flex;justify-content:space-between;align-items:center;gap:7px;padding:10px;border-top:1px solid #ffffff12}
+.tp-store-price,.tp-store-unavailable{font-size:12px;line-height:1.3;color:#b7d8e6}
+.tp-store-card-footer button{min-height:36px!important;padding:7px 9px!important;min-width:0!important;flex:0 0 auto;font-size:12px!important}
+.tp-store-loading{padding:15px;color:#add8e5;font-size:15px}
+.tp-store-footnote{margin:0;flex:0 0 auto}
+/* This only changes the player's own ship cells (enemy board has no ship classes). */
+body[data-ship-skin="skin_coral"] .board .cell.ship{background-color:#e67667!important;box-shadow:inset 0 0 11px #ffb49a85}
+body[data-ship-skin="skin_coral"] .tide-polygon-board .tile.ship polygon{fill:#e67667!important}
+body[data-ship-skin="skin_abyss"] .board .cell.ship{background-color:#977bd9!important;box-shadow:inset 0 0 11px #c4b0ff66}
+body[data-ship-skin="skin_abyss"] .tide-polygon-board .tile.ship polygon{fill:#977bd9!important}
+@media(max-width:760px){
+ body[data-route="store"] .main{padding:6px!important}
+ body[data-route="store"] .tp-content{padding-bottom:54px!important}
+ .tp-store-page{padding:10px;gap:9px;border-radius:13px}
+ .tp-store-header{align-items:stretch;gap:7px}
+ .tp-store-header h1{font-size:24px}.tp-store-header p{font-size:12px}
+ .tp-store-wallet{padding:9px;min-width:87px;text-align:center}
+ .tp-store-wallet strong{font-size:21px}.tp-store-wallet strong span{display:block;font-size:10px}
+ .tp-store-toolbar{gap:6px}
+ .tp-store-beta{margin:0;font-size:11px}
+ .tp-store-grid{grid-template-columns:1fr;gap:9px}
+ .tp-store-card{min-height:177px;display:grid;grid-template-columns:82px minmax(0,1fr)}
+ .tp-store-preview{min-height:0;grid-row:1/3}.tp-store-preview>span{font-size:32px}
+ .tp-store-card-text{padding:10px;gap:4px}
+ .tp-store-card h3{font-size:16px}.tp-store-card p{font-size:12px}
+ .tp-store-card-meta{font-size:10px;letter-spacing:0}
+ .tp-store-card-footer{grid-column:2;padding:8px 10px;flex-wrap:wrap}
+ .tp-store-footnote{font-size:10px;line-height:1.2}
+}
+@media(max-width:330px){
+ .tp-store-header h1{font-size:20px}.tp-store-header p{font-size:11px}
+ .tp-store-card{grid-template-columns:65px minmax(0,1fr)}.tp-store-price{font-size:11px}
+ .tp-store-card-footer button{font-size:11px!important}
+}
