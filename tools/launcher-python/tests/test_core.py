@@ -125,7 +125,7 @@ class ProcessSafetyTests(unittest.TestCase):
 
 class DockerStartupTests(unittest.TestCase):
     def test_engine_probe_returns_linux(self):
-        result = SimpleNamespace(returncode=0, stdout="linux\\n", stderr="")
+        result = SimpleNamespace(returncode=0, stdout="linux\n", stderr="")
         with patch.object(core.subprocess, "run", return_value=result) as probe:
             self.assertEqual(core.Engine.docker_engine_mode("docker"), "linux")
         self.assertEqual(probe.call_args.args[0], ["docker", "info", "--format", "{{.OSType}}"])
@@ -138,7 +138,7 @@ class DockerStartupTests(unittest.TestCase):
     def test_running_engine_skips_desktop_startup(self):
         with tempfile.TemporaryDirectory() as tmp:
             runner = core.Engine(Path(tmp), lambda _: None)
-            with patch.object(runner, "docker_engine_mode", return_value="linux"), \\
+            with patch.object(runner, "docker_engine_mode", return_value="linux"), \
                  patch.object(runner, "docker_desktop_executable") as desktop:
                 runner.ensure_docker_engine("docker")
                 desktop.assert_not_called()
@@ -155,10 +155,10 @@ class DockerStartupTests(unittest.TestCase):
             log = []
             runner = core.Engine(Path(tmp), log.append)
             desktop = Path("Docker Desktop.exe")
-            with patch.object(core, "os", SimpleNamespace(name="nt")), \\
-                 patch.object(runner, "docker_engine_mode", side_effect=[None, None, "linux"]), \\
-                 patch.object(runner, "docker_desktop_executable", return_value=desktop), \\
-                 patch.object(core.subprocess, "Popen") as start, \\
+            with patch.object(core, "os", SimpleNamespace(name="nt")), \
+                 patch.object(runner, "docker_engine_mode", side_effect=[None, None, "linux"]), \
+                 patch.object(runner, "docker_desktop_executable", return_value=desktop), \
+                 patch.object(core.subprocess, "Popen") as start, \
                  patch.object(core.time, "sleep"):
                 runner.ensure_docker_engine("docker")
             start.assert_called_once()
@@ -168,8 +168,8 @@ class DockerStartupTests(unittest.TestCase):
     def test_windows_missing_desktop_shows_actionable_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             runner = core.Engine(Path(tmp), lambda _: None)
-            with patch.object(core, "os", SimpleNamespace(name="nt")), \\
-                 patch.object(runner, "docker_engine_mode", return_value=None), \\
+            with patch.object(core, "os", SimpleNamespace(name="nt")), \
+                 patch.object(runner, "docker_engine_mode", return_value=None), \
                  patch.object(runner, "docker_desktop_executable", return_value=None):
                 with self.assertRaisesRegex(core.LauncherError, "Abra o Docker Desktop"):
                     runner.ensure_docker_engine("docker")
