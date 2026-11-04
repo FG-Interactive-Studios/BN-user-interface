@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from types import SimpleNamespace
 
 SRC = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC))
@@ -120,6 +121,58 @@ class ProcessSafetyTests(unittest.TestCase):
                 with self.assertRaisesRegex(core.LauncherError, "5173"):
                     app.launch(Path(tmp), Path(tmp), docker=False, reuse_api=True)
 
+
+
+class DockerStartupTests(unittest.TestCase):
+    def test_engine_probe_returns_linux(self):
+        result = SimpleNamespace(returncode=0, stdout="linux\\n", stderr="")
+        with patch.object(core.subprocess, "run", return_value=result) as probe:
+            self.assertEqual(core.Engine.docker_engine_mode("docker"), "linux")
+        self.assertEqual(probe.call_args.args[0], ["docker", "info", "--format", "{{.OSType}}"])
+
+    def test_engine_probe_gracefully_handles_missing_pipe(self):
+        result = SimpleNamespace(returncode=1, stdout="", stderr="dockerDesktopLinuxEngine not found")
+        with patch.object(core.subprocess, "run", return_value=result):
+            self.assertIsNone(core.Engine.docker_engine_mode("docker"))
+
+    def test_running_engine_skips_desktop_startup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = core.Engine(Path(tmp), lambda _: None)
+            with patch.object(runner, "docker_engine_mode", return_value="linux"), \\
+                 patch.object(runner, "docker_desktop_executable") as desktop:
+                runner.ensure_docker_engine("docker")
+                desktop.assert_not_called()
+
+    def test_windows_containers_requires_switch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = core.Engine(Path(tmp), lambda _: None)
+            with patch.object(runner, "docker_engine_mode", return_value="windows"):
+                with self.assertRaisesRegex(core.LauncherError, "Linux containers"):
+                    runner.ensure_docker_engine("docker")
+
+    def test_stopped_docker_desktop_autostarts_and_waits_for_linux(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = []
+            runner = core.Engine(Path(tmp), log.append)
+            desktop = Path("Docker Desktop.exe")
+            with patch.object(core, "os", SimpleNamespace(name="nt")), \\
+                 patch.object(runner, "docker_engine_mode", side_effect=[None, None, "linux"]), \\
+                 patch.object(runner, "docker_desktop_executable", return_value=desktop), \\
+                 patch.object(core.subprocess, "Popen") as start, \\
+                 patch.object(core.time, "sleep"):
+                runner.ensure_docker_engine("docker")
+            start.assert_called_once()
+            self.assertEqual(start.call_args.args[0], [str(desktop)])
+            self.assertTrue(any("pronto" in message.lower() for message in log))
+
+    def test_windows_missing_desktop_shows_actionable_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            runner = core.Engine(Path(tmp), lambda _: None)
+            with patch.object(core, "os", SimpleNamespace(name="nt")), \\
+                 patch.object(runner, "docker_engine_mode", return_value=None), \\
+                 patch.object(runner, "docker_desktop_executable", return_value=None):
+                with self.assertRaisesRegex(core.LauncherError, "Abra o Docker Desktop"):
+                    runner.ensure_docker_engine("docker")
 
 if __name__ == "__main__":
     unittest.main()
