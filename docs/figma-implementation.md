@@ -22,7 +22,9 @@ Referência: design aprovado `PHfipffDE6V0Dil3RGCzC6`, exportado no PDF **Batalh
 - Referência principal é o retrato 9:16; desktop usa uma coluna central que mantém a hierarquia de conteúdo do Figma, em vez de esticar os painéis até a largura da janela.
 - Breakpoints testáveis: 320×568, 375×667 (iPhone SE), 390×844 e 1366×768.
 - Conteúdo deve permanecer utilizável com **rolagem vertical quando necessária**; botões nunca podem ficar atrás do menu inferior.
-- No combate mobile, o tabuleiro permanece quadrado e os blocos passam a uma coluna com ações alcançáveis. O visual específico do combate ainda requer homologação com dois jogadores e screenshots reais.
+- **Correção específica do combate mobile (PR #5):** `combat-mobile-repair.css` é carregado por último, somente em telas até 760px e rotas `placement`/`match`. Remove `container-type:size` nos tabuleiros, que os reduzia a altura zero ao combinar com rolagem; remove a distribuição em linhas com alturas percentuais e organiza cabeçalho, tabuleiro, protocolo/inteligência, ações e informações secundárias em fluxo vertical. Os controles têm altura mínima de toque e as bordas ficam dentro da viewport.
+- **Validação browser para os dois estados reais de tela:** `tools/test-figma-combat-mobile.mjs` entra pela autenticação com dados falsos **somente no CI**, recebe REST simulado para PREPARING/PLAYING, confirma 100 células, quadrado, navegação por rolagem, seleção/ataque e ausência de sobreposição em 320×568, 375×667 e 390×844. Capturas completas ficam no artifact `figma-responsive-captures` do workflow.
+- O combate ainda requer homologação com dois jogadores reais e comparação visual humana com o Figma, além de testes manuais de transição, rotação de tela e acessibilidade.
 
 ## Limitações conhecidas
 - O Figma apresenta saldos e recompensas, XP, ranking, eventos e poderes com valores ilustrativos; a API não fornece todos esses dados. A interface não os inventa. Somente créditos cosméticos beta da API são exibidos.
@@ -40,6 +42,7 @@ node tools/test-figma-assets.mjs
 node tools/test-lobby.mjs
 # O workflow "Figma responsive browser check" instala Playwright no CI:
 node tools/test-figma-viewport.mjs
+node tools/test-figma-combat-mobile.mjs
 ```
 
 O workflow faz login com mock **apenas em teste**, visita lobby, modal, frota, loja e perfil, mede overflow horizontal e sobreposição de nav em diferentes viewports, e anexa screenshots à execução. A versão publicada continua exigindo login real.
