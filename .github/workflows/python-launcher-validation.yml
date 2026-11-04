@@ -1,0 +1,41 @@
+name: Python GUI Launcher - Windows
+on:
+  pull_request:
+    paths:
+      - 'tools/launcher-python/**'
+      - '.github/workflows/python-launcher-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-python:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile all scripts
+        run: python -m compileall -q tools/launcher-python
+      - name: Test Git worktrees, dynamic PRs and process safety
+        run: python -m unittest discover -s tools/launcher-python/tests -v
+      - name: Validate Tkinter import
+        run: python -c "import tkinter; print('Tkinter:', tkinter.TkVersion)"
+      - name: Package the portable launcher
+        shell: pwsh
+        run: |
+          Compress-Archive -Path tools/launcher-python/* -DestinationPath BatalhaNaval-Inicializador-Python.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BatalhaNaval-Inicializador-Python
+          path: BatalhaNaval-Inicializador-Python.zip
+          if-no-files-found: error
+          retention-days: 30
+  linux-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tools/launcher-python/tests -v
