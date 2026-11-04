@@ -10,7 +10,7 @@ Fonte: Figma `PHfipffDE6V0Dil3RGCzC6`; design mobile 1080 × 1920.
 - A branch arquivada da UI clássica permanece disponível.
 
 ## Pendências para fidelidade completa
-- Exportar localmente o asset **Fundo Tempestade** e os outros elementos ilustrados do Figma (a integração atingiu o limite de chamadas).
+- **Concluído:** Fundo Tempestade e moedas dourada/azul agora são imagens originais versionadas em `src/assets/figma/`.\n- **Pendente:** Emblemas dourado/azul do PDF, arte do evento e outras ilustrações não obtidas pela integração, sem substituir por screenshots.
 - Afinar a composição visual comparando com capturas das telas de login e lobby em 360×800 e desktop.
 - Implementar as demais telas por etapas mantendo a API autoritativa (sala, posicionamento, batalha, resultado, perfil e loja).
 - O Figma mostra evento, XP, patente e moedas; essas informações ainda não são fornecidas pela API atual. Os cards usam rótulos explícitos de "em breve" e não inventam saldos nem estatísticas.
@@ -19,7 +19,7 @@ Fonte: Figma `PHfipffDE6V0Dil3RGCzC6`; design mobile 1080 × 1920.
 ## Arquivos
 - `src/prototype/app.js`: estrutura das telas sem trocar a lógica de eventos.
 - `src/prototype/figma-v1.css`: novos tokens e regras de layout, carregados no final.
-- `src/assets/figma/*`: ícones reais extraídos do arquivo do Figma.
+- `src/assets/figma/*`: fundo original, moedas e três ícones reais extraídos do Figma.
 
 ## Validar antes de fazer merge
 ```sh
