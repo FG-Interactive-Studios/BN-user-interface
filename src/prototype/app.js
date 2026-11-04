@@ -510,11 +510,14 @@ function bindEvents() {
     }
   });
   root.addEventListener('change',event=>{
+    if(event.target.id==='store-filter'){state.storeFilter=event.target.value;render();}
     if(event.target.id==='mode-picker')state.modeId=event.target.value;
     if(event.target.id==='orientation')state.orientation=event.target.value;
   });
   window.addEventListener('hashchange',()=>{
-    if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();render();
+    if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();
+    render();
+    if(currentRoute()==='store' && !state.store && !state.storeLoading) void loadStore();
   });
 }
 export function startTidepoint(element) {
