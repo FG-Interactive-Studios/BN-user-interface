@@ -279,5 +279,62 @@ class ExistingPostgresContainerTests(unittest.TestCase):
             ))
 
 
+
+@unittest.skipUnless(sys.platform == "win32", "Requires real Windows CMD execution")
+class WindowsBatchPathTests(unittest.TestCase):
+    """Regression: batch wrappers must execute with spaces in the checkout path."""
+
+    def test_maven_wrapper_with_spaces_in_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            checkout = Path(tmp) / "FG Interactive" / "BN-alt" / "versions" / "api" / "main-test"
+            checkout.mkdir(parents=True)
+            wrapper = checkout / "mvnw.cmd"
+            wrapper.write_bytes(
+                b"@echo off\r\necho BN_API_OK:%~1:%~2\r\n"
+            )
+            proc = core.Engine.spawn(
+                [str(wrapper), "spring-boot:run", "-Dspring-boot.run.profiles=local"],
+                checkout,
+            )
+            try:
+                stdout, _ = proc.communicate(timeout=15)
+            finally:
+                core.terminate_tree(proc)
+            self.assertEqual(proc.returncode, 0, stdout)
+            self.assertIn("BN_API_OK:spring-boot:run:-Dspring-boot.run.profiles=local", stdout)
+
+    def test_npm_batch_wrapper_with_spaces_in_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            checkout = Path(tmp) / "FG Interactive" / "BN-alt" / "versions" / "front" / "pr-5-test"
+            checkout.mkdir(parents=True)
+            wrapper = checkout / "npm.cmd"
+            wrapper.write_bytes(
+                b"@echo off\r\necho BN_FRONT_OK:%~1:%~2\r\n"
+            )
+            proc = core.Engine.spawn(
+                [str(wrapper), "run", "dev"],
+                checkout,
+            )
+            try:
+                stdout, _ = proc.communicate(timeout=15)
+            finally:
+                core.terminate_tree(proc)
+            self.assertEqual(proc.returncode, 0, stdout)
+            self.assertIn("BN_FRONT_OK:run:dev", stdout)
+
+    def test_spawn_does_not_double_escape_batch_command(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            checkout = Path(tmp) / "FG Interactive"
+            checkout.mkdir()
+            wrapper = checkout / "mvnw.cmd"
+            wrapper.write_bytes(b"@echo off\r\necho EXECUTED\r\n")
+            with patch.object(core.subprocess, "Popen") as popen:
+                core.Engine.spawn([str(wrapper), "spring-boot:run"], checkout)
+            self.assertEqual(
+                popen.call_args.args[0],
+                [str(wrapper), "spring-boot:run"],
+            )
+            self.assertEqual(popen.call_args.kwargs.get("cwd"), str(checkout))
+
 if __name__ == "__main__":
     unittest.main()
