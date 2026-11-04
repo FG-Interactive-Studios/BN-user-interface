@@ -9,7 +9,7 @@ Uma interface gráfica para Windows que busca **automaticamente as PRs abertas**
 3. Dê um duplo clique em **`Iniciar-Batalha-Naval.cmd`**. (Também pode executar `python gui.py`.)
 4. Selecione a versão da interface e da API — `main` ou uma PR aberta. Clique em **Atualizar PRs** sempre que quiser consultar as novidades.
 5. Escolha a pasta de downloads (padrão: `%LOCALAPPDATA%\BatalhaNavalLauncherPython\workspace`). Ela será criada automaticamente.
-6. Escolha se deseja inicializar o PostgreSQL via Docker Compose. Clique em **Baixar e iniciar**.
+6. Escolha se deseja inicializar o Docker Desktop (quando necessário) e o PostgreSQL via Docker Compose. Clique em **Baixar e iniciar**.
 7. O launcher instala as dependências do frontend com `npm ci` e inicia a API (`mvnw.cmd ... -Dspring-boot.run.profiles=local`) e o Vite. Abra `http://127.0.0.1:5173/` e faça cadastro/login normalmente.
 8. Para alternar entre PRs, use **Encerrar**, selecione a próxima e inicie novamente.
 
@@ -21,7 +21,7 @@ Uma interface gráfica para Windows que busca **automaticamente as PRs abertas**
 - Busca `refs/pull/<número>/head` ou `refs/heads/main` por Git.
 - Cria worktrees isoladas por repositório, PR e hash do commit. Se a PR mudar, é criada uma nova pasta; nada é sobrescrito.
 - Usa o proxy do Vite para REST (`/api`) e WebSocket (`/ws`) em `localhost:8080`.
-- Inicializa o PostgreSQL com **`docker compose up -d`** e **não apaga** o volume com `down -v`.
+- Verifica **`docker info --format '{{.OSType}}'`** antes de inicializar o PostgreSQL; no Windows, se o daemon estiver desligado, tenta abrir o **Docker Desktop automaticamente** e aguarda o mecanismo Linux. Se estiver em modo Windows Containers, orienta a trocar de modo.\n- Inicializa o PostgreSQL com **`docker compose up -d`** apenas depois que o mecanismo Linux estiver pronto e **não apaga** o volume com `down -v`.
 - Usa o perfil `local` da API e as origens `http://localhost:5173,http://127.0.0.1:5173` para os WebSockets.
 - Registra logs no diretório de downloads e permite encerrar apenas os processos iniciados por ele. O banco continua existindo.
 - Salva escolhas e caminho local em `%LOCALAPPDATA%\BatalhaNavalLauncherPython\settings.json`, **sem credenciais**.
@@ -39,7 +39,7 @@ Uma interface gráfica para Windows que busca **automaticamente as PRs abertas**
 
 ## Diagnóstico e testes
 
-- Cheque `python --version`, `git --version`, `node --version`, `java -version` e `docker info`.
+- Cheque `python --version`, `git --version`, `node --version`, `java -version` e `docker info`. Se `docker info` mencionar `dockerDesktopLinuxEngine` ou `//./pipe/`, o Docker Desktop não está disponibilizando o daemon Linux: abra o Docker Desktop e aguarde **Engine running**; verifique **Linux Containers / WSL 2**. O launcher também tenta abrir e aguardar automaticamente, sem apagar os volumes.
 - Acesse `http://127.0.0.1:8080/api/health` para verificar a API e `http://127.0.0.1:5173/` para testar o frontend.
 - Os logs ficam em `workspace/launcher.log`.
 - Execute `python -m unittest discover -s tests -v` para validar descoberta de PRs, isolamento das worktrees e proteções de execução, sem conexão real ao GitHub.
