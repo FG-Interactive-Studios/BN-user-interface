@@ -13,15 +13,10 @@ assert.ok(css.includes('overflow: hidden !important'));
 assert.ok(css.includes('grid-template-columns: repeat(3, minmax(0, 1fr)) !important'));
 assert.ok(app.includes('Relatório pós-batalha'));
 assert.ok(app.includes('data-action="leave-lobby"'));
-// Matchmaking keeps its radar. Lobby restores the original faint rings,
- // crosshair and contacts; only the sweep animation is reused.
+// Keep the waiting-room radar; the Figma lobby replaces the retired decorative radar.
 assert.ok(app.includes('function radarMarkup()'));
 assert.ok(app.includes('radarMarkup()'));
-assert.ok(!app.includes("radarMarkup('home-radar-disc tp-home-radar')"));
-for (const cls of ['home-radar-disc', 'home-radar-ring ring-a', 'home-radar-axis axis-x', 'home-radar-contact contact-a', 'home-radar-sweep'])
-  assert.ok(app.includes(cls), 'original lobby element missing: '+cls);
-assert.ok(css.includes('body[data-route="lobby"] .home-radar-sweep'));
-assert.ok(css.includes('conic-gradient(from 0deg, #52d6ff45, transparent 25%)'));
+assert.ok(app.includes('bn-feature-card'));
+assert.ok(!app.includes('home-radar-disc'));
 assert.ok(css.includes('animation: tp-waiting-sweep 2.65s linear infinite !important'));
-assert.ok(!css.includes('body[data-route="lobby"] .tp-home-radar'), 'do not override lobby decor with waiting room CSS');
 console.log('TidePoint: report full-screen, original lobby radar visual + waiting sweep: OK');

@@ -1,0 +1,573 @@
+/* Batalha Naval — Figma portrait layouts, responsive pass 2.
+ * Ground truth: "Batalha Naval - Fluxo de Telas.pdf" (1080x1920 frames).
+ * This file deliberately loads after the legacy TidePoint styles.
+ * Never fabricate server balances, XP, event dates or combat abilities.
+ */
+:root{
+  --bn-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --bn-portrait-width: 540px;
+  --bn-bg:#0b1014;
+  --bn-surface:#070e13ed;
+  --bn-surface-soft:#15232deb;
+  --bn-gold:#fbbf24;
+  --bn-mint:#34d399;
+  --bn-muted:#c1cbd0;
+  --bn-edge:#536675;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{overflow-x:clip}
+body{background:var(--bn-bg);font-family:'Lexend',system-ui,sans-serif;overflow-x:clip}
+button,input,select{font:inherit}
+button{touch-action:manipulation}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{
+  outline:3px solid var(--bn-gold);outline-offset:3px;
+}
+body[data-route="lobby"],body[data-route="fleet"],body[data-route="store"],
+body[data-route="profile"],body[data-route="matchmaking"]{
+  height:auto!important;max-height:none!important;overflow-y:auto!important;
+}
+body[data-route="lobby"] #app,body[data-route="fleet"] #app,body[data-route="store"] #app,
+body[data-route="profile"] #app,body[data-route="matchmaking"] #app{
+  height:auto!important;max-height:none!important;min-height:100dvh;
+}
+body[data-route="lobby"] .screen,body[data-route="lobby"] .shell,
+body[data-route="fleet"] .screen,body[data-route="fleet"] .shell,
+body[data-route="store"] .screen,body[data-route="store"] .shell,
+body[data-route="profile"] .screen,body[data-route="profile"] .shell,
+body[data-route="matchmaking"] .screen,body[data-route="matchmaking"] .shell{
+  height:auto!important;max-height:none!important;min-height:100dvh!important;overflow:visible!important;
+}
+body[data-route="lobby"] .shell,body[data-route="fleet"] .shell,
+body[data-route="store"] .shell,body[data-route="profile"] .shell,
+body[data-route="matchmaking"] .shell{
+  width:100%;max-width:var(--bn-portrait-width);margin:0 auto;
+  background:linear-gradient(180deg,#0b10143b,#0b101416);
+}
+body[data-route="lobby"] .screen,body[data-route="fleet"] .screen,
+body[data-route="store"] .screen,body[data-route="profile"] .screen,
+body[data-route="matchmaking"] .screen{
+  background:linear-gradient(180deg,#0b101449,#0b101433),url('../assets/figma/storm.jpg') center top/cover no-repeat,var(--bn-bg);
+}
+body[data-route="lobby"] .main,body[data-route="fleet"] .main,
+body[data-route="store"] .main,body[data-route="profile"] .main,
+body[data-route="matchmaking"] .main{
+  display:block!important;flex:1 0 auto!important;height:auto!important;max-height:none!important;
+  min-height:0!important;overflow:visible!important;width:100%;
+  padding:clamp(9px,2dvh,18px) 14px calc(126px + var(--bn-safe-bottom))!important;
+}
+body[data-route="lobby"] .tp-content,body[data-route="fleet"] .tp-content,
+body[data-route="store"] .tp-content,body[data-route="profile"] .tp-content,
+body[data-route="matchmaking"] .tp-content{
+  display:block!important;height:auto!important;max-height:none!important;min-height:0!important;
+  width:100%!important;max-width:none!important;overflow:visible!important;
+  margin:0 auto!important;padding:0!important;
+}
+/* Header: portrait mockup shows a captain identity and account controls, not a desktop admin toolbar. */
+.bn-topbar,body[data-route="lobby"] .topbar{
+  width:100%;height:auto!important;min-height:74px!important;flex:0 0 auto!important;
+  padding:12px 14px!important;display:flex!important;flex-wrap:nowrap!important;
+  align-items:center;justify-content:space-between;gap:10px!important;
+  border:0;background:linear-gradient(180deg,#061016e8,transparent);
+}
+.bn-header-identity{
+  display:flex;min-width:0;align-items:center;gap:9px;max-width:calc(100% - 104px);
+  appearance:none;border:0;background:none;color:#fff;padding:0;cursor:pointer;text-align:left;
+}
+.bn-header-avatar{
+  width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;
+  border:2px solid var(--bn-gold);border-radius:50%;
+  font:27px 'Pirata One',serif;color:#83c5eb;
+  background:linear-gradient(145deg,#172e3b,#0b151b);
+}
+.bn-header-player{display:grid;gap:4px;min-width:0}
+.bn-header-player strong{
+  display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font:400 clamp(20px,5.5vw,29px)/1 'Pirata One',Georgia,serif;
+}
+.bn-header-player small{font:400 10px/1.1 'Lexend',sans-serif;color:var(--bn-muted);white-space:nowrap}
+.bn-header-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.bn-connection-status{
+  font:500 10px/1 'Lexend',sans-serif;display:flex;align-items:center;gap:5px;
+  color:var(--bn-muted);padding:4px 0;white-space:nowrap;
+}
+.bn-connection-status .tp-live-dot{width:7px;height:7px}
+.bn-account-menu{position:relative;display:block!important}
+.bn-account-menu summary{
+  list-style:none;width:39px;height:39px;border-radius:12px;
+  background:#071119;border:2px solid #bed9e5;cursor:pointer;
+  display:grid;place-items:center;color:#f1f7f9;font-size:24px;
+}
+.bn-account-menu summary::-webkit-details-marker{display:none}
+.bn-account-menu .tp-account-popover{z-index:100}
+@media(max-width:390px){
+  .bn-topbar,body[data-route="lobby"] .topbar{min-height:61px!important;padding:8px 11px!important}
+  .bn-header-avatar{width:41px;height:41px;flex-basis:41px;font-size:23px}
+  .bn-header-identity{gap:7px;max-width:calc(100% - 65px)}
+  .bn-header-player strong{font-size:21px}
+  .bn-header-player small{font-size:9px}
+  .bn-connection-status{display:none}
+  .bn-account-menu summary{width:36px;height:36px;font-size:21px}
+}
+@media(min-width:391px) and (max-width:540px){
+  .bn-connection-status{font-size:9px}
+}
+
+/* One bottom bar on all non-combat navigation screens, fixed but never covering content. */
+body[data-route="lobby"] .bottom-nav,body[data-route="fleet"] .bottom-nav,
+body[data-route="store"] .bottom-nav{
+  position:fixed!important;z-index:60!important;left:50%!important;
+  bottom:max(9px,var(--bn-safe-bottom))!important;transform:translateX(-50%)!important;
+  width:min(calc(100vw - 18px),var(--bn-portrait-width))!important;
+  max-width:calc(100vw - 18px);height:76px!important;
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;align-items:end!important;padding:22px 5px 4px!important;
+  border:0!important;box-shadow:none!important;border-radius:16px!important;
+  background:linear-gradient(180deg,transparent,#081016e8 32%,#081016ed)!important;
+  backdrop-filter:none!important;
+}
+body[data-route="lobby"] .bottom-nav .nav-btn,body[data-route="fleet"] .bottom-nav .nav-btn,
+body[data-route="store"] .bottom-nav .nav-btn{
+  position:relative;min-width:0!important;height:45px!important;min-height:45px!important;width:100%;
+  padding:10px 4px 4px!important;display:flex;align-items:center;justify-content:center;
+  border:2px solid #c5d7dd!important;border-radius:999px!important;
+  background:#070e13!important;box-shadow:0 7px 12px #0009!important;
+  color:#fff!important;font:400 clamp(19px,5.2vw,25px)/1 'Pirata One',Georgia,serif!important;
+  letter-spacing:0!important;text-transform:none!important;
+}
+body[data-route="lobby"] .bottom-nav .nav-btn.active,body[data-route="fleet"] .bottom-nav .nav-btn.active,
+body[data-route="store"] .bottom-nav .nav-btn.active{
+  border-color:var(--bn-mint)!important;box-shadow:0 0 11px #34d39966!important;
+}
+body[data-route="lobby"] .bottom-nav .nav-btn::before,
+body[data-route="fleet"] .bottom-nav .nav-btn::before,
+body[data-route="store"] .bottom-nav .nav-btn::before{
+  content:"";position:absolute;left:50%;top:-27px;transform:translateX(-50%);
+  width:38px;height:38px;display:block;margin:0!important;
+  background-size:contain;background-repeat:no-repeat;background-position:center;
+}
+.bn-nav-fleet::before{background-image:url('../assets/figma/ship-icon.png')!important}
+.bn-nav-play::before{background-image:url('../assets/figma/cannon.png')!important}
+.bn-nav-store::before{background-image:url('../assets/figma/coin-icon.png')!important}
+
+/* Lobby: match the original portrait hierarchy, including short 375x667 viewports. */
+body[data-route="lobby"] .main{padding-top:clamp(10px,2.5dvh,25px)!important}
+.bn-lobby{
+  display:grid!important;align-content:start!important;gap:clamp(10px,1.8dvh,16px)!important;
+  width:min(100%,520px)!important;min-height:0!important;height:auto!important;
+  margin:0 auto!important;padding:0 0 8px!important;
+}
+.bn-feature-card{
+  display:grid;grid-template-columns:68px minmax(0,1fr);gap:12px;align-items:center;
+  min-width:0;min-height:120px;padding:14px;border-radius:18px;
+  background:#d3c3b6!important;border:2px solid #7c7975!important;color:#101518;
+  box-shadow:0 7px 19px #0008;
+}
+.bn-feature-icon{
+  width:65px;height:65px;display:block;
+  background:url('../assets/figma/cannon.png') center center/contain no-repeat!important;
+}
+.bn-feature-copy{min-width:0}
+.bn-feature-card .bn-kicker{font:700 10px 'Lexend',sans-serif;color:#13202c}
+.bn-feature-card h1{
+  font:400 clamp(25px,7vw,36px)/.95 'Pirata One',serif;
+  margin:4px 0 6px;white-space:normal;overflow-wrap:anywhere;
+}
+.bn-feature-card p{font:400 12px/1.35 'Lexend',sans-serif;margin:0 0 7px}
+.bn-feature-card small{font:600 10px 'Lexend',sans-serif}
+.bn-news-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.bn-news-card{
+  min-width:0;min-height:94px;padding:12px;border:2px solid #28353d;border-radius:16px;
+  background:#070e13ee;display:flex;flex-direction:column;gap:6px;box-shadow:0 6px 14px #0009;
+}
+.bn-news-card .bn-kicker{color:var(--bn-gold);font-size:9px;letter-spacing:.05em}
+.bn-news-card strong{font:400 clamp(22px,5.9vw,30px)/.95 'Pirata One',serif;overflow-wrap:anywhere}
+.bn-news-card small{font:400 10px/1.3 'Lexend',sans-serif;color:#e3e7ea}
+.bn-rank-card{display:flex;align-items:center;justify-content:center;gap:12px;min-height:54px;max-width:100%}
+.bn-rank-emblem{
+  flex:0 0 46px;width:46px;height:46px;display:grid;place-items:center;
+  border:2px solid var(--bn-gold);border-radius:50%;background:#0d2230;color:#62b7e2;font-size:28px;
+}
+.bn-rank-card strong{font:400 clamp(21px,5.5vw,29px)/1.1 'Pirata One',serif;color:white}
+.bn-rank-card small{display:block;color:var(--bn-muted);font:400 10px/1.2 'Lexend',sans-serif;margin-top:3px}
+.bn-lobby-actions{display:grid;gap:9px;margin-top:3px}
+.bn-primary-button{
+  display:grid;place-items:center;min-height:50px!important;padding:7px 14px!important;
+  border:2px solid #d6dfe2!important;border-radius:999px!important;
+  background:var(--bn-gold)!important;color:#0b1014!important;
+  font:400 clamp(26px,6.5vw,36px)/1 'Pirata One',serif!important;
+  box-shadow:0 6px 16px #0008!important;text-transform:none!important;
+}
+.bn-primary-button:disabled{opacity:.5}
+.bn-join-button{
+  display:grid;place-items:center;min-height:43px!important;height:auto!important;
+  width:100%;border:2px solid #d6dfe2;background:#070f14ed;border-radius:999px;
+  font:400 clamp(21px,5vw,27px)/1 'Pirata One',serif;color:#fff;
+  padding:7px 15px;box-shadow:0 5px 12px #0008;
+}
+@media(max-width:390px){
+  body[data-route="lobby"] .main{padding:12px 12px calc(112px + var(--bn-safe-bottom))!important}
+  .bn-lobby{gap:11px!important}
+  .bn-feature-card{grid-template-columns:53px minmax(0,1fr);gap:8px;min-height:108px;padding:11px}
+  .bn-feature-icon{width:50px;height:58px}
+  .bn-feature-card h1{font-size:clamp(24px,7.3vw,29px);margin:3px 0}
+  .bn-feature-card p{font-size:10px;line-height:1.22;margin-bottom:5px}
+  .bn-feature-card small{font-size:9px}
+  .bn-news-card{min-height:83px;padding:10px 8px;gap:4px}
+  .bn-news-card strong{font-size:clamp(21px,6vw,26px)}
+  .bn-news-card small{font-size:9px}
+  .bn-rank-emblem{width:40px;height:40px;flex-basis:40px;font-size:23px}
+  .bn-rank-card strong{font-size:24px}
+  .bn-primary-button{min-height:49px!important}
+  .bn-join-button{min-height:40px!important;font-size:22px}
+}
+@media(max-width:350px){.bn-news-grid{gap:6px}.bn-feature-card{padding:9px}.bn-news-card{padding:8px}}
+
+/* Authentication mirrors the vertical mobile-first Figma layouts. */
+body[data-route="auth"],body[data-route="register"]{height:auto;max-height:none;overflow-y:auto}
+body[data-route="auth"] .screen,body[data-route="register"] .screen{
+  height:auto;min-height:100dvh;max-height:none;overflow:visible;
+}
+.bn-auth{
+  width:min(calc(100% - 28px),450px)!important;min-height:100dvh!important;
+  padding:clamp(26px,6dvh,68px) 0 32px!important;margin:auto;
+  display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:24px;
+}
+.bn-auth-logo{text-align:center}
+.bn-auth-emblem{
+  width:80px;height:80px;display:grid;place-items:center;margin:0 auto 10px;
+  font-size:45px;color:var(--bn-gold);border:3px solid var(--bn-gold);border-radius:50%;
+  background:#08171dba;
+}
+.bn-auth-logo h1{font:400 clamp(45px,11vw,71px)/1 'Pirata One',serif}
+.bn-auth-logo p{font:400 clamp(19px,5.6vw,27px) 'Pirata One',serif;color:var(--bn-gold)}
+.bn-auth-panel{
+  background:#070d13ef;border:2px solid #21313c;border-radius:14px;padding:17px;
+}
+.bn-auth-form{display:grid;gap:16px}
+.bn-auth-form .bn-field{margin:0}
+.bn-field{display:grid;gap:6px}
+.bn-field label{font:600 12px 'Lexend',sans-serif;color:#e7f0f3;text-transform:none;letter-spacing:0}
+.bn-field input,.bn-field select{
+  display:block;width:100%;min-width:0;min-height:44px;max-width:100%;
+  border:2px solid #637381;border-radius:8px;padding:9px 13px;
+  background:#070d13;color:#fff;font:400 13px 'Lexend',sans-serif;
+}
+.bn-field input:focus,.bn-field select:focus{border-color:var(--bn-gold)}
+.bn-auth-help{font:400 11px 'Lexend',sans-serif;color:var(--bn-gold);margin:0;text-align:right}
+.bn-auth-switch{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;color:#e7edf1;font-size:12px}
+.bn-auth-switch .bn-pill-button{font-size:23px;min-height:38px;padding:7px 15px}
+.bn-register{justify-content:flex-start;gap:21px}
+.bn-register-title{position:relative;min-height:84px;padding-left:58px}
+.bn-register-title h1{margin:0;font:400 clamp(42px,11vw,66px)/1 'Pirata One',serif}
+.bn-register-title p{margin:8px 0 0;color:var(--bn-muted);font-size:12px}
+.bn-back-button{
+  border:2px solid #e0e9ee;color:#fff;background:#071119;width:42px;height:42px;
+  border-radius:50%;display:grid;place-items:center;font:32px/1 system-ui;cursor:pointer;
+}
+.bn-register-title .bn-back-button{position:absolute;left:0;top:5px}
+.bn-register .bn-auth-panel{border:0;background:#070d13dc;padding:16px}
+@media(max-height:690px){
+  .bn-auth{justify-content:flex-start;gap:17px;padding-top:20px!important}
+  .bn-auth-emblem{width:63px;height:63px;font-size:35px}
+  .bn-auth-form{gap:12px}
+}
+@media(max-width:375px){.bn-auth{width:calc(100% - 22px)!important}.bn-auth-panel{padding:13px}}
+
+/* Shared Figma cards on secondary screens. */
+.bn-page{display:grid;gap:11px;width:100%;min-width:0;max-width:100%}
+.bn-page-heading{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 5px}
+.bn-page-heading h1{
+  font:400 clamp(40px,11vw,60px)/1 'Pirata One',Georgia,serif;margin:0;color:#fff;
+}
+.bn-page-heading p{width:100%;margin:0;color:#ced8de;font-size:12px;line-height:1.5}
+.bn-page-heading:has(.bn-back-button) h1{margin-left:0}
+.bn-surface{
+  min-width:0;max-width:100%;border-radius:14px;border:1px solid #293b47;
+  background:var(--bn-surface);box-shadow:0 8px 18px #0007;padding:15px;
+}
+.bn-section-title{display:grid;gap:3px;margin-bottom:12px}
+.bn-section-title span{color:var(--bn-gold);font:700 11px 'Lexend',sans-serif;letter-spacing:.05em}
+.bn-section-title strong{font:400 28px/1.06 'Pirata One',serif}
+.bn-surface p{color:#c1cbd0;font:400 12px/1.45 'Lexend',sans-serif}
+.bn-fleet-page .bn-surface{padding:14px}
+.bn-ship-list{display:grid;gap:8px}
+.bn-ship-item{
+  display:grid;grid-template-columns:38px minmax(0,1fr) auto;
+  align-items:center;gap:10px;padding:10px;border:1px solid #334d5d;
+  border-radius:9px;background:#0a1a23;
+}
+.bn-ship-glyph{display:grid;place-items:center;color:#7cc3e9;font-size:25px}
+.bn-ship-item strong{display:block;font:500 13px 'Lexend',sans-serif}
+.bn-ship-item small{display:block;color:#b9c8d0;font-size:11px;margin-top:3px}
+.bn-ship-status{font:600 10px 'Lexend',sans-serif;color:var(--bn-mint)}
+.bn-fleet-info .bn-primary-button{min-height:45px!important;font-size:25px!important}
+.bn-available-note{color:#bdcad2;font-size:11px;line-height:1.5}
+.bn-profile-hero{display:flex;gap:14px;align-items:center}
+.bn-profile-avatar{width:73px;height:73px;flex:0 0 73px;display:grid;place-items:center;
+  border:2px solid var(--bn-gold);border-radius:50%;font-size:42px;color:#65bbe2}
+.bn-profile-details{min-width:0;overflow-wrap:anywhere}
+.bn-profile-details h2{font:400 30px/1 'Pirata One',serif;margin:0 0 5px}
+.bn-profile-details small{font-size:10px;color:var(--bn-muted)}
+.bn-profile-details p{margin:7px 0 0;font-size:11px;word-break:break-word}
+.bn-profile-form{display:grid;gap:12px}
+.bn-profile-form .btn{border-radius:999px;font:400 23px 'Pirata One',serif;text-transform:none}
+.bn-profile-coming{padding:9px 4px}
+.bn-store-feature-art{
+  width:100%;min-height:135px;display:grid;place-items:center;
+  border:1px dashed #68747a;border-radius:8px;background:#060b10;
+  font:400 26px/1 'Pirata One',serif;color:#b9cbd5;
+}
+.bn-store-coming .bn-pill-button{font-size:22px}
+.bn-store-page .bn-section-title strong{font-size:28px}
+
+/* Waiting and room setup use the same vertical composition and never hide readiness controls. */
+body[data-route="matchmaking"] .main{padding-bottom:28px!important}
+body[data-route="matchmaking"] .matchmaking-wrap{
+  display:block!important;min-height:0!important;max-height:none!important;
+  width:100%!important;height:auto!important;overflow:visible!important;padding:0!important;
+}
+body[data-route="matchmaking"] .mm-card{
+  width:100%!important;max-width:100%!important;max-height:none!important;height:auto!important;
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  overflow:visible!important;padding:18px!important;gap:10px!important;
+  text-align:center;border:1px solid #293946;border-radius:15px;background:#071016e8;
+}
+body[data-route="matchmaking"] .mm-card .form-title{font:400 42px/1 'Pirata One',serif!important;text-transform:none!important}
+body[data-route="matchmaking"] .mm-card .form-sub{font:400 12px/1.45 'Lexend',sans-serif!important;color:#d9e3e9}
+body[data-route="matchmaking"] .mm-card .radar{
+  width:min(60vw,300px)!important;min-width:120px;min-height:120px!important;
+  max-height:none!important;aspect-ratio:1;margin:14px auto!important;
+}
+body[data-route="matchmaking"] .tp-room-slots{width:100%!important;max-height:none!important;overflow:visible!important}
+body[data-route="matchmaking"] .tp-player-slot{
+  width:100%;max-width:100%;min-height:75px!important;overflow:visible;
+}
+body[data-route="matchmaking"] .tp-room-controls{width:100%;display:flex;flex-wrap:wrap;gap:9px}
+body[data-route="matchmaking"] .tp-room-controls .btn{flex:1 1 130px;min-height:43px!important}
+body[data-route="matchmaking"] .tp-create-actions{width:100%}
+body[data-route="matchmaking"] .tp-create-mode{width:100%}
+body[data-route="matchmaking"] .tp-room-code{align-self:center}
+body[data-route="matchmaking"] .tp-waiting-radar{display:block;flex:0 0 auto}
+body[data-route="matchmaking"] .tp-room-hint{color:#c1ccd2;font-size:12px}
+
+/* Mobile game: keep every action accessible and boards square.
+   The previous viewport-v3 rules clipped entire side panels below 710px. */
+@media(max-width:760px){
+  body[data-route="placement"],body[data-route="match"]{height:auto!important;max-height:none!important;overflow-y:auto!important}
+  body[data-route="placement"] #app,body[data-route="match"] #app{max-height:none!important;height:auto!important}
+  body[data-route="placement"] .combat-screen,body[data-route="match"] .combat-screen,
+  .combat-screen .match-layout{
+    height:auto!important;max-height:none!important;min-height:100dvh!important;
+    overflow:visible!important;
+  }
+  .combat-screen .match-head{height:auto!important;min-height:52px!important;flex:0 0 auto!important;gap:7px}
+  .combat-screen .match-grid,.combat-screen.placement-screen .match-grid.premium-placement-grid,
+  .combat-screen:not(.placement-screen) .match-grid.combat-grid{
+    display:flex!important;flex-direction:column!important;flex:1 0 auto!important;
+    grid-template-columns:none!important;grid-template-rows:none!important;
+    gap:9px!important;align-items:stretch!important;overflow:visible!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    padding:6px 10px calc(14px + var(--bn-safe-bottom))!important;
+  }
+  .combat-screen .match-grid>.premium-board-panel{
+    order:1!important;grid-area:auto!important;width:100%!important;min-width:0!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    align-self:stretch!important;overflow:visible!important;padding:10px!important;
+  }
+  .combat-screen .match-grid>.side-stack{
+    order:2!important;grid-area:auto!important;display:flex!important;
+    flex-direction:column!important;width:100%!important;height:auto!important;
+    min-height:0!important;max-height:none!important;overflow:visible!important;
+  }
+  .combat-screen .match-grid>.premium-hud{
+    order:3!important;grid-area:auto!important;display:flex!important;
+    flex-direction:column!important;width:100%!important;height:auto!important;
+    min-height:0!important;max-height:none!important;overflow:visible!important;
+    padding:0!important;position:static!important;
+  }
+  .combat-screen .board-wrap-primary.combat-board-wrap{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    width:100%!important;max-width:none!important;flex:0 0 auto!important;
+    min-height:0!important;height:auto!important;max-height:none!important;
+    overflow:visible!important;padding:6px 0!important;
+  }
+  .combat-screen .combat-board-wrap .tactical-board-frame,
+  .placement-screen .placement-board-wrap .setup-board-frame{
+    width:min(calc(100vw - 52px),420px)!important;
+    max-width:100%!important;max-height:none!important;
+    height:auto!important;aspect-ratio:1!important;flex:0 0 auto!important;
+  }
+  .combat-screen .tactical-board-frame .board-main,
+  .combat-screen .board-main{
+    width:100%!important;height:auto!important;max-height:none!important;aspect-ratio:1!important;
+  }
+  .combat-screen .board-panel{overflow:visible!important}
+  .combat-screen .board-meta{height:auto!important;max-height:none!important;flex:0 0 auto!important}
+  .placement-screen .placement-fleet-card,.placement-screen .placement-tip-card,
+  .placement-screen .placement-hud>.placement-protocol-card,
+  .combat-screen .enemy-intel-panel,.combat-screen .preview-panel{
+    max-height:none!important;height:auto!important;min-height:0!important;overflow:visible!important;
+  }
+  .combat-screen .tp-ships{max-height:none!important;overflow:visible!important}
+  .combat-screen .placement-actions,.combat-screen .combat-actions{height:auto!important;overflow:visible!important}
+  .combat-screen .match-foot{display:none!important}
+  .combat-screen .board-main .cell:focus-visible{outline-offset:-2px}
+}
+@media(max-width:390px){
+  body[data-route="matchmaking"] .mm-card{padding:13px!important}
+  body[data-route="matchmaking"] .mm-card .radar{width:min(55vw,220px)!important}
+  .combat-screen .board-main .coord{font-size:8px}
+}
+@media(min-width:761px){
+  /* Figma supplies portrait art; use a centered reading column for UI pages. */
+  body[data-route="lobby"] .main,body[data-route="fleet"] .main,
+  body[data-route="store"] .main,body[data-route="profile"] .main{padding-inline:22px!important}
+  .bn-lobby{gap:17px!important}
+  .bn-feature-card{min-height:146px;grid-template-columns:92px minmax(0,1fr)}
+  .bn-feature-icon{width:85px;height:85px}
+  .bn-news-card{min-height:110px}
+  .bn-primary-button{min-height:58px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .bn-bottom-nav *, .bn-lobby *, .bn-page *{animation:none!important;transition:none!important}
+}
+
+/* Real store catalogue, using server-owned prices and beta credits.
+   Product art is not yet delivered, so illustration areas are honest previews. */
+.tp-store-page{width:100%;display:grid;gap:12px;min-width:0;padding-bottom:12px}
+.tp-store-header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;flex-wrap:nowrap;
+}
+.tp-store-header>div:first-child{min-width:0}
+.tp-store-header h1{font:400 clamp(40px,11vw,58px)/1 'Pirata One',serif;margin:0}
+.tp-store-header p{font:400 12px/1.4 'Lexend',sans-serif;color:#c4d0d5;margin:5px 0}
+.tp-store-wallet{
+  flex:0 0 auto;display:grid;place-items:center;gap:3px;min-width:102px;
+  padding:10px 12px;border:2px solid #576675;border-radius:15px;
+  background:#071016ee;color:var(--bn-gold);text-align:center;
+}
+.tp-store-wallet small{color:#d7e0e3;font:600 9px/1.2 'Lexend',sans-serif}
+.tp-store-wallet strong{font:400 28px/1 'Pirata One',serif}
+.tp-store-toolbar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center}
+.tp-store-toolbar label{font:600 11px 'Lexend',sans-serif;color:var(--bn-gold)}
+.tp-store-toolbar .tp-mode-select{
+  min-width:0;min-height:43px;width:100%;background:#08121a;
+  border:2px solid #9fadb6;border-radius:999px;color:#fff;
+  font:500 12px 'Lexend',sans-serif;padding:8px 13px;
+}
+.tp-store-beta{grid-column:1/-1;font:400 10px 'Lexend',sans-serif;color:#c4d0d5}
+.tp-store-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:stretch;min-width:0;
+}
+.tp-store-loading{grid-column:1/-1;color:#e5eef2;padding:20px;text-align:center}
+.tp-store-card{
+  display:flex;flex-direction:column;min-width:0;overflow:hidden;
+  border:2px solid #263842;border-radius:14px;background:#070d12f2;box-shadow:0 8px 18px #0009;
+}
+.tp-store-preview{
+  height:120px;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;background:#0b1720;position:relative;border-bottom:1px solid #293946;color:#bed5e0;
+}
+.tp-store-preview>span{font-size:48px;color:var(--bn-gold);line-height:1}
+.tp-store-preview>small{font:400 10px 'Lexend',sans-serif;color:#a0b0b7}
+.tp-store-card.is-sound .tp-store-preview>span{color:#68bddc}
+.tp-store-card-text{flex:1;min-width:0;padding:11px;display:grid;gap:5px;align-content:start}
+.tp-store-card-meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px;
+  font:600 9px 'Lexend',sans-serif;color:var(--bn-gold)}
+.tp-store-tag{border:1px solid #546879;border-radius:99px;padding:3px 6px;color:#dfecf2;
+  font:400 9px 'Lexend',sans-serif}
+.tp-store-tag.is-equipped{border-color:var(--bn-mint);color:var(--bn-mint)}
+.tp-store-tag.is-future{border-color:#80755b;color:#f3d184}
+.tp-store-card h3{margin:4px 0 0;font:400 24px/1 'Pirata One',serif;color:#fff;overflow-wrap:anywhere}
+.tp-store-card p{margin:4px 0 0;color:#c1cbd0;font:400 11px/1.35 'Lexend',sans-serif}
+.tp-store-card-footer{display:grid;gap:7px;padding:10px;border-top:1px solid #24323d}
+.tp-store-price{color:var(--bn-gold);font:400 20px/1 'Pirata One',serif}
+.tp-store-card-footer .btn{width:100%;min-height:38px;padding:7px 5px;
+  font:400 18px/1 'Pirata One',serif;border-radius:99px;text-transform:none;white-space:normal}
+.tp-store-unavailable{color:#aabac1;font:400 10px/1.25 'Lexend',sans-serif}
+.tp-store-footnote{color:#bdc8cf;font:400 10px/1.4 'Lexend',sans-serif;margin:2px 3px 0}
+body[data-ship-skin="skin_coral"] .board .cell.ship{background-color:#e67667!important;box-shadow:inset 0 0 11px #ffb49a85}
+body[data-ship-skin="skin_coral"] .tide-polygon-board .tile.ship polygon{fill:#e67667!important}
+body[data-ship-skin="skin_abyss"] .board .cell.ship{background-color:#977bd9!important;box-shadow:inset 0 0 11px #c4b0ff66}
+body[data-ship-skin="skin_abyss"] .tide-polygon-board .tile.ship polygon{fill:#977bd9!important}
+@media(max-width:355px){
+  .tp-store-header{gap:7px}
+  .tp-store-wallet{min-width:85px;padding:8px}
+  .tp-store-card h3{font-size:21px}
+  .tp-store-preview{height:90px;min-height:90px}
+  .tp-store-card-footer .btn{font-size:16px}
+}
+@media(min-width:600px){
+  .tp-store-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .tp-store-preview{height:150px}
+}
+
+
+/* End-of-battle summary: portrait Figma arrangement with actual API values. */
+body[data-route="result"]{height:auto!important;max-height:none!important;overflow-y:auto!important}
+body[data-route="result"] #app{height:auto!important;max-height:none!important;min-height:100dvh}
+body[data-route="result"] .screen,body[data-route="result"] .shell{
+  min-height:100dvh!important;height:auto!important;max-height:none!important;
+  overflow:visible!important;
+}
+body[data-route="result"] .screen{
+  background:linear-gradient(180deg,#0b101454,#0b10143c),
+  url('../assets/figma/storm.jpg') center top/cover no-repeat,var(--bn-bg);
+}
+body[data-route="result"] .shell{
+  max-width:var(--bn-portrait-width)!important;width:100%;margin:0 auto;
+}
+body[data-route="result"] .main{
+  display:flex!important;align-items:center;justify-content:center;
+  height:auto!important;min-height:0!important;flex:1 0 auto!important;
+  max-height:none!important;overflow:visible!important;
+  padding:24px 15px calc(25px + var(--bn-safe-bottom))!important;
+}
+body[data-route="result"] .tp-content{
+  width:100%!important;max-width:none!important;height:auto!important;
+  min-height:0!important;max-height:none!important;overflow:visible!important;
+  margin:0!important;padding:0!important;display:block!important;
+}
+.bn-result-screen{
+  width:100%;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:16px;min-width:0;margin:0 auto;
+}
+.bn-result-emblem{
+  width:68px;height:68px;border:3px solid var(--bn-gold);
+  border-radius:50%;display:grid;place-items:center;font-size:35px;
+  color:var(--bn-gold);background:#091720e9;
+}
+.bn-result-heading{
+  margin:0;text-align:center;color:var(--bn-gold);
+  font:400 clamp(54px,14vw,79px)/1 'Pirata One',Georgia,serif;
+}
+.bn-result-description{
+  color:#d2dce1;text-align:center;font:400 12px/1.4 'Lexend',sans-serif;
+  margin:0 0 6px;
+}
+.bn-result-panel{
+  width:100%;padding:15px;border-radius:14px;
+  background:#070f14ed;border:2px solid #2a3d47;
+}
+.bn-result-panel .bn-section-title span{color:#e7f0f3}
+.bn-result-panel .bn-section-title strong{font-size:31px}
+.bn-result-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.bn-result-stats>div{
+  min-width:0;min-height:67px;padding:11px;
+  background:#15232d;border-radius:10px;display:grid;gap:4px;
+}
+.bn-result-stats strong{
+  font:400 33px/1 'Pirata One',serif;color:var(--bn-mint);
+}
+.bn-result-stats>div:nth-child(2) strong{color:#f87171}
+.bn-result-stats>div:nth-child(4) strong{color:var(--bn-gold)}
+.bn-result-stats span{color:#c5d3db;font:400 10px/1.3 'Lexend',sans-serif}
+.bn-result-confirmation{margin:13px 0 0;font:400 10px/1.35 'Lexend',sans-serif;color:#b2c3cb}
+.bn-result-actions{display:grid;gap:10px;width:100%}
+.bn-result-actions button{width:100%}
+@media(max-width:390px){
+  .bn-result-screen{gap:12px}
+  .bn-result-emblem{width:56px;height:56px;font-size:27px}
+  .bn-result-panel{padding:11px}
+  .bn-result-stats>div{min-height:61px}
+}
