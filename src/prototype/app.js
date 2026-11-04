@@ -33,8 +33,28 @@ function go(route) {
   route = resolvedRoute(route, api.isAuthenticated(), state.lobby?.status);
   if (currentRoute()===route) render(); else location.hash=route;
 }
-function nav(active='play') { return `<nav class="bottom-nav"><button class="nav-btn bn-nav-fleet ${active==='fleet'?'active':''}" data-go="fleet">Equipe</button><button class="nav-btn play bn-nav-play ${active==='play'?'active':''}" data-go="lobby">Play</button><button class="nav-btn bn-nav-store ${active==='store'?'active':''}" data-go="store">Loja</button></nav>`; }
-function header() { const player=state.profile; return `<header class="topbar">${brand()}<div class="currencies"><span class="pill">● TidePoint V1</span><span class="pill" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span></div><div class="player-strip"><div class="avatar" aria-hidden="true">⚓</div><div class="name"><b>${esc(player?.nickname || 'Capitão')}</b><div style="font-size:10px;color:var(--muted)">Conta de jogador</div></div><div class="tp-top-actions"><button data-go="profile">Perfil</button><button data-action="logout">Sair</button><a href="/admin" class="tp-small" style="color:var(--cyan)">Admin</a></div><details class="tp-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary><div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div></details></div></header>`; }
+function nav(active='play') {
+  return `<nav class="bottom-nav bn-bottom-nav" aria-label="Navegação principal">
+    <button type="button" class="nav-btn bn-nav-fleet ${active==='fleet'?'active':''}" data-go="fleet" ${active==='fleet'?'aria-current="page"':''}>Equipe</button>
+    <button type="button" class="nav-btn play bn-nav-play ${active==='play'?'active':''}" data-go="lobby" ${active==='play'?'aria-current="page"':''}>Play</button>
+    <button type="button" class="nav-btn bn-nav-store ${active==='store'?'active':''}" data-go="store" ${active==='store'?'aria-current="page"':''}>Loja</button>
+  </nav>`;
+}
+function header() {
+  const nickname=esc(state.profile?.nickname || 'Capitão');
+  return `<header class="topbar bn-topbar">
+    <button type="button" class="bn-header-identity" data-go="profile" aria-label="Abrir meu perfil">
+      <span class="bn-header-avatar" aria-hidden="true">⚓</span>
+      <span class="bn-header-player"><strong>${nickname}</strong><small>Conta de jogador</small></span>
+    </button>
+    <div class="bn-header-actions">
+      <span class="bn-connection-status" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span>
+      <details class="tp-account-menu bn-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary>
+        <div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div>
+      </details>
+    </div>
+  </header>`;
+}
 function screen(content,{active='play',noNav=false}={}) { return `<div class="screen"><div class="shell">${header()}<main class="main">${content}</main>${noNav?'':nav(active)}</div></div>`; }
 function panel(title,body,cls='') { return `<section class="panel tp-panel ${cls}"><div class="eyebrow">Comando naval</div><h2 class="panel-title" style="margin:8px 0 16px">${title}</h2>${body}</section>`; }
 function mainContent(inner,{active='play',noNav=false}={}) {return screen(`<div class="tp-content">${inner}</div>`,{active,noNav});}
@@ -143,17 +163,19 @@ async function reconcile() {
 }
 
 function authForm(isRegister=false) {
-  const title=isRegister?'Criar conta':'Batalha Naval';
-  const fields=isRegister?'<div class="bn-field"><label for="nick">Nome de usuário</label><input id="nick" name="nickname" autocomplete="nickname" minlength="3" maxlength="30" required /></div>':'';
-  return `<div class="screen bn-design-screen bn-auth-screen"><main class="bn-auth">
-    <div class="bn-auth-logo" aria-label="Batalha Naval"><span class="bn-auth-emblem" aria-hidden="true">⚓</span><h1>Batalha Naval</h1><p>Duelo 1v1 em alto-mar</p></div>
-    <section class="bn-auth-panel" aria-labelledby="bn-auth-title">
-      <h2 id="bn-auth-title">${title}</h2>
+  const fields=isRegister
+    ? '<div class="bn-field"><label for="nick">Nome de usuário</label><input id="nick" name="nickname" autocomplete="nickname" minlength="3" maxlength="30" placeholder="Escolha seu nome de capitão" required /></div>'
+    : '';
+  return `<div class="screen bn-design-screen bn-auth-screen"><main class="bn-auth ${isRegister?'bn-register':''}">
+    ${isRegister
+      ? '<header class="bn-register-title"><button type="button" data-go="auth" class="bn-back-button" aria-label="Voltar ao login">‹</button><h1>Cadastro</h1><p>Crie sua conta e monte sua frota</p></header>'
+      : '<div class="bn-auth-logo" aria-label="Batalha Naval"><span class="bn-auth-emblem" aria-hidden="true">⚓</span><h1>Batalha Naval</h1><p>Duelo 1v1 em alto-mar</p></div>'}
+    <section class="bn-auth-panel" aria-label="${isRegister?'Criar conta':'Acessar conta'}">
       <form class="tp-form bn-auth-form" data-form="${isRegister?'register':'login'}">
         ${fields}
-        <div class="bn-field"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email" placeholder="Digite seu e-mail" required maxlength="254" /></div>
+        <div class="bn-field"><label for="email">${isRegister?'E-mail':'E-mail'}</label><input id="email" name="email" type="email" autocomplete="email" placeholder="${isRegister?'Digite seu e-mail':'Seu e-mail'}" required maxlength="254" /></div>
         <div class="bn-field"><label for="password">Senha</label><input id="password" name="password" type="password" autocomplete="${isRegister?'new-password':'current-password'}" placeholder="Digite sua senha" minlength="8" maxlength="72" required /></div>
-        ${isRegister?'<div class="bn-field"><label for="repeat">Confirmar senha</label><input id="repeat" name="repeat" type="password" autocomplete="new-password" placeholder="Confirme sua senha" required /></div>':'<p class="bn-auth-help">Esqueceu a senha? Recuperação por e-mail em breve.</p>'}
+        ${isRegister?'<div class="bn-field"><label for="repeat">Confirmar senha</label><input id="repeat" name="repeat" type="password" autocomplete="new-password" placeholder="Confirme sua senha" minlength="8" maxlength="72" required /></div>':'<p class="bn-auth-help">Recuperação de senha em breve</p>'}
         <button type="submit" class="btn btn-primary bn-primary-button">${isRegister?'Criar conta':'Entrar'}</button>
       </form>
     </section>
@@ -168,15 +190,31 @@ function radarMarkup() {
 
 function lobbyScreen() {
   if (state.lobby) return waitingScreen();
-  const nickname=esc(state.profile?.nickname || 'Capitão');
   return mainContent(`<div class="bn-lobby">
-    <div class="bn-player-intro"><span class="bn-player-avatar" aria-hidden="true">${nickname.slice(0,1).toUpperCase()}</span><div><strong>${nickname}</strong><small>Pronto para navegar</small></div></div>
-    <section class="bn-feature-card" aria-labelledby="bn-feature-title"><span class="bn-feature-icon" aria-hidden="true">⚓</span><div><span class="bn-kicker">EVENTO</span><h1 id="bn-feature-title">Tempestade de Aço</h1><p>Novos desafios e recompensas chegarão em breve.</p><small>Em desenvolvimento</small></div></section>
-    <div class="bn-news-grid" aria-label="Novidades"><article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas embarcações</strong><small>Personalizações em breve</small></article><article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas temporadas</strong><small>Progressão em breve</small></article></div>
+    <section class="bn-feature-card" aria-labelledby="bn-feature-title">
+      <span class="bn-feature-icon" aria-hidden="true"></span>
+      <div class="bn-feature-copy"><span class="bn-kicker">EVENTO</span><h1 id="bn-feature-title">Tempestade de Aço</h1>
+        <p>Novos desafios e recompensas chegarão em breve.</p><small>Em desenvolvimento</small></div>
+    </section>
+    <section class="bn-news-grid" aria-label="Novidades">
+      <article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas embarcações</strong><small>Personalizações em breve</small></article>
+      <article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas temporadas</strong><small>Progressão em breve</small></article>
+    </section>
     <div class="bn-rank-card"><span class="bn-rank-emblem" aria-hidden="true">⚓</span><div><strong>Patentes em breve</strong><small>Batalhas privadas 1v1</small></div></div>
-    <div class="bn-lobby-actions"><button type="button" class="btn btn-primary bn-primary-button" data-go="matchmaking" ${state.modes.length?'':'disabled'}>Jogar</button><button type="button" class="bn-pill-button bn-join-button" data-action="open-join-modal">Entrar na sala com código</button></div>
+    <div class="bn-lobby-actions">
+      <button type="button" class="btn btn-primary bn-primary-button" data-go="matchmaking" ${state.modes.length?'':'disabled'}>Jogar</button>
+      <button type="button" class="bn-pill-button bn-join-button" data-action="open-join-modal">Entrar com código</button>
+    </div>
   </div>
-  <dialog id="tp-join-dialog" class="tp-join-dialog" aria-labelledby="tp-join-title"><div class="tp-modal-header"><div><div class="eyebrow">Convite de partida</div><h2 id="tp-join-title">Entrar em uma sala</h2></div><button type="button" data-action="close-join-modal" aria-label="Fechar janela">×</button></div><form data-form="join" class="tp-form"><div class="field"><label for="room-code">Código de seis caracteres</label><input id="room-code" name="code" placeholder="ABC234" maxlength="6" minlength="6" pattern="[a-zA-Z0-9]{6}" autocomplete="off" required style="text-transform:uppercase" /></div><p class="tp-modal-feedback" role="alert" aria-live="polite"></p><div class="tp-modal-actions"><button class="btn btn-ghost" type="button" data-action="close-join-modal">Cancelar</button><button class="btn btn-primary" type="submit">Entrar na sala</button></div></form></dialog>`);
+  <dialog id="tp-join-dialog" class="tp-join-dialog" aria-labelledby="tp-join-title">
+    <div class="tp-modal-header"><div><div class="eyebrow">Convite de partida</div><h2 id="tp-join-title">Entrar em uma sala</h2></div>
+      <button type="button" data-action="close-join-modal" aria-label="Fechar janela">×</button></div>
+    <form data-form="join" class="tp-form"><div class="field"><label for="room-code">Código de seis caracteres</label>
+      <input id="room-code" name="code" placeholder="ABC234" maxlength="6" minlength="6" pattern="[a-zA-Z0-9]{6}" autocomplete="off" required style="text-transform:uppercase" /></div>
+      <p class="tp-modal-feedback" role="alert" aria-live="polite"></p><div class="tp-modal-actions">
+      <button class="btn btn-ghost" type="button" data-action="close-join-modal">Cancelar</button>
+      <button class="btn btn-primary" type="submit">Entrar na sala</button></div></form>
+  </dialog>`);
 }
 
 function waitingScreen() {
@@ -230,9 +268,65 @@ function resultScreen(){
   const shots=b.shotsFired||[],hits=shots.filter(s=>s.hit).length;
   return mainContent(`<section class="panel result-card tp-result"><div class="eyebrow">Relatório pós-batalha</div><div class="result-stamp">${label}</div><h2 class="form-title">${won?'O mar ficou com você.':draw?'O oceano segue sem dono.':'Uma batalha, uma lição.'}</h2><p class="tp-muted">Resultado confirmado pela API · ${esc(b.finishReason||'Batalha finalizada')}</p><div class="result-grid"><div class="result-stat"><b>${shots.length?Math.round(hits/shots.length*100):0}%</b><span>Precisão</span></div><div class="result-stat"><b>${hits}</b><span>Acertos</span></div><div class="result-stat"><b>${shots.length}</b><span>Disparos</span></div></div><div class="tp-actions" style="justify-content:center;margin-top:26px"><button class="btn btn-orange" data-action="leave-lobby">Voltar ao lobby</button></div></section>`,{noNav:true});
 }
-function fleetScreen(){const mode=activeMode()||state.modes[0];return mainContent(`<div class="tp-page-header"><div class="eyebrow">Frota / Arsenal pessoal</div><h2 class="form-title">Navios do ${esc(mode?.name||'TidePoint')}</h2></div><div class="tp-flow">${panel('Catálogo de embarcações',mode?fleetPanel(mode,[],false):'Não há modos disponíveis.')}${panel('Configuração atual','<p class="tp-muted">A frota de cada modo é definida no servidor e posicionada para cada partida. Inventário, skins equipáveis e habilidades personalizadas ainda não possuem endpoints na API.</p><button class="btn btn-orange" data-go="lobby">Preparar partida</button>')}</div>`,{active:'fleet'});}
-function storeScreen(){return mainContent(`<div class="tp-page-header"><div class="eyebrow">Loja Batalha Naval</div><h2 class="form-title">Loja e coleções</h2></div>${panel('Em construção','<p>O layout de cosméticos do protótipo foi reservado para o futuro catálogo. Compras, moedas, skins e pacotes de som ainda não existem na API e, portanto, não há preços ou saldos fictícios aqui.</p><p class="tp-muted">As partidas reais e os tabuleiros estão disponíveis no lobby.</p><button class="btn btn-orange" data-go="lobby">Voltar para jogar</button>')}`,{active:'store'});}
-function profileScreen(){const p=state.profile;return mainContent(`<div class="tp-page-header"><button class="btn btn-ghost tp-back" type="button" data-go="lobby">← Voltar</button><div class="eyebrow">Conta de jogador</div><h2 class="form-title">Meu perfil</h2></div><div class="tp-flow"><section class="panel tp-panel"><div class="eyebrow">Identidade</div><form class="tp-form" data-form="profile"><div class="field"><label for="profile-name">Nickname</label><input id="profile-name" name="nickname" maxlength="30" minlength="3" required value="${esc(p?.nickname)}" /></div><div class="field"><label for="avatar">Avatar</label><select name="avatarId" id="avatar" class="tp-mode-select">${['captain','submarine','destroyer','carrier'].map(id=>`<option value="${id}" ${p?.avatarId===id?'selected':''}>${esc(shipName(id.toUpperCase()))}</option>`).join('')}</select></div><button class="btn btn-primary" type="submit">Salvar perfil</button></form><p class="tp-muted tp-small" style="margin-top:12px">E-mail: ${esc(p?.email||'—')}</p></section><section class="panel tp-panel"><div class="eyebrow">Segurança</div><h2 class="panel-title">Alterar senha</h2><form class="tp-form" data-form="password"><div class="field"><label>Senha atual<input name="currentPassword" type="password" autocomplete="current-password" required /></label></div><div class="field"><label>Nova senha<input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></label></div><button class="btn btn-orange" type="submit">Alterar senha</button></form><p class="tp-muted tp-small">A sessão continua ativa após a troca de senha.</p></section></div>`,{noNav:true});}
+function fleetScreen(){
+  const mode=activeMode()||state.modes[0];
+  const ships=mode?.fleet||[];
+  const catalogue=ships.length
+    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">⚓</span>
+       <div><strong>${esc(shipName(def.id))}</strong><small>${def.length} casas</small></div>
+       <span class="bn-ship-status">Disponível</span></article>`).join('')
+    : '<p class="bn-available-note">Nenhum modo de jogo habilitado no momento.</p>';
+  return mainContent(`<div class="bn-page bn-fleet-page">
+    <header class="bn-page-heading"><h1>Sua frota</h1><p>Escolha sua estratégia antes de entrar em batalha.</p></header>
+    <section class="bn-surface bn-fleet-catalogue"><div class="bn-section-title"><span>EMBARCAÇÕES</span><strong>${esc(mode?.name||'Clássico')}</strong></div>
+      <div class="bn-ship-list">${catalogue}</div></section>
+    <section class="bn-surface bn-fleet-info"><div class="bn-section-title"><span>PREPARAÇÃO</span><strong>Frota de combate</strong></div>
+      <p>A frota é definida pela API para cada modo. Você posiciona seus navios ao entrar na partida.</p>
+      <button type="button" class="btn btn-primary bn-primary-button" data-go="lobby">Preparar partida</button>
+    </section>
+  </div>`,{active:'fleet'});
+}
+function storeScreen(){
+  return mainContent(`<div class="bn-page bn-store-page">
+    <header class="bn-page-heading"><h1>Loja</h1><p>Personalizações e pacotes para sua frota.</p></header>
+    <section class="bn-surface bn-store-feature"><div class="bn-section-title"><span>ITENS EM DESTAQUE</span><strong>Pacote Tempestade</strong></div>
+      <div class="bn-store-feature-art" aria-hidden="true">Arte em desenvolvimento</div>
+      <p>Catálogo visual em preparação. Os itens beta são disponibilizados pela API.</p>
+    </section>
+    <section class="bn-surface bn-store-coming"><div class="bn-section-title"><span>PERSONALIZAÇÃO</span><strong>Novos pacotes em breve</strong></div>
+      <p>As artes e os sons finais dependem do Game Design. Nenhum preço fictício foi adicionado.</p>
+      <button type="button" class="bn-pill-button" data-go="lobby">Voltar para jogar</button>
+    </section>
+  </div>`,{active:'store'});
+}
+function profileScreen(){
+  const p=state.profile||{};
+  const nickname=esc(p.nickname||'Capitão');
+  return mainContent(`<div class="bn-page bn-profile-page">
+    <header class="bn-page-heading"><button type="button" class="bn-back-button" data-go="lobby" aria-label="Voltar ao lobby">‹</button><h1>Perfil</h1></header>
+    <section class="bn-surface bn-profile-hero"><div class="bn-profile-avatar" aria-hidden="true">⚓</div>
+      <div class="bn-profile-details"><h2>${nickname}</h2><small>Conta de jogador</small><p>${esc(p.email||'')}</p></div></section>
+    <section class="bn-surface bn-profile-section">
+      <div class="bn-section-title"><span>PERFIL</span><strong>Editar informações</strong></div>
+      <form class="tp-form bn-profile-form" data-form="profile">
+        <div class="bn-field"><label for="profile-name">Nome de usuário</label><input id="profile-name" name="nickname" maxlength="30" minlength="3" required value="${nickname}" /></div>
+        <div class="bn-field"><label for="avatar">Avatar</label>
+          <select name="avatarId" id="avatar" class="tp-mode-select">${['captain','submarine','destroyer','carrier'].map(id=>`<option value="${id}" ${p.avatarId===id?'selected':''}>${esc(shipName(id.toUpperCase()))}</option>`).join('')}</select>
+        </div><button class="btn btn-primary" type="submit">Salvar perfil</button>
+      </form>
+    </section>
+    <section class="bn-surface bn-profile-section">
+      <div class="bn-section-title"><span>SEGURANÇA</span><strong>Alterar senha</strong></div>
+      <form class="tp-form bn-profile-form" data-form="password">
+        <div class="bn-field"><label for="current-password">Senha atual</label><input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required /></div>
+        <div class="bn-field"><label for="new-password">Nova senha</label><input id="new-password" name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></div>
+        <button class="btn btn-primary" type="submit">Alterar senha</button>
+      </form>
+      <p class="bn-available-note">Sua sessão permanece ativa após a alteração.</p>
+    </section>
+    <p class="bn-available-note bn-profile-coming">Estatísticas, conquistas e histórico aparecerão aqui quando estiverem disponíveis na API.</p>
+  </div>`,{noNav:true});
+}
 
 function roomExitDialog() {
   if (!state.roomExitNotice) return "";
