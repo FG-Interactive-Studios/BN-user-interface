@@ -9,8 +9,9 @@ Fonte: Figma `PHfipffDE6V0Dil3RGCzC6`; design mobile 1080 × 1920.
 - Ícones de navegação exportados diretamente das fontes do Figma.
 - A branch arquivada da UI clássica permanece disponível.
 
-## Pendências para fidelidade completa
-- **Concluído:** Fundo Tempestade e moedas dourada/azul agora são imagens originais versionadas em `src/assets/figma/`.\n- **Pendente:** Emblemas dourado/azul do PDF, arte do evento e outras ilustrações não obtidas pela integração, sem substituir por screenshots.
+## Progresso e pendências de fidelidade
+- **Concluído:** Fundo Tempestade e moedas dourada/azul agora são imagens originais versionadas em `src/assets/figma/`.
+- **Pendente:** Emblemas dourado/azul do PDF, arte do evento e outras ilustrações não obtidas pela integração, sem substituir por screenshots.
 - Afinar a composição visual comparando com capturas das telas de login e lobby em 360×800 e desktop.
 - Implementar as demais telas por etapas mantendo a API autoritativa (sala, posicionamento, batalha, resultado, perfil e loja).
 - O Figma mostra evento, XP, patente e moedas; essas informações ainda não são fornecidas pela API atual. Os cards usam rótulos explícitos de "em breve" e não inventam saldos nem estatísticas.
@@ -28,5 +29,6 @@ npm run build
 node tools/test-tidepoint.mjs
 node tools/test-client.mjs
 node tools/test-room-flow.mjs
+node tools/test-figma-assets.mjs
 ```
 Testar visualmente login, cadastro, lobby e abertura do modal da sala; depois confirmar uma partida com dois navegadores e API real.
