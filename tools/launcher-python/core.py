@@ -395,6 +395,80 @@ class Engine:
             time.sleep(1)
         raise LauncherError(f"{label} não respondeu no tempo esperado. Confira os logs.")
 
+    @staticmethod
+    def inspect_existing_postgres(docker_bin: str) -> dict | None:
+        """Inspect the fixed-name container without touching its data or state."""
+        try:
+            result = subprocess.run(
+                [docker_bin, "container", "inspect", "batalha-naval-postgres"],
+                capture_output=True, text=True, timeout=12, check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise LauncherError(
+                "Não foi possível consultar o container PostgreSQL existente."
+            ) from exc
+        if result.returncode != 0:
+            if "no such" in result.stderr.lower():
+                return None
+            raise LauncherError(
+                "Docker não conseguiu verificar o container batalha-naval-postgres. "
+                "Confira 'docker ps -a' antes de continuar."
+            )
+        try:
+            payload = json.loads(result.stdout)
+            if not isinstance(payload, list) or not payload or not isinstance(payload[0], dict):
+                raise ValueError("Resposta inesperada")
+            return payload[0]
+        except ValueError as exc:
+            raise LauncherError("Docker retornou dados inválidos ao inspecionar o PostgreSQL.") from exc
+
+    @staticmethod
+    def check_existing_postgres_compatibility(info: dict) -> None:
+        """Refuse to run the game against an unrelated or wrongly mapped DB."""
+        config = info.get("Config") or {}
+        image = str(config.get("Image") or "")
+        env = {str(item) for item in (config.get("Env") or [])}
+        ports = (info.get("HostConfig") or {}).get("PortBindings") or {}
+        exposed = ports.get("5432/tcp") or []
+        host_ports = {str(item.get("HostPort")) for item in exposed if isinstance(item, dict)}
+        if not (image == "postgres:17"
+                and "POSTGRES_DB=battleship" in env
+                and "POSTGRES_USER=postgres" in env
+                and "5432" in host_ports):
+            raise LauncherError(
+                "Já existe um container chamado batalha-naval-postgres, mas sua "
+                "imagem, banco, usuário ou porta não corresponde ao ambiente "
+                "esperado (postgres:17, battleship, postgres, 5432). "
+                "Ele não será modificado. Verifique as configurações com "
+                "'docker inspect batalha-naval-postgres'."
+            )
+
+    def start_postgres(self, docker_bin: str, api_path: Path) -> None:
+        """Reuse an existing compatible named DB, avoiding Compose name collisions."""
+        existing = self.inspect_existing_postgres(docker_bin)
+        if existing is None:
+            self.log("Nenhum container batalha-naval-postgres existente. Iniciando Compose...")
+            self.command([docker_bin, "compose", "up", "-d"],
+                         api_path, "Docker PostgreSQL", timeout=160)
+            self.wait(lambda: self.postgres_ready(docker_bin, api_path), 90, "PostgreSQL")
+            return
+        self.check_existing_postgres_compatibility(existing)
+        self.log(
+            "Container batalha-naval-postgres já existe. "
+            "Reutilizando o banco sem recriar, remover volumes ou executar compose up."
+        )
+        if not bool((existing.get("State") or {}).get("Running")):
+            self.log("Container PostgreSQL estava parado; iniciando o existente...")
+            self.command([docker_bin, "start", "batalha-naval-postgres"],
+                         api_path, "Docker PostgreSQL existente", timeout=90)
+        self.wait(lambda: self.postgres_ready(
+            docker_bin, api_path, container_name="batalha-naval-postgres"
+        ), 90, "PostgreSQL existente")
+        self.log(
+            "PostgreSQL existente está pronto. A API usará os dados atuais; "
+            "o inicializador não fará reset do banco."
+        )
+
     def launch(self, front_path: Path, api_path: Path, *, docker: bool,
                reuse_api: bool) -> None:
         self.check_cancel()
@@ -413,8 +487,7 @@ class Engine:
             if docker:
                 docker_bin = self.require("docker", "Docker Desktop")
                 self.ensure_docker_engine(docker_bin)
-                self.command([docker_bin, "compose", "up", "-d"], api_path, "Docker PostgreSQL", timeout=160)
-                self.wait(lambda: self.postgres_ready(docker_bin, api_path), 90, "PostgreSQL")
+                self.start_postgres(docker_bin, api_path)
             self.java_check()
             mvnw = api_path / ("mvnw.cmd" if os.name == "nt" else "mvnw")
             if not mvnw.is_file():
@@ -445,11 +518,16 @@ class Engine:
         self.wait(frontend_healthy, 75, "Frontend", proc)
 
     @staticmethod
-    def postgres_ready(docker: str, api_path: Path) -> bool:
+    def postgres_ready(docker: str, api_path: Path, *, container_name: str | None = None) -> bool:
+        """Check that the expected battleship DB accepts a real SQL query."""
+        target = ([docker, "exec", container_name] if container_name else
+                  [docker, "compose", "exec", "-T", "postgres"])
         try:
-            ret = subprocess.run([docker, "compose", "exec", "-T", "postgres", "pg_isready", "-U", "postgres", "-d", "battleship"],
-                                 cwd=api_path, capture_output=True, timeout=4, check=False)
-            return ret.returncode == 0
+            ret = subprocess.run(
+                [*target, "psql", "-U", "postgres", "-d", "battleship", "-Atqc", "SELECT 1"],
+                cwd=api_path, capture_output=True, text=True, timeout=6, check=False
+            )
+            return ret.returncode == 0 and ret.stdout.strip() == "1"
         except (OSError, subprocess.TimeoutExpired):
             return False
 
