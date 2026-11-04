@@ -4,6 +4,7 @@ on:
     paths:
       - 'src/prototype/**'
       - 'tools/test-figma-viewport.mjs'
+      - 'tools/test-figma-combat-mobile.mjs'
       - '.github/workflows/figma-responsive-browser.yml'
   workflow_dispatch:
 permissions:
@@ -25,10 +26,14 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Check mobile and desktop actual geometry
         run: node tools/test-figma-viewport.mjs
+      - name: Check mobile placement and battle geometry
+        run: node tools/test-figma-combat-mobile.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: figma-responsive-captures
-          path: artifacts/figma-responsive/
+          path: |
+            artifacts/figma-responsive/
+            artifacts/figma-combat/
           if-no-files-found: ignore
           retention-days: 7
