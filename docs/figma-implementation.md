@@ -1,6 +1,6 @@
 # Batalha Naval — implementação da interface Figma (fase 1)
 
-Fonte: Figma \`PHfipffDE6V0Dil3RGCzC6\`; design mobile 1080 × 1920.
+Fonte: Figma `PHfipffDE6V0Dil3RGCzC6`; design mobile 1080 × 1920.
 
 ## Escopo
 - Formulários de login/cadastro e lobby recebem a linguagem visual aprovada (Pirata One, Lexend, paleta de cores, componentes pílula).
@@ -17,16 +17,16 @@ Fonte: Figma \`PHfipffDE6V0Dil3RGCzC6\`; design mobile 1080 × 1920.
 - Matchmaking público não foi criado: o botão Jogar abre o fluxo funcional de sala privada.
 
 ## Arquivos
-- \`src/prototype/app.js\`: estrutura das telas sem trocar a lógica de eventos.
-- \`src/prototype/figma-v1.css\`: novos tokens e regras de layout, carregados no final.
-- \`src/assets/figma/*\`: ícones reais extraídos do arquivo do Figma.
+- `src/prototype/app.js`: estrutura das telas sem trocar a lógica de eventos.
+- `src/prototype/figma-v1.css`: novos tokens e regras de layout, carregados no final.
+- `src/assets/figma/*`: ícones reais extraídos do arquivo do Figma.
 
 ## Validar antes de fazer merge
-\`\`\`sh
+```sh
 npm ci
 npm run build
 node tools/test-tidepoint.mjs
 node tools/test-client.mjs
 node tools/test-room-flow.mjs
-\`\`\`
+```
 Testar visualmente login, cadastro, lobby e abertura do modal da sala; depois confirmar uma partida com dois navegadores e API real.
