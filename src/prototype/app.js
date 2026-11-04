@@ -151,7 +151,7 @@ function authForm(isRegister=false) {
       <h2 id="bn-auth-title">${title}</h2>
       <form class="tp-form bn-auth-form" data-form="${isRegister?'register':'login'}">
         ${fields}
-        <div class="bn-field"><label for="email">E-mail ou usuário</label><input id="email" name="email" type="email" autocomplete="email" placeholder="Digite seu e-mail" required maxlength="254" /></div>
+        <div class="bn-field"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email" placeholder="Digite seu e-mail" required maxlength="254" /></div>
         <div class="bn-field"><label for="password">Senha</label><input id="password" name="password" type="password" autocomplete="${isRegister?'new-password':'current-password'}" placeholder="Digite sua senha" minlength="8" maxlength="72" required /></div>
         ${isRegister?'<div class="bn-field"><label for="repeat">Confirmar senha</label><input id="repeat" name="repeat" type="password" autocomplete="new-password" placeholder="Confirme sua senha" required /></div>':'<p class="bn-auth-help">Esqueceu a senha? Recuperação por e-mail em breve.</p>'}
         <button type="submit" class="btn btn-primary bn-primary-button">${isRegister?'Criar conta':'Entrar'}</button>
