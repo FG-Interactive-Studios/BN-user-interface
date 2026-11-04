@@ -495,7 +495,9 @@ class Engine:
             env = os.environ.copy()
             env["SPRING_PROFILES_ACTIVE"] = "local"
             env["REALTIME_ALLOWED_ORIGINS"] = "http://localhost:5173,http://127.0.0.1:5173"
-            cmd = [str(mvnw), "spring-boot:run", "-Dspring-boot.run.profiles=local"]
+            # Use the inherited environment instead of a -Dname=value batch argument.
+            # CMD may split unquoted arguments containing "=" when running .cmd files.
+            cmd = [str(mvnw), "spring-boot:run"]
             if os.name != "nt":
                 cmd = ["sh", *cmd]
             self.log("Iniciando API Java com banco local...")
