@@ -68,7 +68,12 @@ function Exec([string]$program, [string[]]$arguments, [string]$directory) {
 function Http-Ready([string]$url) {
     try {
         $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
-        return ($response.StatusCode -eq 200)
+        if ($response.StatusCode -ne 200) { return $false }
+        if ($url -like '*/api/health') {
+            $body = $response.Content | ConvertFrom-Json
+            return ($body.status -eq 'UP')
+        }
+        return $true
     } catch {
         return $false
     }
@@ -151,8 +156,8 @@ try {
             Exec 'docker.exe' @('compose', 'up', '-d') $ApiPath
         }
         Require-Command 'java.exe' 'Java 21'
-        $javaInfo = (& java.exe -version 2>&1 | Out-String)
-        if ($javaInfo -notmatch 'version "21|openjdk 21') {
+        $javaInfo = (& java.exe --version | Out-String)
+        if ($javaInfo -notmatch '(?m)^(openjdk|java) 21([.\s]|$)') {
             throw 'A API requer Java 21 no PATH.'
         }
         $env:REALTIME_ALLOWED_ORIGINS = 'http://localhost:5173,http://127.0.0.1:5173'
