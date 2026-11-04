@@ -1,0 +1,31 @@
+name: Windows GUI launcher validation
+on:
+  pull_request:
+    paths:
+      - 'tools/launcher/**'
+      - 'tools/test-launcher.mjs'
+      - '.github/workflows/launcher-validation.yml'
+permissions:
+  contents: read
+jobs:
+  windows-powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse scripts in Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $files = @('tools/launcher/BN-Launcher.ps1', 'tools/launcher/BN-Launcher.Worker.ps1')
+          foreach ($path in $files) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path), [ref]$tokens, [ref]$errors)
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error ($path + ': ' + $_.Message) }
+              exit 1
+            }
+            Write-Output ("OK: " + $path)
+          }
+      - name: Validate launcher contracts
+        shell: pwsh
+        run: node tools/test-launcher.mjs
