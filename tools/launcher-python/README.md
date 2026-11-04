@@ -22,7 +22,8 @@ Uma interface gráfica para Windows que busca **automaticamente as PRs abertas**
 - Cria worktrees isoladas por repositório, PR e hash do commit. Se a PR mudar, é criada uma nova pasta; nada é sobrescrito.
 - Usa o proxy do Vite para REST (`/api`) e WebSocket (`/ws`) em `localhost:8080`.
 - Verifica **`docker info --format '{{.OSType}}'`** antes de inicializar o PostgreSQL; no Windows, se o daemon estiver desligado, tenta abrir o **Docker Desktop automaticamente** e aguarda o mecanismo Linux. Se estiver em modo Windows Containers, orienta a trocar de modo.
-- Inicializa o PostgreSQL com **`docker compose up -d`** apenas depois que o mecanismo Linux estiver pronto e **não apaga** o volume com `down -v`.
+- Quando o container **`batalha-naval-postgres`** já existe, verifica se ele utiliza `postgres:17`, banco `battleship`, usuário `postgres` e porta local `5432`. Se for compatível, reutiliza-o (ou inicia o próprio container, caso esteja parado), evitando conflitos de nome. Executa uma consulta `SELECT 1` para validar o banco antes de iniciar a API. Se não for compatível, interrompe com orientação e **não altera nem remove** o container.
+- Caso o container não exista, inicializa o PostgreSQL com **`docker compose up -d`**, sem apagar volumes com `down -v`.
 - Usa o perfil `local` da API e as origens `http://localhost:5173,http://127.0.0.1:5173` para os WebSockets.
 - Registra logs no diretório de downloads e permite encerrar apenas os processos iniciados por ele. O banco continua existindo.
 - Salva escolhas e caminho local em `%LOCALAPPDATA%\BatalhaNavalLauncherPython\settings.json`, **sem credenciais**.
@@ -33,6 +34,8 @@ Uma interface gráfica para Windows que busca **automaticamente as PRs abertas**
 - Escolher uma PR de backend pode aplicar **migrações Flyway** ao banco local. Os volumes não são apagados, mas migrações podem modificar o schema; para comparações arriscadas, use uma base de teste separada.
 - Se uma API estiver ativa na porta 8080, o launcher avisa. **Reutilizar API ativa** é opcional; nesse caso não é possível garantir qual branch está executando. Para testar exatamente a PR do backend escolhida, encerre a outra API primeiro.
 - Se a porta 5173 estiver ocupada, o launcher não inicia um frontend diferente na mesma porta, evitando confusão.
+- Se aparecer `container name is already in use`, não use `docker rm`, `docker compose down -v` nem apague volumes. Atualize o inicializador: ele identifica e reutiliza o container existente quando compatível. Para inspecionar manualmente, use `docker ps -a --filter name=batalha-naval-postgres`.
+- Reutilizar um banco existente preserva os dados, mas a API selecionada pode aplicar **migrações Flyway**. Faça backup antes de testar versões do backend com schemas diferentes.
 - Se o backend levar um tempo para subir, acompanhe o log. A inicialização pode baixar dependências Maven na primeira vez.
 - É preciso conexão com internet para consultar o GitHub ou baixar novos commits e dependências.
 - O WebSocket e o login dependem da API estar disponível. A página de login isolada não fornece uma conta simulada.
