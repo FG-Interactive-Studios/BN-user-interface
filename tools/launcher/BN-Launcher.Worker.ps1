@@ -102,6 +102,21 @@ function Await-Ready([string]$url, [System.Diagnostics.Process]$process, [int]$a
     }
     throw "O servico nao respondeu em $url. Confira o terminal e a configuracao local."
 }
+function Await-PostgreSQL([string]$directory) {
+    for ($i = 0; $i -lt 90; $i++) {
+        Push-Location -LiteralPath $directory
+        try {
+            & docker.exe compose exec -T postgres pg_isready -U postgres -d battleship 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) { return }
+        } catch {
+            # Container may still be starting.
+        } finally {
+            Pop-Location
+        }
+        Start-Sleep -Seconds 1
+    }
+    throw 'O PostgreSQL nao ficou pronto. Confira Docker Desktop e o terminal da API.'
+}
 function Start-Terminal([string]$directory, [string]$command, [string]$title) {
     Write-Log ("Abrindo terminal: " + $title)
     $proc = Start-Process -FilePath $env:ComSpec -WorkingDirectory $directory -ArgumentList @('/k', $command) -PassThru
@@ -168,6 +183,8 @@ try {
             Require-Command 'docker.exe' 'Docker Desktop'
             Progress 'Iniciando o PostgreSQL com docker compose up -d (sem apagar dados)...'
             Exec 'docker.exe' @('compose', 'up', '-d') $ApiPath
+            Progress 'Aguardando PostgreSQL ficar pronto...'
+            Await-PostgreSQL $ApiPath
         }
         Require-Command 'java.exe' 'Java 21'
         $javaInfo = (& java.exe --version | Out-String)
