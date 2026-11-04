@@ -21,7 +21,8 @@ Uma interface gráfica para Windows que busca **automaticamente as PRs abertas**
 - Busca `refs/pull/<número>/head` ou `refs/heads/main` por Git.
 - Cria worktrees isoladas por repositório, PR e hash do commit. Se a PR mudar, é criada uma nova pasta; nada é sobrescrito.
 - Usa o proxy do Vite para REST (`/api`) e WebSocket (`/ws`) em `localhost:8080`.
-- Verifica **`docker info --format '{{.OSType}}'`** antes de inicializar o PostgreSQL; no Windows, se o daemon estiver desligado, tenta abrir o **Docker Desktop automaticamente** e aguarda o mecanismo Linux. Se estiver em modo Windows Containers, orienta a trocar de modo.\n- Inicializa o PostgreSQL com **`docker compose up -d`** apenas depois que o mecanismo Linux estiver pronto e **não apaga** o volume com `down -v`.
+- Verifica **`docker info --format '{{.OSType}}'`** antes de inicializar o PostgreSQL; no Windows, se o daemon estiver desligado, tenta abrir o **Docker Desktop automaticamente** e aguarda o mecanismo Linux. Se estiver em modo Windows Containers, orienta a trocar de modo.
+- Inicializa o PostgreSQL com **`docker compose up -d`** apenas depois que o mecanismo Linux estiver pronto e **não apaga** o volume com `down -v`.
 - Usa o perfil `local` da API e as origens `http://localhost:5173,http://127.0.0.1:5173` para os WebSockets.
 - Registra logs no diretório de downloads e permite encerrar apenas os processos iniciados por ele. O banco continua existindo.
 - Salva escolhas e caminho local em `%LOCALAPPDATA%\BatalhaNavalLauncherPython\settings.json`, **sem credenciais**.
