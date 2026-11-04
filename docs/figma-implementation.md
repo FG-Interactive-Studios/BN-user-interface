@@ -1,34 +1,45 @@
-# Batalha Naval — implementação da interface Figma (fase 1)
+# Batalha Naval — Migração da interface Figma (em desenvolvimento)
 
-Fonte: Figma `PHfipffDE6V0Dil3RGCzC6`; design mobile 1080 × 1920.
+Referência: design aprovado `PHfipffDE6V0Dil3RGCzC6`, exportado no PDF **Batalha Naval - Fluxo de Telas.pdf** (12 telas verticais, 1080×1920). A integração direta com o Figma atingiu o limite de chamadas; o PDF e os assets exportados foram a referência desta etapa.
 
-## Escopo
-- Formulários de login/cadastro e lobby recebem a linguagem visual aprovada (Pirata One, Lexend, paleta de cores, componentes pílula).
-- As ações de cadastro, login, criar sala privada, entrar por código, perfil, logout e navegação usam o fluxo e os handlers existentes.
-- Nenhum endpoint novo, lib de frontend ou dado fictício de economia/progressão é introduzido.
-- Ícones de navegação exportados diretamente das fontes do Figma.
-- A branch arquivada da UI clássica permanece disponível.
+## Arquitetura e branch
+- Stack preservada: Vite + Vanilla JavaScript / HTML / CSS. Nenhuma migração para React.
+- Trabalho em `feature/figma-new-ui-v1`, PR #5 **sem merge**, comparável à `main`.
+- Interface anterior preservada em `archive/tidepoint-classic-ui-2026-11-04`.
+- Regras de sala, posição de navios, batalha, autenticação e reconexão permanecem autoritativas na API.
 
-## Progresso e pendências de fidelidade
-- **Concluído:** Fundo Tempestade e moedas dourada/azul agora são imagens originais versionadas em `src/assets/figma/`.
-- **Pendente:** Emblemas dourado/azul do PDF, arte do evento e outras ilustrações não obtidas pela integração, sem substituir por screenshots.
-- Afinar a composição visual comparando com capturas das telas de login e lobby em 360×800 e desktop.
-- Implementar as demais telas por etapas mantendo a API autoritativa (sala, posicionamento, batalha, resultado, perfil e loja).
-- O Figma mostra evento, XP, patente e moedas; essas informações ainda não são fornecidas pela API atual. Os cards usam rótulos explícitos de "em breve" e não inventam saldos nem estatísticas.
-- Matchmaking público não foi criado: o botão Jogar abre o fluxo funcional de sala privada.
+## O que foi implementado nesta etapa
+- Autenticação e cadastro em composição vertical (Pirata One, Lexend, fundo Tempestade, botões pílula).
+- Lobby com carta de evento, novidades, patentes identificadas como indisponíveis, ação Jogar e modal de entrada por código.
+- Header compacto com perfil/conexão/menu de conta e navegação inferior Equipe/Play/Loja.
+- Frota real derivada dos modos recebidos por `GET /api/game-modes`, sem inventar posições.
+- Perfil com edição de nickname, avatar e senha por endpoints existentes.
+- **Loja beta real:** `GET /api/store` traz créditos de teste e itens, com filtros SKIN/SOUND; `POST /api/store/purchase/{itemId}` compra, `PUT /api/store/equip/{itemId}` equipa. Não há preços fictícios nem pagamentos reais. A arte e os sons finais ainda dependem do time de Game Design.
+- Regras finais de layout no `figma-responsive-v2.css`, sobrescrevendo a herança TidePoint para as telas novas. Removidos cortes por `100dvh + overflow:hidden` nas rotas de navegação e, no mobile, em preparação/batalha; barra inferior com área reservada e safe area.
+- Fundo Tempestade, moedas e três ícones originais são recursos locais em `src/assets/figma`.
 
-## Arquivos
-- `src/prototype/app.js`: estrutura das telas sem trocar a lógica de eventos.
-- `src/prototype/figma-v1.css`: novos tokens e regras de layout, carregados no final.
-- `src/assets/figma/*`: fundo original, moedas e três ícones reais extraídos do Figma.
+## Responsividade
+- Referência principal é o retrato 9:16; desktop usa uma coluna central que mantém a hierarquia de conteúdo do Figma, em vez de esticar os painéis até a largura da janela.
+- Breakpoints testáveis: 320×568, 375×667 (iPhone SE), 390×844 e 1366×768.
+- Conteúdo deve permanecer utilizável com **rolagem vertical quando necessária**; botões nunca podem ficar atrás do menu inferior.
+- No combate mobile, o tabuleiro permanece quadrado e os blocos passam a uma coluna com ações alcançáveis. O visual específico do combate ainda requer homologação com dois jogadores e screenshots reais.
 
-## Validar antes de fazer merge
-```sh
+## Limitações conhecidas
+- O Figma apresenta saldos e recompensas, XP, ranking, eventos e poderes com valores ilustrativos; a API não fornece todos esses dados. A interface não os inventa. Somente créditos cosméticos beta da API são exibidos.
+- Ícones de âncora dourado/azul, arte de evento e ilustrações de produtos ainda precisam ser integrados em seus slots definitivos. Não usar prints de tela como assets.
+- O "Jogar" da versão funcional abre o fluxo existente de **sala privada**, não uma fila de matchmaking público.
+- Tela de configurações e fidelidade integral das telas de posicionamento, batalha, perda de conexão e resultado ainda são etapas futuras. Alguns estilos TidePoint antigos permanecem nesses fluxos.
+- Não alterar o CSS da interface clássica apenas para forçar a correspondência com o Figma.
+
+## Validação
+```bash
 npm ci
 npm run build
-node tools/test-tidepoint.mjs
-node tools/test-client.mjs
-node tools/test-room-flow.mjs
+node tools/test-store.mjs
 node tools/test-figma-assets.mjs
+node tools/test-lobby.mjs
+# O workflow "Figma responsive browser check" instala Playwright no CI:
+node tools/test-figma-viewport.mjs
 ```
-Testar visualmente login, cadastro, lobby e abertura do modal da sala; depois confirmar uma partida com dois navegadores e API real.
+
+O workflow faz login com mock **apenas em teste**, visita lobby, modal, frota, loja e perfil, mede overflow horizontal e sobreposição de nav em diferentes viewports, e anexa screenshots à execução. A versão publicada continua exigindo login real.
