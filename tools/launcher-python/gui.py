@@ -147,7 +147,7 @@ class LauncherApp:
         self.browser_var = tk.BooleanVar(value=self.settings.get("browser", True))
         self.reuse_var = tk.BooleanVar(value=self.settings.get("reuse_api", False))
         for col, (caption, variable) in enumerate((
-            ("Iniciar PostgreSQL (Docker)", self.docker_var),
+            ("Iniciar Docker e PostgreSQL", self.docker_var),
             ("Abrir jogo no navegador", self.browser_var),
             ("Reutilizar API já ativa", self.reuse_var),
         )):
