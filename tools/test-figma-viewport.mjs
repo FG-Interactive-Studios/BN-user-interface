@@ -25,7 +25,12 @@ try {
    const path=new URL(route.request().url()).pathname;
    const body=path==='/api/auth/login'?{tokenType:'Bearer',accessToken:'test-token',refreshToken:'test-refresh',expiresIn:900,user:player}:
      path==='/api/users/me'?player:
-     path==='/api/game-modes'?modes:null;
+     path==='/api/game-modes'?modes:
+     path==='/api/store'?{credits:300,items:[
+       {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Visual padrão',price:0,enabled:true,owned:true,equipped:true},
+       {id:'skin_coral',category:'SKIN',name:'Coral',description:'Personalização',price:90,enabled:true,owned:false,equipped:false},
+       {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Em breve',price:90,enabled:false,owned:false,equipped:false}
+     ]}:null;
    if(body!==null)return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
    if(path==='/api/matchmaking/lobbies/me')return route.fulfill({status:404,contentType:'application/json',body:'{"code":"NOT_FOUND"}'});
    if(path==='/api/realtime/ticket')return route.fulfill({status:503,contentType:'application/json',body:'{"code":"UNAVAILABLE"}'});
@@ -57,7 +62,7 @@ try {
   await join.click();
   const dialog=page.locator('#tp-join-dialog');
   await dialog.waitFor({state:'visible'});
-  await page.locator('[data-action="close-join-modal"]').click();
+  await page.getByRole('button',{name:'Fechar janela'}).click();
   await page.locator('.bn-nav-fleet').click();
   await page.locator('.bn-fleet-page').waitFor();
   await horizontalFit('fleet');
@@ -66,6 +71,9 @@ try {
   await page.locator('.bn-nav-store').click();
   await page.locator('.bn-store-page').waitFor();
   await horizontalFit('store');
+  await page.locator('.tp-store-card').first().waitFor();
+  assert.equal(await page.locator('.tp-store-card').count(),3,'store must display live API items');
+  assert.match(await page.locator('.tp-store-wallet').innerText(),/300/);
   if(viewport.width===375)await page.screenshot({path:'artifacts/figma-responsive/store-375.png',fullPage:true});
   await page.locator('.bn-header-identity').click();
   await page.locator('.bn-profile-page').waitFor();
