@@ -25,13 +25,13 @@ if (-not (Test-Path -LiteralPath $script:workerPath)) {
 function Ui-Font([int]$size, [bool]$bold = $false) {
     $style = [System.Drawing.FontStyle]::Regular
     if ($bold) { $style = [System.Drawing.FontStyle]::Bold }
-    return (New-Object System.Drawing.Font('Segoe UI', $size, $style))
+    return (New-Object -TypeName System.Drawing.Font -ArgumentList @('Segoe UI', $size, $style))
 }
 function Ui-Label([string]$caption, [int]$x, [int]$y, [int]$w, [int]$h, [int]$size, [bool]$bold = $false) {
     $control = New-Object System.Windows.Forms.Label
     $control.Text = $caption
-    $control.Location = New-Object System.Drawing.Point($x, $y)
-    $control.Size = New-Object System.Drawing.Size($w, $h)
+    $control.Location = New-Object -TypeName System.Drawing.Point -ArgumentList @($x, $y)
+    $control.Size = New-Object -TypeName System.Drawing.Size -ArgumentList @($w, $h)
     $control.Font = Ui-Font $size $bold
     $control.ForeColor = [System.Drawing.Color]::FromArgb(220, 231, 238)
     $control.BackColor = [System.Drawing.Color]::Transparent
@@ -156,7 +156,7 @@ function Refresh-PullRequests {
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Batalha Naval - Inicializador de PRs'
-$form.ClientSize = New-Object System.Drawing.Size(760, 635)
+$form.ClientSize = New-Object -TypeName System.Drawing.Size -ArgumentList @(760, 635)
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
 $form.MaximizeBox = $false
 $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
@@ -170,8 +170,8 @@ $form.Controls.Add($title)
 $form.Controls.Add((Ui-Label 'Teste qualquer PR sem alterar sua branch de desenvolvimento.' 25 61 700 27 10))
 $form.Controls.Add((Ui-Label 'Versao do frontend' 24 103 270 25 10 $true))
 $versionBox = New-Object System.Windows.Forms.ComboBox
-$versionBox.Location = New-Object System.Drawing.Point(24, 133)
-$versionBox.Size = New-Object System.Drawing.Size(710, 30)
+$versionBox.Location = New-Object -TypeName System.Drawing.Point -ArgumentList @(24, 133)
+$versionBox.Size = New-Object -TypeName System.Drawing.Size -ArgumentList @(710, 30)
 $versionBox.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
 $versionBox.Font = Ui-Font 10 $false
 $versionBox.DisplayMember = 'Label'
@@ -180,16 +180,16 @@ $refreshButton = Ui-Button 'Atualizar PRs' 580 177 154 33
 $form.Controls.Add($refreshButton)
 $link = New-Object System.Windows.Forms.LinkLabel
 $link.Text = 'Ver versao no GitHub'
-$link.Location = New-Object System.Drawing.Point(25, 182)
-$link.Size = New-Object System.Drawing.Size(210, 26)
+$link.Location = New-Object -TypeName System.Drawing.Point -ArgumentList @(25, 182)
+$link.Size = New-Object -TypeName System.Drawing.Size -ArgumentList @(210, 26)
 $link.LinkColor = [System.Drawing.Color]::FromArgb(251, 191, 36)
 $link.ActiveLinkColor = [System.Drawing.Color]::White
 $form.Controls.Add($link)
 
 $form.Controls.Add((Ui-Label 'Pasta local da API (BN-API-Central)' 24 226 480 26 10 $true))
 $apiBox = New-Object System.Windows.Forms.TextBox
-$apiBox.Location = New-Object System.Drawing.Point(24, 257)
-$apiBox.Size = New-Object System.Drawing.Size(604, 29)
+$apiBox.Location = New-Object -TypeName System.Drawing.Point -ArgumentList @(24, 257)
+$apiBox.Size = New-Object -TypeName System.Drawing.Size -ArgumentList @(604, 29)
 $apiBox.Font = Ui-Font 10 $false
 $form.Controls.Add($apiBox)
 $browse = Ui-Button 'Procurar...' 639 255 95 31
@@ -197,14 +197,14 @@ $form.Controls.Add($browse)
 
 $dockerBox = New-Object System.Windows.Forms.CheckBox
 $dockerBox.Text = 'Iniciar PostgreSQL (Docker Compose)'
-$dockerBox.Location = New-Object System.Drawing.Point(24, 310)
-$dockerBox.Size = New-Object System.Drawing.Size(340, 28)
+$dockerBox.Location = New-Object -TypeName System.Drawing.Point -ArgumentList @(24, 310)
+$dockerBox.Size = New-Object -TypeName System.Drawing.Size -ArgumentList @(340, 28)
 $dockerBox.Checked = $true
 $form.Controls.Add($dockerBox)
 $browserBox = New-Object System.Windows.Forms.CheckBox
 $browserBox.Text = 'Abrir navegador quando estiver pronto'
-$browserBox.Location = New-Object System.Drawing.Point(390, 310)
-$browserBox.Size = New-Object System.Drawing.Size(344, 28)
+$browserBox.Location = New-Object -TypeName System.Drawing.Point -ArgumentList @(390, 310)
+$browserBox.Size = New-Object -TypeName System.Drawing.Size -ArgumentList @(344, 28)
 $browserBox.Checked = $true
 $form.Controls.Add($browserBox)
 
@@ -220,14 +220,14 @@ $form.Controls.Add($openButton)
 $statusLabel = Ui-Label 'Preparando lista de PRs...' 24 409 710 27 10
 $form.Controls.Add($statusLabel)
 $logBox = New-Object System.Windows.Forms.TextBox
-$logBox.Location = New-Object System.Drawing.Point(24, 444)
-$logBox.Size = New-Object System.Drawing.Size(710, 146)
+$logBox.Location = New-Object -TypeName System.Drawing.Point -ArgumentList @(24, 444)
+$logBox.Size = New-Object -TypeName System.Drawing.Size -ArgumentList @(710, 146)
 $logBox.Multiline = $true
 $logBox.ReadOnly = $true
 $logBox.ScrollBars = [System.Windows.Forms.ScrollBars]::Vertical
 $logBox.BackColor = [System.Drawing.Color]::FromArgb(19, 35, 46)
 $logBox.ForeColor = [System.Drawing.Color]::FromArgb(220, 231, 238)
-$logBox.Font = New-Object System.Drawing.Font('Consolas', 9)
+$logBox.Font = New-Object -TypeName System.Drawing.Font -ArgumentList @('Consolas', 9)
 $form.Controls.Add($logBox)
 $form.Controls.Add((Ui-Label 'Cada PR roda em pasta propria. Nao usamos git reset nem apagamos o banco.' 24 599 712 27 9))
 
