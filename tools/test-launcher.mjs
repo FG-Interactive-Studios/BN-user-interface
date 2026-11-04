@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+const gui = readFileSync(new URL('../tools/launcher/BN-Launcher.ps1',import.meta.url), 'utf8');
+const worker = readFileSync(new URL('../tools/launcher/BN-Launcher.Worker.ps1',import.meta.url), 'utf8');
+const cmd = readFileSync(new URL('../tools/launcher/Iniciar-Batalha-Naval.cmd',import.meta.url), 'utf8');
+for (const token of ['System.Windows.Forms','api.github.com/repos/', '/pulls?state=open','Refresh-PullRequests', 'FolderBrowserDialog','Save-Settings','Stop-OwnedProcesses']) assert.ok(gui.includes(token), token);
+for (const token of ['refs/pull/$PrNumber/head','refs/heads/main','worktree', '--detach', 'npm.cmd', 'ci', 'docker.exe', 'compose', 'up', '-d', 'http://127.0.0.1:8080/api/health','REALTIME_ALLOWED_ORIGINS','--strictPort', 'spring-boot:run','Save-Status']) assert.ok(worker.includes(token), token);
+assert.ok(!worker.includes('reset --hard') && !worker.includes('down -v') && !worker.includes('docker volume rm'));
+assert.ok(cmd.includes('-STA') && cmd.includes('BN-Launcher.ps1'));
+assert.ok(!gui.includes('PR #5') && !gui.includes('pull/5'));
+console.log('Batalha Naval: GUI, seletor dinamico, isolamento de worktrees e backend local: OK');
