@@ -51,17 +51,24 @@ function Require-Command([string]$command, [string]$description) {
 }
 function Exec([string]$program, [string[]]$arguments, [string]$directory) {
     Push-Location -LiteralPath $directory
+    $previousPreference = $ErrorActionPreference
     try {
         Write-Log ('> {0} {1}' -f $program, ($arguments -join ' '))
+        # Windows PowerShell 5.1 turns native stderr into NativeCommandError
+        # under Stop. Log stderr and check the real exit code instead.
+        $ErrorActionPreference = 'Continue'
         & $program @arguments 2>&1 | ForEach-Object {
             if ($_ -ne $null) {
                 Add-Content -LiteralPath $logPath -Value ([string]$_) -Encoding UTF8
             }
         }
-        if ($LASTEXITCODE -ne 0) {
-            throw "Comando falhou ($LASTEXITCODE): $program"
+        $commandExit = $LASTEXITCODE
+        $ErrorActionPreference = $previousPreference
+        if ($commandExit -ne 0) {
+            throw "Comando falhou ($commandExit): $program"
         }
     } finally {
+        $ErrorActionPreference = $previousPreference
         Pop-Location
     }
 }
