@@ -189,11 +189,11 @@ class Engine:
     @staticmethod
     def spawn(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> subprocess.Popen:
         flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
-        if os.name == "nt" and command[0].lower().endswith((".cmd", ".bat")):
-            # Windows batch wrappers must be invoked through cmd.exe; parent PID
-            # stays killable together with descendants by taskkill /T.
-            command = [os.environ.get("ComSpec", "cmd.exe"), "/d", "/c",
-                       "call " + subprocess.list2cmdline(command)]
+        # Windows automatically dispatches .cmd/.bat files through cmd.exe.
+        # Do not wrap an already-quoted list2cmdline() string inside /c:
+        # it becomes \\"C:\\path with spaces\\mvnw.cmd\\" and fails to execute.
+        # Passing the argument list directly keeps one round of Windows quoting
+        # and lets taskkill /T terminate the resulting subprocess tree.
         return subprocess.Popen(command, cwd=str(cwd), env=env,
                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 encoding="utf-8", errors="replace", bufsize=1,
