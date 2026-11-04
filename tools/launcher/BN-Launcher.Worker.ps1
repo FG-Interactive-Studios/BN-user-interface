@@ -65,6 +65,17 @@ function Exec([string]$program, [string[]]$arguments, [string]$directory) {
         Pop-Location
     }
 }
+function Port-Occupied([int]$port) {
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        $connect = $client.ConnectAsync('127.0.0.1', $port)
+        return ($connect.Wait(600) -and $client.Connected)
+    } catch {
+        return $false
+    } finally {
+        $client.Dispose()
+    }
+}
 function Http-Ready([string]$url) {
     try {
         $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
@@ -150,6 +161,9 @@ try {
     if ($apiHealthy) {
         Write-Log 'API local ja esta disponivel em 8080. Nao sera reiniciada.'
     } else {
+        if (Port-Occupied 8080) {
+            throw 'A porta 8080 esta ocupada por um servico que nao responde a /api/health.'
+        }
         if ($StartDocker) {
             Require-Command 'docker.exe' 'Docker Desktop'
             Progress 'Iniciando o PostgreSQL com docker compose up -d (sem apagar dados)...'
@@ -169,7 +183,7 @@ try {
         Write-Log 'API pronta em http://127.0.0.1:8080'
     }
 
-    if (Http-Ready 'http://127.0.0.1:5173/') {
+    if (Port-Occupied 5173) {
         throw 'A porta 5173 ja esta ocupada por um frontend. Feche a instancia anterior antes de trocar de PR.'
     }
     if (-not (Test-Path -LiteralPath (Join-Path $script:workingDir 'node_modules'))) {
