@@ -281,7 +281,7 @@ $startButton.Add_Click({
     $script:lastStatus = $null
     $script:openedBrowser = $false
     $logBox.Text = ''
-    $args = @(
+    $workerArgs = @(
         '-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-File', (Quote-Argument $script:workerPath),
         '-Source', [string]$selection.Source,
@@ -289,9 +289,9 @@ $startButton.Add_Click({
         '-ApiPath', (Quote-Argument $apiPath),
         '-SessionDir', (Quote-Argument $script:sessionDir)
     )
-    if ($dockerBox.Checked) { $args += '-StartDocker' }
+    if ($dockerBox.Checked) { $workerArgs += '-StartDocker' }
     try {
-        $script:workerProcess = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList ($args -join ' ') -WindowStyle Hidden -PassThru
+        $script:workerProcess = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList ($workerArgs -join ' ') -WindowStyle Hidden -PassThru
         $startButton.Enabled = $false
         $stopButton.Enabled = $true
         $openButton.Enabled = $false
