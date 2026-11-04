@@ -261,7 +261,7 @@ class ExistingPostgresContainerTests(unittest.TestCase):
             core.Engine.check_existing_postgres_compatibility(info)
 
     def test_sql_readiness_checks_correct_database(self):
-        result = SimpleNamespace(returncode=0, stdout="1\\n", stderr="")
+        result = SimpleNamespace(returncode=0, stdout="1\n", stderr="")
         with patch.object(core.subprocess, "run", return_value=result) as command:
             ok = core.Engine.postgres_ready("docker", Path("."), container_name="batalha-naval-postgres")
         self.assertTrue(ok)
