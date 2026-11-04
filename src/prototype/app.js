@@ -263,12 +263,33 @@ function battleScreen(){
   return `<div class="screen combat-screen"><div class="match-layout"><header class="match-head tp-battle-head"><div class="tp-battle-brand">${brand()}</div><div class="turn-box"><b>${finished?'BATALHA CONCLUÍDA':myTurn?'SUA VEZ':'AGUARDANDO O OPONENTE'}</b><small>${finished?'Resultado definido pelo servidor':myTurn?'Escolha um alvo no mapa inimigo':'Aguarde a jogada adversária'}</small></div><div class="enemy-meta"><b>${esc(opponent?.nickname||'Oponente')}</b></div></header><main class="match-grid combat-grid"><aside class="side-stack combat-left-rail"><section class="panel compact combat-side-card"><div class="eyebrow">Sua frota</div>${fleetPanel(mode,b.yourShips||[],true)}</section><section class="panel compact preview-panel combat-side-card"><div class="side-card-heading"><div class="eyebrow">Seu mapa</div></div><div class="board-wrap board-wrap-preview tp-board tp-board-small">${renderBoard(mode,{ships:b.yourShips,hits:own.hits,misses:own.misses,small:true})}</div></section></aside><section class="panel board-panel board-panel-primary premium-board-panel"><div class="board-head premium-board-head"><div><div class="eyebrow enemy-map-label">Mapa inimigo</div><b>Quadrante inimigo</b></div><div class="target-readout"><span>Alvo selecionado</span><strong>${selected?coordLabel(selected):'—'}</strong></div></div><div class="board-wrap board-wrap-primary combat-board-wrap tp-board"><div class="tactical-board-frame">${renderBoard(mode,{hits:enemy.hits,misses:enemy.misses,selected,interactive:myTurn&&!finished})}</div></div><div class="board-meta"><div class="meta-block"><div><b>Inteligência naval</b><small>${enemy.hits.length} acertos · ${enemy.misses.length} disparos na água</small></div></div></div></section><aside class="action-col premium-hud"><section class="panel enemy-intel-panel"><div class="enemy-intel-head"><div><div class="eyebrow">Inteligência inimiga</div><b>Navios identificados</b></div><span class="intel-progress">${sunk.length} / ${mode.fleet.length}</span></div><div class="enemy-intel-list">${mode.fleet.map((ship,i)=>{const sunkType=sunk.some(s=>s.sunkShip===ship.id);return `<article class="intel-ship ${sunkType?'destroyed':'unknown'}"><div class="intel-ship-copy"><div class="intel-state-label">${sunkType?'Afundado':'Não identificado'}</div><b>${sunkType?esc(shipName(ship.id)):'Contato desconhecido'}</b><small>${sunkType?'Classe identificada pelo servidor':`Contato ${i+1} · classe não revelada`}</small></div></article>`}).join('')}</div>${compactEnemyContacts(mode.fleet,sunk)}</section><div class="combat-actions"><button class="btn btn-orange attack-btn" data-action="fire" ${myTurn&&selected&&!finished?'':'disabled'}><span class="action-copy"><b>Atacar</b><small>${selected?`Disparar em ${coordLabel(selected)}`:'Selecione uma casa livre'}</small></span></button><button class="btn btn-ghost skill-btn tp-disabled" disabled><span class="action-copy"><b>Habilidades</b><small>Em desenvolvimento no backend</small></span></button><button class="btn btn-danger tp-forfeit-btn" data-action="forfeit" ${finished?'disabled':''}><span class="tp-desktop-forfeit">Desistir da partida</span><span class="tp-mobile-forfeit">Desistir</span></button></div></aside></main><footer class="match-foot combat-foot"><span>${esc(mode.name)}</span><span class="foot-center">${finished?'Partida finalizada':myTurn?'Sua vez de atacar':'Turno do oponente'}</span><span>${b.shotsFired.length} disparos realizados</span></footer></div></div>`;
 }
 function resultScreen(){
-  const b=state.battle;
-  if(!b) return mainContent(panel('Resultado','Aguardando dados da partida.'),{noNav:true});
-  const won=b.winnerId===state.profile?.id,draw=b.winnerId===null;
-  const label=draw?'Sem vencedor':won?'Vitória':'Derrota';
-  const shots=b.shotsFired||[],hits=shots.filter(s=>s.hit).length;
-  return mainContent(`<section class="panel result-card tp-result"><div class="eyebrow">Relatório pós-batalha</div><div class="result-stamp">${label}</div><h2 class="form-title">${won?'O mar ficou com você.':draw?'O oceano segue sem dono.':'Uma batalha, uma lição.'}</h2><p class="tp-muted">Resultado confirmado pela API · ${esc(b.finishReason||'Batalha finalizada')}</p><div class="result-grid"><div class="result-stat"><b>${shots.length?Math.round(hits/shots.length*100):0}%</b><span>Precisão</span></div><div class="result-stat"><b>${hits}</b><span>Acertos</span></div><div class="result-stat"><b>${shots.length}</b><span>Disparos</span></div></div><div class="tp-actions" style="justify-content:center;margin-top:26px"><button class="btn btn-orange" data-action="leave-lobby">Voltar ao lobby</button></div></section>`,{noNav:true});
+  const battle=state.battle;
+  if(!battle) return mainContent(panel('Resultado','Aguardando dados da partida.'),{noNav:true});
+  const won=battle.winnerId===state.profile?.id;
+  const draw=battle.winnerId===null;
+  const status=draw?'Empate':won?'Vitória!':'Derrota';
+  const shots=battle.shotsFired||[];
+  const hits=shots.filter(shot=>shot.hit).length;
+  const misses=shots.length-hits;
+  const accuracy=shots.length?Math.round(hits/shots.length*100):0;
+  return mainContent(`<section class="bn-result-screen" aria-label="Resultado da partida">
+    <div class="bn-result-emblem" aria-hidden="true">⚓</div>
+    <h1 class="bn-result-heading">${status}</h1>
+    <p class="bn-result-description">${won?'Você venceu esta batalha!':draw?'A batalha terminou sem vencedor.':'A batalha terminou. Sua próxima estratégia começa agora.'}</p>
+    <section class="bn-result-panel" aria-labelledby="bn-result-summary">
+      <div class="bn-section-title"><span>Relatório pós-batalha</span><strong id="bn-result-summary">Resumo da partida</strong></div>
+      <div class="bn-result-stats">
+        <div><strong>${hits}</strong><span>Acertos</span></div>
+        <div><strong>${misses}</strong><span>Erros</span></div>
+        <div><strong>${accuracy}%</strong><span>Precisão</span></div>
+        <div><strong>${shots.length}</strong><span>Disparos</span></div>
+      </div>
+      <p class="bn-result-confirmation">Resultado confirmado pelo servidor · ${esc(battle.finishReason||'Partida finalizada')}</p>
+    </section>
+    <div class="bn-result-actions">
+      <button type="button" class="btn bn-primary-button" data-action="leave-lobby">Voltar ao lobby</button>
+    </div>
+  </section>`,{noNav:true});
 }
 function fleetScreen(){
   const mode=activeMode()||state.modes[0];
