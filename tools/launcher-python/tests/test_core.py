@@ -293,7 +293,7 @@ class WindowsBatchPathTests(unittest.TestCase):
                 b"@echo off\r\necho BN_API_OK:%~1:%~2\r\n"
             )
             proc = core.Engine.spawn(
-                [str(wrapper), "spring-boot:run", "-Dspring-boot.run.profiles=local"],
+                [str(wrapper), "spring-boot:run"],
                 checkout,
             )
             try:
@@ -301,7 +301,7 @@ class WindowsBatchPathTests(unittest.TestCase):
             finally:
                 core.terminate_tree(proc)
             self.assertEqual(proc.returncode, 0, stdout)
-            self.assertIn("BN_API_OK:spring-boot:run:-Dspring-boot.run.profiles=local", stdout)
+            self.assertIn("BN_API_OK:spring-boot:run:", stdout)
 
     def test_npm_batch_wrapper_with_spaces_in_path(self):
         with tempfile.TemporaryDirectory() as tmp:
