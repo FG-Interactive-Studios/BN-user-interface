@@ -145,20 +145,20 @@ async function reconcile() {
 function authForm(isRegister=false) {
   const title=isRegister?'Criar conta':'Batalha Naval';
   const fields=isRegister?'<div class="bn-field"><label for="nick">Nome de usuário</label><input id="nick" name="nickname" autocomplete="nickname" minlength="3" maxlength="30" required /></div>':'';
-  return \`<div class="screen bn-design-screen bn-auth-screen"><main class="bn-auth">
+  return `<div class="screen bn-design-screen bn-auth-screen"><main class="bn-auth">
     <div class="bn-auth-logo" aria-label="Batalha Naval"><span class="bn-auth-emblem" aria-hidden="true">⚓</span><h1>Batalha Naval</h1><p>Duelo de um contra um</p></div>
     <section class="bn-auth-panel" aria-labelledby="bn-auth-title">
-      <h2 id="bn-auth-title">\${title}</h2>
-      <form class="tp-form bn-auth-form" data-form="\${isRegister?'register':'login'}">
-        \${fields}
+      <h2 id="bn-auth-title">${title}</h2>
+      <form class="tp-form bn-auth-form" data-form="${isRegister?'register':'login'}">
+        ${fields}
         <div class="bn-field"><label for="email">E-mail ou usuário</label><input id="email" name="email" type="email" autocomplete="email" placeholder="Digite seu e-mail" required maxlength="254" /></div>
-        <div class="bn-field"><label for="password">Senha</label><input id="password" name="password" type="password" autocomplete="\${isRegister?'new-password':'current-password'}" placeholder="Digite sua senha" minlength="8" maxlength="72" required /></div>
-        \${isRegister?'<div class="bn-field"><label for="repeat">Confirmar senha</label><input id="repeat" name="repeat" type="password" autocomplete="new-password" placeholder="Confirme sua senha" required /></div>':'<p class="bn-auth-help">Esqueceu a senha? Recuperação por e-mail em breve.</p>'}
-        <button type="submit" class="btn btn-primary bn-primary-button">\${isRegister?'Criar conta':'Entrar'}</button>
+        <div class="bn-field"><label for="password">Senha</label><input id="password" name="password" type="password" autocomplete="${isRegister?'new-password':'current-password'}" placeholder="Digite sua senha" minlength="8" maxlength="72" required /></div>
+        ${isRegister?'<div class="bn-field"><label for="repeat">Confirmar senha</label><input id="repeat" name="repeat" type="password" autocomplete="new-password" placeholder="Confirme sua senha" required /></div>':'<p class="bn-auth-help">Esqueceu a senha? Recuperação por e-mail em breve.</p>'}
+        <button type="submit" class="btn btn-primary bn-primary-button">${isRegister?'Criar conta':'Entrar'}</button>
       </form>
     </section>
-    <div class="bn-auth-switch"><span>\${isRegister?'Já tem conta?':'Ainda não tem conta?'}</span><button type="button" class="bn-pill-button" data-go="\${isRegister?'auth':'register'}">\${isRegister?'Entrar':'Criar conta'}</button></div>
-  </main></div>\`;
+    <div class="bn-auth-switch"><span>${isRegister?'Já tem conta?':'Ainda não tem conta?'}</span><button type="button" class="bn-pill-button" data-go="${isRegister?'auth':'register'}">${isRegister?'Entrar':'Criar conta'}</button></div>
+  </main></div>`;
 }
 
 /** Waiting-room radar: uses the existing .radar design. */
@@ -169,14 +169,14 @@ function radarMarkup() {
 function lobbyScreen() {
   if (state.lobby) return waitingScreen();
   const nickname=esc(state.profile?.nickname || 'Capitão');
-  return mainContent(\`<div class="bn-lobby">
-    <div class="bn-player-intro"><span class="bn-player-avatar" aria-hidden="true">\${nickname.slice(0,1).toUpperCase()}</span><div><strong>\${nickname}</strong><small>Pronto para navegar</small></div></div>
+  return mainContent(`<div class="bn-lobby">
+    <div class="bn-player-intro"><span class="bn-player-avatar" aria-hidden="true">${nickname.slice(0,1).toUpperCase()}</span><div><strong>${nickname}</strong><small>Pronto para navegar</small></div></div>
     <section class="bn-feature-card" aria-labelledby="bn-feature-title"><span class="bn-feature-icon" aria-hidden="true">⚓</span><div><span class="bn-kicker">EVENTO</span><h1 id="bn-feature-title">Tempestade de Aço</h1><p>Novos desafios e recompensas chegarão em breve.</p><small>Em desenvolvimento</small></div></section>
     <div class="bn-news-grid" aria-label="Novidades"><article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas embarcações</strong><small>Personalizações em breve</small></article><article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas temporadas</strong><small>Progressão em breve</small></article></div>
     <div class="bn-rank-card"><span class="bn-rank-emblem" aria-hidden="true">⚓</span><div><strong>Patentes em breve</strong><small>Batalhas privadas 1v1</small></div></div>
-    <div class="bn-lobby-actions"><button type="button" class="btn btn-primary bn-primary-button" data-go="matchmaking" \${state.modes.length?'':'disabled'}>Jogar</button><button type="button" class="bn-pill-button bn-join-button" data-action="open-join-modal">Entrar na sala com código</button></div>
+    <div class="bn-lobby-actions"><button type="button" class="btn btn-primary bn-primary-button" data-go="matchmaking" ${state.modes.length?'':'disabled'}>Jogar</button><button type="button" class="bn-pill-button bn-join-button" data-action="open-join-modal">Entrar na sala com código</button></div>
   </div>
-  <dialog id="tp-join-dialog" class="tp-join-dialog" aria-labelledby="tp-join-title"><div class="tp-modal-header"><div><div class="eyebrow">Convite de partida</div><h2 id="tp-join-title">Entrar em uma sala</h2></div><button type="button" data-action="close-join-modal" aria-label="Fechar janela">×</button></div><form data-form="join" class="tp-form"><div class="field"><label for="room-code">Código de seis caracteres</label><input id="room-code" name="code" placeholder="ABC234" maxlength="6" minlength="6" pattern="[a-zA-Z0-9]{6}" autocomplete="off" required style="text-transform:uppercase" /></div><p class="tp-modal-feedback" role="alert" aria-live="polite"></p><div class="tp-modal-actions"><button class="btn btn-ghost" type="button" data-action="close-join-modal">Cancelar</button><button class="btn btn-primary" type="submit">Entrar na sala</button></div></form></dialog>\`);
+  <dialog id="tp-join-dialog" class="tp-join-dialog" aria-labelledby="tp-join-title"><div class="tp-modal-header"><div><div class="eyebrow">Convite de partida</div><h2 id="tp-join-title">Entrar em uma sala</h2></div><button type="button" data-action="close-join-modal" aria-label="Fechar janela">×</button></div><form data-form="join" class="tp-form"><div class="field"><label for="room-code">Código de seis caracteres</label><input id="room-code" name="code" placeholder="ABC234" maxlength="6" minlength="6" pattern="[a-zA-Z0-9]{6}" autocomplete="off" required style="text-transform:uppercase" /></div><p class="tp-modal-feedback" role="alert" aria-live="polite"></p><div class="tp-modal-actions"><button class="btn btn-ghost" type="button" data-action="close-join-modal">Cancelar</button><button class="btn btn-primary" type="submit">Entrar na sala</button></div></form></dialog>`);
 }
 
 function waitingScreen() {
