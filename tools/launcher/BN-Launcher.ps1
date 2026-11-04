@@ -118,7 +118,7 @@ function Refresh-PullRequests {
     $versionBox.BeginUpdate()
     try {
         $versionBox.Items.Clear()
-        $main = [pscustomobject]@{ Label = 'main  |  versao principal'; Source = 'main'; Number = 0; Author = 'FG-Interactive-Studios' }
+        $main = [pscustomobject]@{ Label = 'main  |  versao principal'; Source = 'main'; Number = 0; Author = 'FG-Interactive-Studios'; IsExternal = $false }
         [void]$versionBox.Items.Add($main)
         $headers = @{ Accept = 'application/vnd.github+json'; 'User-Agent' = 'BN-Windows-PR-Launcher'; 'X-GitHub-Api-Version' = '2022-11-28' }
         if ($env:GITHUB_TOKEN) { $headers.Authorization = 'Bearer ' + $env:GITHUB_TOKEN }
@@ -133,7 +133,7 @@ function Refresh-PullRequests {
         foreach ($pr in $pulls) {
             $label = ('#{0} | {1} | @{2}' -f $pr.number, $pr.title, $pr.user.login)
             if ($pr.draft) { $label += ' [RASCUNHO]' }
-            $entry = [pscustomobject]@{ Label = $label; Source = 'pr'; Number = [int]$pr.number; Author = [string]$pr.user.login }
+            $entry = [pscustomobject]@{ Label = $label; Source = 'pr'; Number = [int]$pr.number; Author = [string]$pr.user.login; IsExternal = ($pr.head.repo.full_name -ne $repository) }
             [void]$versionBox.Items.Add($entry)
         }
         $versionBox.DisplayMember = 'Label'
@@ -267,7 +267,7 @@ $startButton.Add_Click({
         Show-Failure 'Selecione a pasta BN-API-Central, que deve conter mvnw.cmd.'
         return
     }
-    if ($selection.Source -eq 'pr' -and $selection.Author -ne 'FG-Interactive-Studios') {
+    if ($selection.Source -eq 'pr' -and $selection.IsExternal) {
         $answer = [System.Windows.Forms.MessageBox]::Show(
             'Esta PR pode incluir codigo de terceiros. npm ci executa scripts do projeto. Prossiga somente se confiar no autor. Continuar?',
             'Confirmar execucao de PR', 'YesNo', 'Warning'
