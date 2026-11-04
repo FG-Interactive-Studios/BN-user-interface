@@ -174,5 +174,110 @@ class DockerStartupTests(unittest.TestCase):
                 with self.assertRaisesRegex(core.LauncherError, "Abra o Docker Desktop"):
                     runner.ensure_docker_engine("docker")
 
+
+class ExistingPostgresContainerTests(unittest.TestCase):
+    @staticmethod
+    def compatible(running=True):
+        return {
+            "Config": {
+                "Image": "postgres:17",
+                "Env": [
+                    "POSTGRES_DB=battleship", "POSTGRES_USER=postgres",
+                    "POSTGRES_PASSWORD=not-written-to-logs",
+                ],
+            },
+            "HostConfig": {"PortBindings": {"5432/tcp": [
+                {"HostIp": "0.0.0.0", "HostPort": "5432"}
+            ]}},
+            "State": {"Running": running},
+        }
+
+    def test_inspect_existing_named_container(self):
+        response = SimpleNamespace(
+            returncode=0, stdout=json.dumps([self.compatible()]), stderr=""
+        )
+        with patch.object(core.subprocess, "run", return_value=response) as run:
+            result = core.Engine.inspect_existing_postgres("docker")
+        self.assertEqual(result["Config"]["Image"], "postgres:17")
+        self.assertEqual(
+            run.call_args.args[0],
+            ["docker", "container", "inspect", "batalha-naval-postgres"],
+        )
+
+    def test_missing_named_container_is_not_an_error(self):
+        response = SimpleNamespace(returncode=1, stdout="",
+                                   stderr="Error: No such object: batalha-naval-postgres")
+        with patch.object(core.subprocess, "run", return_value=response):
+            self.assertIsNone(core.Engine.inspect_existing_postgres("docker"))
+
+    def test_reuse_running_container_without_compose(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = core.Engine(Path(tmp), lambda _: None)
+            with patch.object(engine, "inspect_existing_postgres", return_value=self.compatible()), \
+                 patch.object(engine, "command") as command, \
+                 patch.object(engine, "wait") as wait:
+                engine.start_postgres("docker", Path(tmp))
+            command.assert_not_called()
+            wait.assert_called_once()
+            self.assertEqual(wait.call_args.args[2], "PostgreSQL existente")
+
+    def test_start_stopped_container_without_recreating_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = core.Engine(Path(tmp), lambda _: None)
+            with patch.object(engine, "inspect_existing_postgres",
+                              return_value=self.compatible(running=False)), \
+                 patch.object(engine, "command") as command, \
+                 patch.object(engine, "wait"):
+                engine.start_postgres("docker", Path(tmp))
+            self.assertEqual(
+                command.call_args.args[0],
+                ["docker", "start", "batalha-naval-postgres"],
+            )
+
+    def test_empty_environment_uses_compose(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = core.Engine(Path(tmp), lambda _: None)
+            with patch.object(engine, "inspect_existing_postgres", return_value=None), \
+                 patch.object(engine, "command") as command, \
+                 patch.object(engine, "wait"):
+                engine.start_postgres("docker", Path(tmp))
+            self.assertEqual(command.call_args.args[0], ["docker", "compose", "up", "-d"])
+
+    def test_incompatible_existing_container_is_never_modified(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = core.Engine(Path(tmp), lambda _: None)
+            mismatched = self.compatible()
+            mismatched["Config"]["Image"] = "mysql:8"
+            with patch.object(engine, "inspect_existing_postgres", return_value=mismatched), \
+                 patch.object(engine, "command") as command:
+                with self.assertRaisesRegex(core.LauncherError, "não corresponde"):
+                    engine.start_postgres("docker", Path(tmp))
+            command.assert_not_called()
+
+    def test_wrong_host_port_is_not_reused(self):
+        info = self.compatible()
+        info["HostConfig"]["PortBindings"]["5432/tcp"][0]["HostPort"] = "5433"
+        with self.assertRaises(core.LauncherError):
+            core.Engine.check_existing_postgres_compatibility(info)
+
+    def test_sql_readiness_checks_correct_database(self):
+        result = SimpleNamespace(returncode=0, stdout="1\\n", stderr="")
+        with patch.object(core.subprocess, "run", return_value=result) as command:
+            ok = core.Engine.postgres_ready("docker", Path("."), container_name="batalha-naval-postgres")
+        self.assertTrue(ok)
+        self.assertEqual(
+            command.call_args.args[0],
+            ["docker", "exec", "batalha-naval-postgres", "psql",
+             "-U", "postgres", "-d", "battleship", "-Atqc", "SELECT 1"],
+        )
+
+    def test_sql_readiness_rejects_missing_database(self):
+        response = SimpleNamespace(returncode=2, stdout="", stderr="database battleship does not exist")
+        with patch.object(core.subprocess, "run", return_value=response):
+            self.assertFalse(core.Engine.postgres_ready(
+                "docker", Path("."), container_name="batalha-naval-postgres"
+            ))
+
+
 if __name__ == "__main__":
     unittest.main()
