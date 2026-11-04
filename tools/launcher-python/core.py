@@ -284,6 +284,96 @@ class Engine:
             raise LauncherError(f"É necessário Node.js 22 ou superior. Encontrado: {version}")
         return npm
 
+    @staticmethod
+    def docker_engine_mode(docker_bin: str) -> str | None:
+        """Return the engine OS only when the Docker daemon is reachable."""
+        try:
+            result = subprocess.run(
+                [docker_bin, "info", "--format", "{{.OSType}}"],
+                capture_output=True, text=True, timeout=8, check=False,
+            )
+            if result.returncode == 0:
+                mode = result.stdout.strip().lower()
+                return mode if mode in ("linux", "windows") else None
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        return None
+
+    @staticmethod
+    def docker_desktop_executable() -> Path | None:
+        """Find Docker Desktop without modifying PATH, contexts or Windows services."""
+        if os.name != "nt":
+            return None
+        roots = [os.environ.get("ProgramFiles"), os.environ.get("ProgramW6432"),
+                 os.environ.get("LOCALAPPDATA")]
+        paths = [Path(p) / "Docker" / "Docker" / "Docker Desktop.exe"
+                 for p in roots[:2] if p]
+        if roots[2]:
+            paths += [
+                Path(roots[2]) / "Programs" / "DockerDesktop" / "Docker Desktop.exe",
+                Path(roots[2]) / "Docker" / "Docker Desktop.exe",
+            ]
+        return next((path for path in paths if path.is_file()), None)
+
+    def ensure_docker_engine(self, docker_bin: str, timeout: int = 180) -> None:
+        """Start Docker Desktop on Windows if needed, then wait for Linux containers."""
+        mode = self.docker_engine_mode(docker_bin)
+        if mode == "linux":
+            self.log("Docker Engine Linux já está disponível.")
+            return
+        if mode == "windows":
+            raise LauncherError(
+                "O Docker está em modo Windows Containers. Abra o Docker Desktop, "
+                "escolha 'Switch to Linux containers' e tente novamente."
+            )
+        if os.name != "nt":
+            raise LauncherError(
+                "Docker Engine não está respondendo. Inicie o daemon Docker "
+                "e confirme com 'docker info' antes de executar o jogo."
+            )
+        executable = self.docker_desktop_executable()
+        if executable is None:
+            raise LauncherError(
+                "Docker Engine não está disponível e o aplicativo Docker Desktop "
+                "não foi encontrado nos locais habituais. Abra o Docker Desktop "
+                "manualmente, aguarde o Engine iniciar e tente novamente. "
+                "Para diagnosticar: docker info"
+            )
+        self.log("Docker Engine indisponível. Abrindo Docker Desktop automaticamente...")
+        try:
+            subprocess.Popen([str(executable)], stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL)
+        except OSError as exc:
+            raise LauncherError(
+                "Não foi possível abrir o Docker Desktop automaticamente. "
+                "Abra-o pelo menu Iniciar e tente novamente."
+            ) from exc
+        self.log("Aguardando Docker Desktop e o Engine Linux ficarem prontos...")
+        started = time.monotonic()
+        last_update = started
+        while time.monotonic() - started < timeout:
+            self.check_cancel()
+            mode = self.docker_engine_mode(docker_bin)
+            if mode == "linux":
+                self.log("Docker Engine Linux pronto.")
+                return
+            if mode == "windows":
+                raise LauncherError(
+                    "Docker Desktop iniciou em modo Windows Containers. "
+                    "No menu do Docker Desktop escolha 'Switch to Linux containers' "
+                    "e tente novamente."
+                )
+            if time.monotonic() - last_update >= 20:
+                self.log("Docker Desktop ainda inicializando. Aguarde o Engine Linux...")
+                last_update = time.monotonic()
+            time.sleep(2)
+        raise LauncherError(
+            "Docker Desktop foi aberto, mas o Engine Linux não ficou pronto. "
+            "Verifique se o Docker Desktop mostra 'Engine running' e está usando "
+            "Linux Containers (WSL 2). Depois execute 'docker info' no terminal "
+            "e tente novamente."
+        )
+
     def java_check(self) -> None:
         java = self.require("java", "Java 21")
         response = subprocess.run([java, "-version"], capture_output=True, text=True, timeout=12, check=True)
@@ -322,6 +412,7 @@ class Engine:
                 raise LauncherError("Porta 8080 ocupada por serviço que não responde a /api/health.")
             if docker:
                 docker_bin = self.require("docker", "Docker Desktop")
+                self.ensure_docker_engine(docker_bin)
                 self.command([docker_bin, "compose", "up", "-d"], api_path, "Docker PostgreSQL", timeout=160)
                 self.wait(lambda: self.postgres_ready(docker_bin, api_path), 90, "PostgreSQL")
             self.java_check()
