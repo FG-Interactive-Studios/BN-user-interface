@@ -10,7 +10,7 @@ Uma interface gráfica para Windows que busca **automaticamente as PRs abertas**
 4. Selecione a versão da interface e da API — `main` ou uma PR aberta. Clique em **Atualizar PRs** sempre que quiser consultar as novidades.
 5. Escolha a pasta de downloads (padrão: `%LOCALAPPDATA%\BatalhaNavalLauncherPython\workspace`). Ela será criada automaticamente.
 6. Escolha se deseja inicializar o Docker Desktop (quando necessário) e o PostgreSQL via Docker Compose. Clique em **Baixar e iniciar**.
-7. O launcher instala as dependências do frontend com `npm ci` e inicia a API (`mvnw.cmd ... -Dspring-boot.run.profiles=local`) e o Vite. Abra `http://127.0.0.1:5173/` e faça cadastro/login normalmente.
+7. O launcher instala as dependências do frontend com `npm ci` e inicia a API (`SPRING_PROFILES_ACTIVE=local` e `mvnw.cmd spring-boot:run`) e o Vite. Abra `http://127.0.0.1:5173/` e faça cadastro/login normalmente.
 8. Para alternar entre PRs, use **Encerrar**, selecione a próxima e inicie novamente.
 
 **Você não precisa clonar os repositórios nem informar a pasta do backend.** O launcher baixa os dois automaticamente e guarda cada commit em seu próprio diretório. **Baixar versões** permite preparar os arquivos sem ligar os serviços.
@@ -36,6 +36,7 @@ Uma interface gráfica para Windows que busca **automaticamente as PRs abertas**
 - Se a porta 5173 estiver ocupada, o launcher não inicia um frontend diferente na mesma porta, evitando confusão.
 - Se aparecer `container name is already in use`, não use `docker rm`, `docker compose down -v` nem apague volumes. Atualize o inicializador: ele identifica e reutiliza o container existente quando compatível. Para inspecionar manualmente, use `docker ps -a --filter name=batalha-naval-postgres`.
 - Reutilizar um banco existente preserva os dados, mas a API selecionada pode aplicar **migrações Flyway**. Faça backup antes de testar versões do backend com schemas diferentes.
+- O launcher executa `mvnw.cmd` e `npm.cmd` diretamente com a lista de argumentos, sem adicionar uma camada de aspas via `cmd /c`. Isso evita falhas quando o caminho local tem espaços, como `FG Interactive`. O perfil da API é definido pela variável de ambiente `SPRING_PROFILES_ACTIVE=local`.
 - Se o backend levar um tempo para subir, acompanhe o log. A inicialização pode baixar dependências Maven na primeira vez.
 - É preciso conexão com internet para consultar o GitHub ou baixar novos commits e dependências.
 - O WebSocket e o login dependem da API estar disponível. A página de login isolada não fornece uma conta simulada.
