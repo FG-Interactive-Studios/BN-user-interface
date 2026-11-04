@@ -501,3 +501,73 @@ body[data-ship-skin="skin_abyss"] .tide-polygon-board .tile.ship polygon{fill:#9
   .tp-store-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
   .tp-store-preview{height:150px}
 }
+
+
+/* End-of-battle summary: portrait Figma arrangement with actual API values. */
+body[data-route="result"]{height:auto!important;max-height:none!important;overflow-y:auto!important}
+body[data-route="result"] #app{height:auto!important;max-height:none!important;min-height:100dvh}
+body[data-route="result"] .screen,body[data-route="result"] .shell{
+  min-height:100dvh!important;height:auto!important;max-height:none!important;
+  overflow:visible!important;
+}
+body[data-route="result"] .screen{
+  background:linear-gradient(180deg,#0b101454,#0b10143c),
+  url('../assets/figma/storm.jpg') center top/cover no-repeat,var(--bn-bg);
+}
+body[data-route="result"] .shell{
+  max-width:var(--bn-portrait-width)!important;width:100%;margin:0 auto;
+}
+body[data-route="result"] .main{
+  display:flex!important;align-items:center;justify-content:center;
+  height:auto!important;min-height:0!important;flex:1 0 auto!important;
+  max-height:none!important;overflow:visible!important;
+  padding:24px 15px calc(25px + var(--bn-safe-bottom))!important;
+}
+body[data-route="result"] .tp-content{
+  width:100%!important;max-width:none!important;height:auto!important;
+  min-height:0!important;max-height:none!important;overflow:visible!important;
+  margin:0!important;padding:0!important;display:block!important;
+}
+.bn-result-screen{
+  width:100%;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:16px;min-width:0;margin:0 auto;
+}
+.bn-result-emblem{
+  width:68px;height:68px;border:3px solid var(--bn-gold);
+  border-radius:50%;display:grid;place-items:center;font-size:35px;
+  color:var(--bn-gold);background:#091720e9;
+}
+.bn-result-heading{
+  margin:0;text-align:center;color:var(--bn-gold);
+  font:400 clamp(54px,14vw,79px)/1 'Pirata One',Georgia,serif;
+}
+.bn-result-description{
+  color:#d2dce1;text-align:center;font:400 12px/1.4 'Lexend',sans-serif;
+  margin:0 0 6px;
+}
+.bn-result-panel{
+  width:100%;padding:15px;border-radius:14px;
+  background:#070f14ed;border:2px solid #2a3d47;
+}
+.bn-result-panel .bn-section-title span{color:#e7f0f3}
+.bn-result-panel .bn-section-title strong{font-size:31px}
+.bn-result-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.bn-result-stats>div{
+  min-width:0;min-height:67px;padding:11px;
+  background:#15232d;border-radius:10px;display:grid;gap:4px;
+}
+.bn-result-stats strong{
+  font:400 33px/1 'Pirata One',serif;color:var(--bn-mint);
+}
+.bn-result-stats>div:nth-child(2) strong{color:#f87171}
+.bn-result-stats>div:nth-child(4) strong{color:var(--bn-gold)}
+.bn-result-stats span{color:#c5d3db;font:400 10px/1.3 'Lexend',sans-serif}
+.bn-result-confirmation{margin:13px 0 0;font:400 10px/1.35 'Lexend',sans-serif;color:#b2c3cb}
+.bn-result-actions{display:grid;gap:10px;width:100%}
+.bn-result-actions button{width:100%}
+@media(max-width:390px){
+  .bn-result-screen{gap:12px}
+  .bn-result-emblem{width:56px;height:56px;font-size:27px}
+  .bn-result-panel{padding:11px}
+  .bn-result-stats>div{min-height:61px}
+}
