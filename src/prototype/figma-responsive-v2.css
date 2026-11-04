@@ -431,3 +431,73 @@ body[data-route="matchmaking"] .tp-room-hint{color:#c1ccd2;font-size:12px}
 @media(prefers-reduced-motion:reduce){
   .bn-bottom-nav *, .bn-lobby *, .bn-page *{animation:none!important;transition:none!important}
 }
+
+/* Real store catalogue, using server-owned prices and beta credits.
+   Product art is not yet delivered, so illustration areas are honest previews. */
+.tp-store-page{width:100%;display:grid;gap:12px;min-width:0;padding-bottom:12px}
+.tp-store-header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;flex-wrap:nowrap;
+}
+.tp-store-header>div:first-child{min-width:0}
+.tp-store-header h1{font:400 clamp(40px,11vw,58px)/1 'Pirata One',serif;margin:0}
+.tp-store-header p{font:400 12px/1.4 'Lexend',sans-serif;color:#c4d0d5;margin:5px 0}
+.tp-store-wallet{
+  flex:0 0 auto;display:grid;place-items:center;gap:3px;min-width:102px;
+  padding:10px 12px;border:2px solid #576675;border-radius:15px;
+  background:#071016ee;color:var(--bn-gold);text-align:center;
+}
+.tp-store-wallet small{color:#d7e0e3;font:600 9px/1.2 'Lexend',sans-serif}
+.tp-store-wallet strong{font:400 28px/1 'Pirata One',serif}
+.tp-store-toolbar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center}
+.tp-store-toolbar label{font:600 11px 'Lexend',sans-serif;color:var(--bn-gold)}
+.tp-store-toolbar .tp-mode-select{
+  min-width:0;min-height:43px;width:100%;background:#08121a;
+  border:2px solid #9fadb6;border-radius:999px;color:#fff;
+  font:500 12px 'Lexend',sans-serif;padding:8px 13px;
+}
+.tp-store-beta{grid-column:1/-1;font:400 10px 'Lexend',sans-serif;color:#c4d0d5}
+.tp-store-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:stretch;min-width:0;
+}
+.tp-store-loading{grid-column:1/-1;color:#e5eef2;padding:20px;text-align:center}
+.tp-store-card{
+  display:flex;flex-direction:column;min-width:0;overflow:hidden;
+  border:2px solid #263842;border-radius:14px;background:#070d12f2;box-shadow:0 8px 18px #0009;
+}
+.tp-store-preview{
+  height:120px;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;background:#0b1720;position:relative;border-bottom:1px solid #293946;color:#bed5e0;
+}
+.tp-store-preview>span{font-size:48px;color:var(--bn-gold);line-height:1}
+.tp-store-preview>small{font:400 10px 'Lexend',sans-serif;color:#a0b0b7}
+.tp-store-card.is-sound .tp-store-preview>span{color:#68bddc}
+.tp-store-card-text{flex:1;min-width:0;padding:11px;display:grid;gap:5px;align-content:start}
+.tp-store-card-meta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px;
+  font:600 9px 'Lexend',sans-serif;color:var(--bn-gold)}
+.tp-store-tag{border:1px solid #546879;border-radius:99px;padding:3px 6px;color:#dfecf2;
+  font:400 9px 'Lexend',sans-serif}
+.tp-store-tag.is-equipped{border-color:var(--bn-mint);color:var(--bn-mint)}
+.tp-store-tag.is-future{border-color:#80755b;color:#f3d184}
+.tp-store-card h3{margin:4px 0 0;font:400 24px/1 'Pirata One',serif;color:#fff;overflow-wrap:anywhere}
+.tp-store-card p{margin:4px 0 0;color:#c1cbd0;font:400 11px/1.35 'Lexend',sans-serif}
+.tp-store-card-footer{display:grid;gap:7px;padding:10px;border-top:1px solid #24323d}
+.tp-store-price{color:var(--bn-gold);font:400 20px/1 'Pirata One',serif}
+.tp-store-card-footer .btn{width:100%;min-height:38px;padding:7px 5px;
+  font:400 18px/1 'Pirata One',serif;border-radius:99px;text-transform:none;white-space:normal}
+.tp-store-unavailable{color:#aabac1;font:400 10px/1.25 'Lexend',sans-serif}
+.tp-store-footnote{color:#bdc8cf;font:400 10px/1.4 'Lexend',sans-serif;margin:2px 3px 0}
+body[data-ship-skin="skin_coral"] .board .cell.ship{background-color:#e67667!important;box-shadow:inset 0 0 11px #ffb49a85}
+body[data-ship-skin="skin_coral"] .tide-polygon-board .tile.ship polygon{fill:#e67667!important}
+body[data-ship-skin="skin_abyss"] .board .cell.ship{background-color:#977bd9!important;box-shadow:inset 0 0 11px #c4b0ff66}
+body[data-ship-skin="skin_abyss"] .tide-polygon-board .tile.ship polygon{fill:#977bd9!important}
+@media(max-width:355px){
+  .tp-store-header{gap:7px}
+  .tp-store-wallet{min-width:85px;padding:8px}
+  .tp-store-card h3{font-size:21px}
+  .tp-store-preview{height:90px;min-height:90px}
+  .tp-store-card-footer .btn{font-size:16px}
+}
+@media(min-width:600px){
+  .tp-store-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .tp-store-preview{height:150px}
+}
