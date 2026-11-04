@@ -1,0 +1,108 @@
+/* Batalha Naval: primeira etapa da migração do Figma.
+   Somente apresentação. Reutiliza os formulários, ações e estado reais.
+   A ilustração Fundo Tempestade aguarda exportação local autorizada. */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Pirata+One&display=swap');
+:root {
+ --bn-bg:#0b1014;--bn-board-top:#15232d;--bn-board-bottom:#28495a;
+ --bn-outline:#cbd5e1;--bn-outline-mid:#637381;--bn-outline-dark:#232d36;
+ --bn-yellow:#fbbf24;--bn-hit:#f87171;--bn-selected:#34d399;
+ --bn-radar-dark:#0c1511;--bn-radar-green:#1d4e33;--bn-radar-bright:#2ee677;
+}
+body{background:var(--bn-bg);font-family:'Lexend',system-ui,sans-serif}
+.screen{background:radial-gradient(ellipse at 50% 5%,#2a4150 0,transparent 47%),radial-gradient(ellipse at 80% 100%,#192d35 0,transparent 45%),var(--bn-bg);color:#fff}
+.screen::before,.screen::after{display:none}
+.eyebrow{color:var(--bn-yellow);font-family:'Lexend',sans-serif}
+.form-title,.panel-title,.brand-name{font-family:'Pirata One',Georgia,serif;font-weight:400;text-transform:none;letter-spacing:0}
+.brand-name{font-size:26px}
+.brand-sub{font-family:'Lexend',sans-serif;color:var(--bn-yellow);font-size:9px;letter-spacing:0}
+.brand-mark{transform:none;border-color:var(--bn-yellow);background:var(--bn-board-top);box-shadow:none;border-radius:50%;color:var(--bn-yellow)}
+.topbar{background:linear-gradient(#0b1014eb,#0b101433);height:auto;min-height:80px}
+.pill{background:var(--bn-bg);border-color:var(--bn-outline-dark);color:#fff}
+.pill [data-socket-status]{color:var(--bn-selected)}
+.avatar{border-color:var(--bn-yellow);box-shadow:none}
+.btn-primary,.btn-orange,.bn-primary-button{background:var(--bn-yellow);border:2px solid var(--bn-outline);color:var(--bn-bg);box-shadow:0 5px 14px #0007}
+.btn-primary:hover,.btn-orange:hover,.bn-primary-button:hover{background:#ffd45b}
+.btn-ghost,.bn-pill-button{background:var(--bn-bg);border:2px solid var(--bn-outline);color:#fff;box-shadow:none}
+.btn{border-radius:999px}
+.bn-pill-button{border-radius:999px;font-family:'Pirata One',Georgia,serif;font-size:clamp(19px,4vw,27px);padding:10px 22px;cursor:pointer}
+.bn-primary-button{font-family:'Pirata One',Georgia,serif;font-weight:400;letter-spacing:0;text-transform:none;font-size:clamp(27px,6vw,42px);min-height:60px;width:100%;border-radius:999px}
+.bn-primary-button:disabled{opacity:.5;cursor:not-allowed}
+.bn-design-screen{min-height:100dvh}
+.bn-auth{width:min(100% - 36px,530px);min-height:100dvh;margin:auto;padding:clamp(28px,6dvh,70px) 0 30px;display:flex;flex-direction:column;justify-content:center;gap:clamp(22px,3.8dvh,42px);position:relative;z-index:1}
+.bn-auth-logo{text-align:center}
+.bn-auth-emblem{display:grid;place-items:center;color:var(--bn-yellow);width:88px;height:88px;border:3px solid var(--bn-yellow);border-radius:50%;margin:0 auto 9px;font-size:46px;background:#0b1014b8;box-shadow:0 0 0 6px #0b101477}
+.bn-auth-logo h1{font:400 clamp(48px,10vw,73px)/1.05 'Pirata One',Georgia,serif;margin:0;color:#fff;text-shadow:2px 4px 2px #000c}
+.bn-auth-logo p{font:400 clamp(19px,5vw,26px)/1.2 'Pirata One',Georgia,serif;color:var(--bn-yellow);margin:6px 0 0}
+.bn-auth-panel{padding:clamp(18px,4vw,28px);background:#0b1014dd;border:2px solid var(--bn-outline-dark);border-radius:19px;box-shadow:0 12px 32px #0008}
+.bn-auth-panel h2{margin:0 0 18px;font:400 clamp(23px,6vw,33px) 'Pirata One',serif}
+.bn-auth-form{display:grid;gap:16px}
+.bn-field{display:grid;gap:8px}
+.bn-field label{font:500 14px 'Lexend',sans-serif;color:#fff}
+.bn-field input{width:100%;min-height:53px;border:2px solid var(--bn-outline-mid);border-radius:10px;background:var(--bn-bg);color:#fff;font-family:'Lexend',sans-serif;padding:12px 15px;outline:0}
+.bn-field input:focus{border-color:var(--bn-yellow);box-shadow:0 0 0 2px #fbbf2433}
+.bn-field input:invalid:not(:placeholder-shown):not(:focus){border-color:var(--bn-hit)}
+.bn-auth-help{font:400 12px/1.4 'Lexend',sans-serif;color:var(--bn-outline);text-align:right;margin:-3px 0 0}
+.bn-auth-switch{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;color:var(--bn-outline);font-size:clamp(12px,3vw,16px)}
+.bn-auth-switch .bn-pill-button{font-size:23px}
+body[data-route="lobby"] .screen{min-height:100dvh}
+body[data-route="lobby"] .main{padding:8px clamp(14px,3vw,35px) 125px}
+body[data-route="lobby"] .shell{max-width:850px;margin:auto}
+body[data-route="lobby"] .topbar{padding:12px 14px;gap:8px;flex-wrap:wrap}
+body[data-route="lobby"] .topbar .currencies .pill:first-child{display:none}
+body[data-route="lobby"] .topbar .player-strip .avatar,body[data-route="lobby"] .topbar .player-strip .name{display:none}
+body[data-route="lobby"] .tp-top-actions{display:none}
+.bn-lobby{display:grid;gap:16px;width:min(100%,620px);margin:0 auto;min-height:calc(100dvh - 225px);align-content:center}
+.bn-player-intro{display:flex;gap:13px;align-items:center;font-size:16px}
+.bn-player-avatar{width:53px;height:53px;border:3px solid var(--bn-yellow);background:linear-gradient(var(--bn-board-top),var(--bn-board-bottom));color:#fff;font:31px 'Pirata One',serif;display:grid;place-items:center;border-radius:50%}
+.bn-player-intro strong,.bn-player-intro small{display:block}
+.bn-player-intro small{font-size:12px;color:var(--bn-outline);margin-top:5px}
+.bn-feature-card{background:#d4c4b8;color:#161e23;border:3px solid #6e625c;border-radius:22px;min-height:155px;padding:18px;display:grid;grid-template-columns:85px minmax(0,1fr);gap:12px;align-items:center;box-shadow:0 12px 32px #0008}
+.bn-feature-icon{font-size:56px;display:grid;place-items:center}
+.bn-feature-card h1{font:400 clamp(28px,6vw,39px)/1.08 'Pirata One',serif;margin:2px 0 4px}
+.bn-feature-card p{font:400 13px/1.35 'Lexend',sans-serif;margin:0 0 8px}
+.bn-feature-card small{font:500 12px 'Lexend',sans-serif}
+.bn-kicker{font:600 11px 'Lexend',sans-serif;letter-spacing:.04em}
+.bn-news-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bn-news-card{display:grid;gap:7px;border:2px solid var(--bn-outline-dark);background:#0b1014ed;border-radius:16px;padding:16px 12px;min-width:0}
+.bn-news-card .bn-kicker{color:var(--bn-yellow)}
+.bn-news-card strong{font:400 clamp(20px,4vw,29px)/1.06 'Pirata One',serif}
+.bn-news-card small{color:var(--bn-outline);font-size:12px;line-height:1.35}
+.bn-rank-card{display:flex;align-items:center;justify-content:center;gap:18px;min-height:76px}
+.bn-rank-emblem{border:3px solid var(--bn-yellow);width:70px;height:70px;border-radius:50%;color:var(--bn-yellow);display:grid;place-items:center;font-size:36px}
+.bn-rank-card strong{display:block;font:28px 'Pirata One',serif}
+.bn-rank-card small{color:var(--bn-outline);font-size:12px}
+.bn-lobby-actions{display:grid;gap:10px}
+.bn-join-button{width:100%;font-size:23px;min-height:45px}
+body[data-route="lobby"] .bottom-nav{display:flex;justify-content:space-evenly;gap:12px;width:min(calc(100% - 22px),620px);padding:8px;bottom:7px;background:#0b1014e8;border:1px solid var(--bn-outline-dark);border-radius:22px}
+body[data-route="lobby"] .bottom-nav .nav-btn{flex:1;min-width:0;border:2px solid var(--bn-outline);border-radius:999px;background:var(--bn-bg);color:#fff;font:400 clamp(20px,4vw,28px) 'Pirata One',serif;letter-spacing:0;text-transform:none;min-height:47px;padding:7px 6px}
+body[data-route="lobby"] .bottom-nav .nav-btn.active{border-color:var(--bn-selected);box-shadow:0 0 10px #34d39988}
+body[data-route="lobby"] .bottom-nav .nav-btn::before{content:'';display:block;width:33px;height:33px;background-size:contain;background-position:center;background-repeat:no-repeat;margin:-26px auto 2px}
+body[data-route="lobby"] .bottom-nav .bn-nav-fleet::before{background-image:url('../assets/figma/ship-icon.png')}
+body[data-route="lobby"] .bottom-nav .bn-nav-play::before{background-image:url('../assets/figma/cannon.png')}
+body[data-route="lobby"] .bottom-nav .bn-nav-store::before{background-image:url('../assets/figma/coin-icon.png')}
+body[data-route="lobby"] .bottom-nav .nav-btn.play{color:#fff}
+body[data-route="matchmaking"] .tp-waiting-card .radar{background-color:var(--bn-radar-dark)!important;border-color:var(--bn-radar-green)!important}
+body[data-route="matchmaking"] .tp-waiting-card .radar::after{border-color:var(--bn-radar-bright)}
+body[data-route="matchmaking"] .tp-room-setup,body[data-route="matchmaking"] .tp-waiting-card{border-color:var(--bn-outline-dark);background:linear-gradient(var(--bn-board-top),var(--bn-bg))}
+@media(max-width:760px){
+ body[data-route="lobby"] .main{padding:12px 12px 110px!important}
+ body[data-route="lobby"] .bn-lobby{gap:12px;min-height:calc(100dvh - 210px)}
+ body[data-route="lobby"] .topbar{min-height:72px}
+ body[data-route="lobby"] .brand-name{font-size:22px}
+ body[data-route="lobby"] .brand-mark{width:38px;height:38px;min-width:38px}
+ body[data-route="lobby"] .bn-feature-card{min-height:135px;padding:13px;grid-template-columns:60px 1fr}
+ body[data-route="lobby"] .bn-feature-icon{font-size:39px}
+ body[data-route="lobby"] .bn-news-card{min-height:92px;padding:12px 10px}
+ body[data-route="lobby"] .bn-rank-emblem{width:56px;height:56px;font-size:27px}
+ body[data-route="lobby"] .bn-rank-card strong{font-size:24px}
+ body[data-route="lobby"] .bottom-nav{padding:8px 4px!important}
+}
+@media(max-height:740px) and (max-width:760px){
+ .bn-auth{justify-content:flex-start;gap:20px;padding-top:24px}
+ .bn-auth-emblem{width:62px;height:62px;font-size:33px}
+ .bn-lobby{align-content:start!important}
+ .bn-player-intro{display:none}
+ .bn-feature-card{min-height:115px}
+ .bn-news-card{min-height:78px}
+}
+@media(prefers-reduced-motion:reduce){.bn-design-screen *{animation-duration:.01ms!important}}
