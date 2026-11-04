@@ -1,4 +1,5 @@
 import * as api from './client.js';
+import { renderCosmeticStore } from './store-ui.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
 import { roomPlayerCard, compactEnemyContacts } from './mobile-presenters.js';
@@ -10,6 +11,7 @@ const state = {
   modeId: 'classic', selected: null, draft: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
+  store: null, storeLoading: false, storeFilter: 'ALL',
 };
 let root;
 let refreshTimer;
@@ -76,7 +78,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;}
+function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -287,17 +289,22 @@ function fleetScreen(){
   </div>`,{active:'fleet'});
 }
 function storeScreen(){
-  return mainContent(`<div class="bn-page bn-store-page">
-    <header class="bn-page-heading"><h1>Loja</h1><p>Personalizações e pacotes para sua frota.</p></header>
-    <section class="bn-surface bn-store-feature"><div class="bn-section-title"><span>ITENS EM DESTAQUE</span><strong>Pacote Tempestade</strong></div>
-      <div class="bn-store-feature-art" aria-hidden="true">Arte em desenvolvimento</div>
-      <p>Catálogo visual em preparação. Os itens beta são disponibilizados pela API.</p>
-    </section>
-    <section class="bn-surface bn-store-coming"><div class="bn-section-title"><span>PERSONALIZAÇÃO</span><strong>Novos pacotes em breve</strong></div>
-      <p>As artes e os sons finais dependem do Game Design. Nenhum preço fictício foi adicionado.</p>
-      <button type="button" class="bn-pill-button" data-go="lobby">Voltar para jogar</button>
-    </section>
-  </div>`,{active:'store'});
+  return mainContent(renderCosmeticStore(state.store,{loading:state.storeLoading,filter:state.storeFilter}),{active:'store'});
+}
+async function loadStore({quiet=false}={}){
+  if(!api.isAuthenticated() || state.storeLoading) return;
+  state.storeLoading=true;
+  if(currentRoute()==='store') render();
+  try {
+    state.store=await api.get('/store');
+    document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
+  } catch(error) {
+    if(!quiet) notice(error?.message || 'Catálogo temporariamente indisponível.',true);
+    state.store=null;
+  } finally {
+    state.storeLoading=false;
+    if(currentRoute()==='store') render();
+  }
 }
 function profileScreen(){
   const p=state.profile||{};
@@ -353,6 +360,7 @@ function render(){ if (!root) return;
   updateNotice();
   if (state.busy) root.classList.add('tp-loading'); else root.classList.remove('tp-loading');
   document.body.dataset.route=route;
+  document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
   const exitDialog=root.querySelector('#tp-room-exit-dialog');
   if (exitDialog && !exitDialog.open) exitDialog.showModal();
 }
@@ -393,7 +401,7 @@ async function handleForm(form) {
   }
 }
 
-async function runAction(action) {
+async function runAction(action,itemId=null) {
   switch(action) {
     case 'ack-room-exit': {
       if (!state.roomExitNotice || state.busy) break;
@@ -411,6 +419,17 @@ async function runAction(action) {
       render();
       break;
     }
+    case 'store-buy':await guard(async()=>{
+      if(!itemId) return;
+      state.store=await api.post('/store/purchase/'+encodeURIComponent(itemId));
+      notice('Item adquirido. Você pode equipá-lo no catálogo.');
+    });break;
+    case 'store-equip':await guard(async()=>{
+      if(!itemId) return;
+      state.store=await api.put('/store/equip/'+encodeURIComponent(itemId));
+      document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
+      notice('Item equipado com sucesso.');
+    });break;
     case 'dismiss':state.notice='';updateNotice();break;
     case 'open-join-modal': { const dialog=root.querySelector('#tp-join-dialog'); if (dialog && !dialog.open) { dialog.showModal(); dialog.querySelector('input[name=code]')?.focus(); } break; }
     case 'close-join-modal':root.querySelector('#tp-join-dialog')?.close();break;
@@ -482,7 +501,7 @@ function bindEvents() {
   root.addEventListener('click',event=>{
     const target=event.target.closest('[data-coord]');
     if(target){const [row,col]=target.dataset.coord.split(',').map(Number);selectCell(row,col);return;}
-    const action=event.target.closest('[data-action]');if(action){void runAction(action.dataset.action);return;}
+    const action=event.target.closest('[data-action]');if(action){void runAction(action.dataset.action,action.dataset.itemId);return;}
     const link=event.target.closest('[data-go]');if(link){go(link.dataset.go);}
   });
   root.addEventListener('keydown',event=>{
