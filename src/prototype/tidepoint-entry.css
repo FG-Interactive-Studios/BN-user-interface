@@ -15,3 +15,6 @@
 @import './figma-v1.css';
 
 @import './figma-responsive-v2.css';
+
+/* Combat styles override the retired fixed-height TidePoint HUD only on mobile. */
+@import './combat-mobile-repair.css';
