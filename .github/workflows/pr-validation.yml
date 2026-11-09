@@ -24,3 +24,4 @@ jobs:
       - run: node tools/test-mobile-presenters.mjs
       - run: node tools/test-realtime-proxy.mjs
       - run: node tools/test-battle-report.mjs
+      - run: node tools/test-store.mjs
