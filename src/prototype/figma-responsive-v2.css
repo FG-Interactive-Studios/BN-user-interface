@@ -112,6 +112,22 @@ body[data-route="matchmaking"] .tp-content{
   .bn-connection-status{font-size:9px}
 }
 
+/* Fleet and store: keep the captain identity and account menu accessible while
+   scrolling the catalogue. Their parent screen/shell already allow overflow,
+   so sticky positioning follows the document without locking content. */
+body[data-route="fleet"] .bn-topbar,
+body[data-route="store"] .bn-topbar {
+  position: sticky !important;
+  top: 0;
+  z-index: 80;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #071119f9, #0b151cf4) !important;
+  border-bottom: 1px solid #ffffff1c;
+  box-shadow: 0 6px 19px #0007;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
 /* One bottom bar on all non-combat navigation screens, fixed but never covering content. */
 body[data-route="lobby"] .bottom-nav,body[data-route="fleet"] .bottom-nav,
 body[data-route="store"] .bottom-nav{
