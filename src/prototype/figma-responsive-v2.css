@@ -112,6 +112,15 @@ body[data-route="matchmaking"] .tp-content{
   .bn-connection-status{font-size:9px}
 }
 
+/* The body must not become an intermediate scroll container: its previous
+   overflow-y:auto prevented sticky from tracking the window's scroll position.
+   Clip horizontal overflow without creating a second vertical scrollport. */
+body[data-route="fleet"],
+body[data-route="store"] {
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+}
+
 /* Fleet and store: keep the captain identity and account menu accessible while
    scrolling the catalogue. Their parent screen/shell already allow overflow,
    so sticky positioning follows the document without locking content. */
