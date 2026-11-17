@@ -42,6 +42,34 @@ try {
    const size=await page.evaluate(()=>({width:window.innerWidth,doc:document.documentElement.scrollWidth}));
    assert.ok(size.doc<=size.width+2,label+' '+viewport.width+': document wider than viewport '+JSON.stringify(size));
   }
+  async function assertStickyAccountHeader(label) {
+    const measure=await page.evaluate(async()=>{
+      const header=document.querySelector('.bn-topbar');
+      const main=document.querySelector('.main');
+      const spacer=document.createElement('div');
+      spacer.style.height='120vh';
+      spacer.setAttribute('aria-hidden','true');
+      main.appendChild(spacer);
+      window.scrollTo(0,180);
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      const result={
+        position:getComputedStyle(header).position,
+        top:header.getBoundingClientRect().top,
+        scrollY:window.scrollY,
+        identityVisible:header.querySelector('.bn-header-identity')?.getBoundingClientRect().height>0,
+        menuVisible:header.querySelector('.bn-account-menu summary')?.getBoundingClientRect().height>0
+      };
+      spacer.remove();
+      window.scrollTo(0,0);
+      return result;
+    });
+    assert.equal(measure.position,'sticky',label+': header must be sticky');
+    assert.ok(measure.scrollY>50,label+': scroll did not happen '+JSON.stringify(measure));
+    assert.ok(Math.abs(measure.top)<4,label+': header left top of viewport '+JSON.stringify(measure));
+    assert.ok(measure.identityVisible&&measure.menuVisible,
+      label+': user identity and menu must remain visible '+JSON.stringify(measure));
+  }
+
   await horizontalFit('login');
   if(viewport.width===375)await page.screenshot({path:'artifacts/figma-responsive/login-375x667.png',fullPage:true});
   await page.locator('#email').fill('capitao@example.test');
@@ -89,11 +117,13 @@ try {
   await page.locator('.bn-nav-fleet').click();
   await page.locator('.bn-fleet-page').waitFor();
   await horizontalFit('fleet');
+  await assertStickyAccountHeader('fleet');
   assert.equal(await page.locator('.bn-ship-item').count(),5,'fleet should follow API');
   if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/fleet-'+viewport.width+'.png',fullPage:true});
   await page.locator('.bn-nav-store').click();
   await page.locator('.bn-store-page').waitFor();
   await horizontalFit('store');
+  await assertStickyAccountHeader('store');
   await page.locator('.tp-store-card').first().waitFor();
   assert.equal(await page.locator('.tp-store-card').count(),3,'store must display live API items');
   assert.match(await page.locator('.tp-store-wallet').innerText(),/300/);
