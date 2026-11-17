@@ -1,6 +1,7 @@
 import * as api from './client.js';
 import { renderCosmeticStore } from './store-ui.js';
 import { renderFigmaResult } from './figma-result.js';
+import { renderFigmaProfile } from './figma-profile.js';
 import { renderFigmaPlacement } from './figma-placement.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
@@ -13,7 +14,7 @@ const state = {
   modeId: 'classic', selected: null, draft: null, placementShip: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
-  store: null, storeLoading: false, storeFilter: 'ALL',
+  store: null, storeLoading: false, storeFilter: 'ALL', profileEditorOpen: false, profileSecurityOpen: false,
 };
 let root;
 let refreshTimer;
@@ -35,6 +36,7 @@ function activeMode() { return state.battle?.mode || state.preparation?.mode || 
 function currentRoute() { return decodeURIComponent(location.hash.slice(1).split('?')[0] || 'auth'); }
 function go(route) {
   route = resolvedRoute(route, api.isAuthenticated(), state.lobby?.status);
+  if (route!=='profile') {state.profileEditorOpen=false;state.profileSecurityOpen=false;}
   if (currentRoute()===route) render(); else location.hash=route;
 }
 function nav(active='play') {
@@ -80,7 +82,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';}
+function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -351,32 +353,7 @@ async function loadStore({quiet=false}={}){
   }
 }
 function profileScreen(){
-  const p=state.profile||{};
-  const nickname=esc(p.nickname||'Capitão');
-  return mainContent(`<div class="bn-page bn-profile-page">
-    <header class="bn-page-heading"><button type="button" class="bn-back-button" data-go="lobby" aria-label="Voltar ao lobby">‹</button><h1>Perfil</h1></header>
-    <section class="bn-surface bn-profile-hero"><div class="bn-profile-avatar" aria-hidden="true">⚓</div>
-      <div class="bn-profile-details"><h2>${nickname}</h2><small>Conta de jogador</small><p>${esc(p.email||'')}</p></div></section>
-    <section class="bn-surface bn-profile-section">
-      <div class="bn-section-title"><span>PERFIL</span><strong>Editar informações</strong></div>
-      <form class="tp-form bn-profile-form" data-form="profile">
-        <div class="bn-field"><label for="profile-name">Nome de usuário</label><input id="profile-name" name="nickname" maxlength="30" minlength="3" required value="${nickname}" /></div>
-        <div class="bn-field"><label for="avatar">Avatar</label>
-          <select name="avatarId" id="avatar" class="tp-mode-select">${['captain','submarine','destroyer','carrier'].map(id=>`<option value="${id}" ${p.avatarId===id?'selected':''}>${esc(shipName(id.toUpperCase()))}</option>`).join('')}</select>
-        </div><button class="btn btn-primary" type="submit">Salvar perfil</button>
-      </form>
-    </section>
-    <section class="bn-surface bn-profile-section">
-      <div class="bn-section-title"><span>SEGURANÇA</span><strong>Alterar senha</strong></div>
-      <form class="tp-form bn-profile-form" data-form="password">
-        <div class="bn-field"><label for="current-password">Senha atual</label><input id="current-password" name="currentPassword" type="password" autocomplete="current-password" required /></div>
-        <div class="bn-field"><label for="new-password">Nova senha</label><input id="new-password" name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></div>
-        <button class="btn btn-primary" type="submit">Alterar senha</button>
-      </form>
-      <p class="bn-available-note">Sua sessão permanece ativa após a alteração.</p>
-    </section>
-    <p class="bn-available-note bn-profile-coming">Estatísticas, conquistas e histórico aparecerão aqui quando estiverem disponíveis na API.</p>
-  </div>`,{noNav:true});
+  return renderFigmaProfile(state.profile);
 }
 
 function roomExitDialog() {
@@ -405,6 +382,14 @@ function render(){ if (!root) return;
   if (state.busy) root.classList.add('tp-loading'); else root.classList.remove('tp-loading');
   document.body.dataset.route=route;
   document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
+  if(route==='profile'&&state.profileEditorOpen){
+    const profileDialog=root.querySelector('#bn-profile-editor');
+    if(profileDialog && !profileDialog.open)profileDialog.showModal();
+    if(state.profileSecurityOpen){
+      const security=profileDialog?.querySelector('.bn-profile-security');
+      if(security)security.open=true;
+    }
+  }
   const exitDialog=root.querySelector('#tp-room-exit-dialog');
   if (exitDialog && !exitDialog.open) exitDialog.showModal();
 }
@@ -440,13 +425,27 @@ async function handleForm(form) {
       if (values.password!==values.repeat) return notice('As senhas digitadas são diferentes.',true);
       await guard(async()=>{await api.register(values.nickname.trim(),values.email.trim(),values.password);await api.login(values.email.trim(),values.password);await sessionInit();go('lobby');});break;
     case 'join':await joinFromModal(form,values.code);break;
-    case 'profile':await guard(async()=>{state.profile=await api.patch('/users/me',{nickname:values.nickname.trim(),avatarId:values.avatarId});notice('Perfil atualizado com sucesso.');});break;
-    case 'password':await guard(async()=>{await api.post('/auth/change-password',{currentPassword:values.currentPassword,newPassword:values.newPassword});notice('Senha atualizada. Sua sessão permanece ativa.');});break;
+    case 'profile':await guard(async()=>{state.profile=await api.patch('/users/me',{nickname:values.nickname.trim(),avatarId:values.avatarId});state.profileEditorOpen=false;state.profileSecurityOpen=false;notice('Perfil atualizado com sucesso.');});break;
+    case 'password':state.profileSecurityOpen=true;await guard(async()=>{await api.post('/auth/change-password',{currentPassword:values.currentPassword,newPassword:values.newPassword});state.profileSecurityOpen=false;notice('Senha atualizada. Sua sessão permanece ativa.');});break;
   }
 }
 
 async function runAction(action,itemId=null) {
   switch(action) {
+    case 'open-profile-editor': {
+      if(currentRoute()!=='profile')break;
+      state.profileEditorOpen=true;
+      const dialog=root.querySelector('#bn-profile-editor');
+      if(dialog&&!dialog.open)dialog.showModal();
+      dialog?.querySelector('#profile-name')?.focus();
+      break;
+    }
+    case 'close-profile-editor': {
+      state.profileEditorOpen=false;
+      state.profileSecurityOpen=false;
+      root.querySelector('#bn-profile-editor')?.close();
+      break;
+    }
     case 'ack-room-exit': {
       if (!state.roomExitNotice || state.busy) break;
       const hostLeft=state.roomExitNotice.type==='host-left';
@@ -577,7 +576,9 @@ function selectCell(row,col){
 function bindEvents() {
   root.addEventListener('cancel', event=>{
     if (event.target?.id==='tp-room-exit-dialog') event.preventDefault();
+    if (event.target?.id==='bn-profile-editor'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
   });
+  root.addEventListener('close', event=>{if(event.target?.id==='bn-profile-editor'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}},true);
   root.addEventListener('submit', event=>{
     const form=event.target.closest('form[data-form]');if(!form)return;
     event.preventDefault(); void handleForm(form);
@@ -597,9 +598,11 @@ function bindEvents() {
     if(event.target.id==='store-filter'){state.storeFilter=event.target.value;render();}
     if(event.target.id==='mode-picker')state.modeId=event.target.value;
     if(event.target.id==='orientation')state.orientation=event.target.value;
+    if(event.target.matches('.bn-profile-security'))state.profileSecurityOpen=event.target.open;
   });
   window.addEventListener('hashchange',()=>{
     if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();
+    if(currentRoute()!=='profile'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
     render();
     if(currentRoute()==='store' && !state.store && !state.storeLoading) void loadStore();
   });
