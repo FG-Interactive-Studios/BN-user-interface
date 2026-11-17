@@ -44,20 +44,25 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
   return `<div class="screen combat-screen placement-screen bn-placement-screen">
     <main class="bn-placement-page" aria-labelledby="bn-placement-title">
       <header class="bn-placement-header">
-        <h1 id="bn-placement-title">Sua frota</h1>
+        <div class="bn-placement-heading">
+          <button type="button" class="bn-placement-exit" data-action="leave-lobby" aria-label="Sair da sala" title="Sair da sala">×</button>
+          <h1 id="bn-placement-title">Sua frota</h1>
+        </div>
         <span class="bn-placement-phase" aria-label="Preparação sem cronômetro fornecido pela partida">
           <span class="bn-placement-clock" aria-hidden="true">◷</span>
           Preparação
         </span>
       </header>
       <p class="bn-placement-instruction">${hint}</p>
-      <div class="bn-placement-board-wrap board-wrap board-wrap-primary combat-board-wrap placement-board-wrap tp-board"
+      <div class="bn-placement-workspace">
+        <div class="bn-placement-board-wrap board-wrap board-wrap-primary combat-board-wrap placement-board-wrap tp-board"
         aria-label="Tabuleiro para posicionamento da frota">
         <div class="tactical-board-frame setup-board-frame">
           ${renderBoard(mode, { ships, interactive: canManual })}
         </div>
       </div>
-      <section class="bn-placement-fleet" aria-label="Seleção de embarcações">
+        <div class="bn-placement-side">
+          <section class="bn-placement-fleet" aria-label="Seleção de embarcações">
         ${cards}
       </section>
       <div class="bn-placement-tools" aria-label="Ferramentas de posicionamento">
@@ -84,7 +89,8 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
           ${!editable||!complete?'disabled':''}>
           ${preparation.fleetConfirmed ? 'Posições confirmadas' : 'Confirmar posições'}
         </button>
-        <button type="button" class="bn-placement-leave" data-action="leave-lobby">Sair da sala</button>
+      </div>
+        </div>
       </div>
     </main>
   </div>`;
