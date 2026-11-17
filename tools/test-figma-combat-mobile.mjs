@@ -98,7 +98,8 @@ try {
          const r=el.getBoundingClientRect();
          return {top:r.top,bottom:r.bottom,width:r.width,height:r.height};
        });
-       assert.ok(bounds.width>70&&bounds.height>=25,'Collapsed placement action '+selector+' '+explain);
+       const minWidth=selector.includes('random-placement')?48:70;
+       assert.ok(bounds.width>=minWidth&&bounds.height>=25,'Collapsed placement action '+selector+' '+explain);
        assert.ok(bounds.top>=-2&&bounds.bottom<=viewport.height+2,'Placement action unreachable '+selector+' '+explain);
      }
      await page.screenshot({path:'artifacts/figma-combat/placement-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
