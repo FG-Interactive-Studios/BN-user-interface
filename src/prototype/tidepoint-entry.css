@@ -24,3 +24,6 @@
 
 /* Approved waiting-room artboard, isolated from the create-room flow. */
 @import './figma-waiting-room-v4.css';
+
+/* Approved Figma placement shell; the original board renderer remains intact. */
+@import './figma-placement-v5.css';
