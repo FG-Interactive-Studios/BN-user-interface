@@ -129,9 +129,15 @@ try {
   assert.match(await page.locator('.tp-store-wallet').innerText(),/300/);
   if(viewport.width===375)await page.screenshot({path:'artifacts/figma-responsive/store-375.png',fullPage:true});
   await page.locator('.bn-header-identity').click();
-  await page.locator('.bn-profile-page').waitFor();
+  await page.locator('.bn-profile-stage').waitFor();
   await horizontalFit('profile');
-  if(viewport.width===375)await page.screenshot({path:'artifacts/figma-responsive/profile-375.png',fullPage:true});
+  assert.equal(await page.locator('.bn-profile-captain').count(),1,'profile captain details must be visible');
+  assert.equal(await page.locator('.bn-profile-statistics').count(),1,'profile statistics panel must be visible');
+  assert.equal(await page.locator('.bn-profile-achievements').count(),1,'profile achievements panel must be visible');
+  assert.equal(await page.locator('.bn-profile-history').count(),1,'profile history panel must be visible');
+  assert.equal(await page.locator('.bn-profile-stat').count(),4);
+  assert.equal(await page.locator('.bn-profile-achievement').count(),4);
+  if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/profile-'+viewport.width+'.png',fullPage:true});
   await page.close();
   console.log('PASS '+viewport.width+'x'+viewport.height+': login, lobby, room dialog, fleet, store and profile; no horizontal overflow or nav overlap');
  }
