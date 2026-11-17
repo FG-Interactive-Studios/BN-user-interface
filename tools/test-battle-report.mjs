@@ -1,22 +1,38 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-const css=readFileSync(new URL('../src/prototype/battle-report-v9.css', import.meta.url),'utf8');
-const entry=readFileSync(new URL('../src/prototype/tidepoint-entry.css', import.meta.url),'utf8');
-const app=readFileSync(new URL('../src/prototype/app.js', import.meta.url),'utf8');
+
+const legacy=readFileSync(new URL('../src/prototype/battle-report-v9.css',import.meta.url),'utf8');
+const design=readFileSync(new URL('../src/prototype/figma-result-v7.css',import.meta.url),'utf8');
+const markup=readFileSync(new URL('../src/prototype/figma-result.js',import.meta.url),'utf8');
+const entry=readFileSync(new URL('../src/prototype/tidepoint-entry.css',import.meta.url),'utf8');
+const app=readFileSync(new URL('../src/prototype/app.js',import.meta.url),'utf8');
 const indexV8=entry.indexOf("@import './mobile-game-v8.css';");
 const indexV9=entry.indexOf("@import './battle-report-v9.css';");
-assert.ok(indexV8 >= 0 && indexV9 > indexV8,'V9 must load after V8 to override layout and radar');
-assert.ok(css.includes('body[data-route="result"] .tp-result'));
-assert.ok(css.includes('body[data-route="result"] .tp-content'));
-assert.ok(css.includes('height: 100dvh !important'));
-assert.ok(css.includes('overflow: hidden !important'));
-assert.ok(css.includes('grid-template-columns: repeat(3, minmax(0, 1fr)) !important'));
-assert.ok(app.includes('Relatório pós-batalha'));
-assert.ok(app.includes('data-action="leave-lobby"'));
-// Keep the waiting-room radar; the Figma lobby replaces the retired decorative radar.
+const indexFigma=entry.indexOf("@import './figma-result-v7.css';");
+assert.ok(indexV8>=0&&indexV9>indexV8&&indexFigma>indexV9,
+ 'Figma result must override the retired report styles after V9');
+assert.ok(legacy.includes('animation: tp-waiting-sweep 2.65s linear infinite !important'),
+ 'Existing waiting radar should remain untouched');
+assert.ok(design.includes('body[data-route="result"] .screen.bn-result-stage'));
+assert.ok(design.includes('height: 100dvh !important'));
+assert.ok(design.includes('overflow: hidden !important'));
+assert.ok(design.includes('storm.jpg'));
+assert.ok(design.includes('center center/auto 100%'),'Figma portrait backdrop must show original storm framing');
+assert.ok(design.includes('left bottom/auto 100%'),'Wide-screen backdrop must retain the left-hand ship artwork');
+assert.ok(markup.includes('Resumo da partida'));
+assert.ok(markup.includes('Recompensas'));
+assert.ok(markup.includes('Navios destruídos'));
+assert.ok(markup.includes('data-action="play-again"'));
+assert.ok(markup.includes('data-action="leave-lobby"'));
+assert.ok(markup.includes('shots.filter(shot=>shot.hit)'));
+assert.ok(markup.includes('new Set(shots.filter(s=>s.sunkShip)'));
+assert.ok(markup.includes('Duração indisponível'));
+assert.ok(!markup.includes('+120 XP')&&!markup.includes('+250'),
+ 'Rewards must not be fabricated before the backend supports them');
+assert.ok(app.includes('renderFigmaResult('));
+assert.ok(app.includes("case 'play-again'"));
 assert.ok(app.includes('function radarMarkup()'));
 assert.ok(app.includes('radarMarkup()'));
 assert.ok(app.includes('bn-feature-card'));
 assert.ok(!app.includes('home-radar-disc'));
-assert.ok(css.includes('animation: tp-waiting-sweep 2.65s linear infinite !important'));
-console.log('TidePoint: report full-screen, original lobby radar visual + waiting sweep: OK');
+console.log('Figma: post-battle full-screen, two real-data panels and storm framing; legacy radar preserved: OK');
