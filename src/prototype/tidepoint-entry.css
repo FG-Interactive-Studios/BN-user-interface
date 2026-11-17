@@ -33,3 +33,6 @@
 
 /* Figma post-battle screen: complete report, rewards and correct storm framing. */
 @import './figma-result-v7.css';
+
+/* Approved Figma captain profile: complete panel layout, edit in a modal. */
+@import './figma-profile-v8.css';
