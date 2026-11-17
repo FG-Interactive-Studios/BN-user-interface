@@ -1,0 +1,334 @@
+/* End-of-battle result — faithful to the approved Figma "Vitória" frame.
+ * A full-screen storm illustration, two visible panels and two pill actions.
+ * The actual result and numbers are populated by BattleResponse.
+ */
+html:has(body[data-route="result"]),
+body[data-route="result"],
+body[data-route="result"] #app {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}
+
+body[data-route="result"] .screen.bn-result-stage {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  background:
+    linear-gradient(180deg,#08101642 0%,#08101645 60%,#08101672 100%),
+    url('../assets/figma/storm.jpg') center center/auto 100% no-repeat,
+    #101a22 !important;
+}
+body[data-route="result"] .bn-result-stage::after { display: none !important; }
+
+.bn-result-viewport {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(8px,1.4dvh,18px);
+  width: min(100%,1040px);
+  height: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  padding: clamp(9px,1.8dvh,18px) clamp(12px,2.2vw,30px);
+  color: #fff;
+}
+.bn-report-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(2px,.6dvh,7px);
+  flex: 0 0 auto;
+  text-align: center;
+}
+.bn-report-emblem {
+  display: block;
+  width: clamp(43px,7dvh,70px);
+  height: clamp(43px,7dvh,70px);
+  flex: 0 0 auto;
+  background: url('../assets/figma/gold-coin.png') center/contain no-repeat;
+  filter: drop-shadow(0 0 8px #28cf9b73);
+}
+.bn-result-stage.is-defeat .bn-report-emblem {
+  background-image: url('../assets/figma/blue-coin.png');
+  filter: drop-shadow(0 0 8px #5c9ace55);
+}
+.bn-result-stage.is-draw .bn-report-emblem {
+  filter: drop-shadow(0 0 8px #fbbf2450) saturate(.6);
+}
+.bn-report-hero h1 {
+  margin: 0;
+  color: #fbbf24;
+  font: 400 clamp(48px,9dvh,88px)/.98 'Pirata One',Georgia,serif;
+  text-shadow: 0 2px 13px #060b0ec4;
+}
+.bn-result-stage.is-defeat .bn-report-hero h1 { color: #f87171; }
+.bn-result-stage.is-draw .bn-report-hero h1 { color: #fff; }
+.bn-report-hero p {
+  margin: 0;
+  color: #d0dae2;
+  font: 400 clamp(12px,1.75dvh,18px)/1.3 'Lexend',sans-serif;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.bn-report-panels {
+  display: grid;
+  grid-template-columns: minmax(0,1.15fr) minmax(0,.85fr);
+  align-items: stretch;
+  gap: clamp(9px,1.5vw,18px);
+  width: 100%;
+  min-height: 0;
+  flex: 0 1 auto;
+}
+.bn-report-panel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(7px,1.05dvh,13px);
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(12px,1.8dvh,21px);
+  border: 2px solid #26343e;
+  border-radius: clamp(16px,2.5vw,25px);
+  background: #070e13f2;
+  box-shadow: 0 10px 23px #0007;
+}
+.bn-report-panel h2 {
+  margin: 0;
+  color: #fff;
+  font: 400 clamp(25px,3vw,38px)/1 'Pirata One',Georgia,serif;
+}
+.bn-report-stats {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: clamp(6px,1.1vw,11px);
+  min-width: 0;
+}
+.bn-report-stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: clamp(63px,10.5dvh,94px);
+  padding: clamp(7px,1.3dvh,13px) clamp(10px,1.3vw,17px);
+  border-radius: clamp(13px,1.9vw,22px);
+  background: #152530;
+}
+.bn-report-stat strong {
+  color: #34d399;
+  font: 400 clamp(30px,4dvh,50px)/.98 'Pirata One',Georgia,serif;
+}
+.bn-report-stat.negative strong { color: #f87171; }
+.bn-report-stat span {
+  margin-top: 2px;
+  color: #d2dae2;
+  font: 400 clamp(11px,1.45dvh,16px)/1.25 'Lexend',sans-serif;
+  overflow-wrap: anywhere;
+}
+.bn-report-meta {
+  margin: auto 0 0;
+  color: #9daeba;
+  font: 400 clamp(10px,1.4dvh,13px)/1.3 'Lexend',sans-serif;
+  overflow-wrap: anywhere;
+}
+.bn-report-rewards h2 { color: #fbbf24; }
+.bn-report-xp {
+  display: grid;
+  gap: clamp(6px,.9dvh,10px);
+  width: 100%;
+}
+.bn-report-xp-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 9px;
+  align-items: center;
+  font: 600 clamp(12px,1.5dvh,17px)/1.2 'Lexend',sans-serif;
+}
+.bn-report-xp-head span { color: #d2dae2; font-size: .77em; font-weight: 400; }
+.bn-report-xp-track {
+  width: 100%;
+  height: clamp(10px,1.6dvh,16px);
+  border: 1px solid #8398a5;
+  border-radius: 999px;
+  background: #202d37;
+}
+.bn-report-reward-items {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: clamp(8px,1vw,14px);
+  align-items: center;
+}
+.bn-report-reward-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(6px,.8vw,12px);
+  min-width: 0;
+}
+.bn-report-currency {
+  display: block;
+  width: clamp(30px,4.8dvh,51px);
+  height: clamp(30px,4.8dvh,51px);
+  flex: 0 0 clamp(30px,4.8dvh,51px);
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.bn-report-currency.gold {background-image:url('../assets/figma/gold-coin.png');}
+.bn-report-currency.blue {background-image:url('../assets/figma/blue-coin.png');}
+.bn-report-reward-item>span:last-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.bn-report-reward-item strong {
+  font: 600 clamp(16px,2.1dvh,23px)/1 'Lexend',sans-serif;
+}
+.bn-report-reward-item small {
+  font: 400 clamp(9px,1.2dvh,12px)/1.15 'Lexend',sans-serif;
+  color: #c3d1d9;
+}
+.bn-report-reward-note {
+  margin: auto 0 0;
+  font: 400 clamp(10px,1.3dvh,13px)/1.3 'Lexend',sans-serif;
+  color: #acbec9;
+  text-wrap: pretty;
+}
+.bn-report-actions {
+  width: min(100%,640px);
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: clamp(7px,1.1dvh,13px);
+}
+.bn-report-replay,
+.bn-report-back {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: 'Pirata One',Georgia,serif;
+  font-weight: 400;
+  line-height: 1;
+}
+.bn-report-replay {
+  width: 100%;
+  min-height: clamp(50px,7.8dvh,78px);
+  padding: 8px 17px;
+  border: 2px solid #dce7ed;
+  background: #ffbf24;
+  color: #0b1116;
+  font-size: clamp(26px,4.6dvh,42px);
+}
+.bn-report-replay:hover {background:#ffd65d;}
+.bn-report-back {
+  width: fit-content;
+  min-height: clamp(39px,5.7dvh,55px);
+  padding: 8px clamp(18px,2.8vw,34px);
+  border: 2px solid #dce7ed;
+  background: #060e14f2;
+  color: #fff;
+  font-size: clamp(21px,3.3dvh,30px);
+}
+.bn-report-back:hover {border-color:#fbbf24;}
+.bn-result-stage button:focus-visible {outline:3px solid #34d399;outline-offset:3px;}
+
+/* Storm background composition:
+ * on mobile keep the complete original portrait painting and ship at the left;
+ * on desktop fill the widescreen with the same storm AND preserve a left-anchored
+ * portrait slice so the ship and foreground waves don't disappear from cropping.
+ */
+@media(min-width:850px) {
+  body[data-route="result"] .screen.bn-result-stage {
+    background:
+      linear-gradient(90deg,#081016a8 0%,#08101668 27%,#08101672 72%,#081016a8 100%),
+      url('../assets/figma/storm.jpg') center 59%/cover no-repeat,
+      #0b1014 !important;
+  }
+  body[data-route="result"] .bn-result-stage::before {
+    content: '';
+    display: block !important;
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(49vw,720px);
+    background: url('../assets/figma/storm.jpg') left bottom/auto 100% no-repeat;
+    mask-image:linear-gradient(to right,#000 0%,#0008 44%,transparent 100%);
+    pointer-events:none;
+  }
+  .bn-result-viewport {width: min(100%,1040px);}
+  .bn-report-rewards {justify-content:center;}
+}
+
+/* Small-screen artwork is a tall single column, as in the approved portrait. */
+@media(max-width:849px) {
+  body[data-route="result"] .screen.bn-result-stage {
+    background:
+      linear-gradient(180deg,#08101644 0%,#08101632 60%,#08101674 100%),
+      url('../assets/figma/storm.jpg') center center/auto 100% no-repeat,
+      #101a22 !important;
+  }
+  body[data-route="result"] .bn-result-stage::before {display:none!important;}
+  .bn-result-viewport {
+    width:min(100%,540px);
+    gap:clamp(5px,.9dvh,10px);
+    padding:clamp(5px,1dvh,13px) clamp(11px,3vw,18px);
+  }
+  .bn-report-emblem {width:clamp(32px,6dvh,51px);height:clamp(32px,6dvh,51px);}
+  .bn-report-hero h1 {font-size:clamp(40px,7.3dvh,59px);}
+  .bn-report-hero p {font-size:clamp(11px,1.7dvh,13px);}
+  .bn-report-panels {grid-template-columns:minmax(0,1fr);gap:clamp(5px,.95dvh,10px);}
+  .bn-report-panel {padding:clamp(9px,1.4dvh,14px);gap:clamp(5px,.8dvh,10px);}
+  .bn-report-panel h2 {font-size:clamp(26px,4.2dvh,35px);}
+  .bn-report-stat {min-height:clamp(46px,8.3dvh,67px);padding:clamp(4px,.8dvh,8px) 12px;}
+  .bn-report-stat strong {font-size:clamp(27px,5.3dvh,38px);}
+  .bn-report-stat span {font-size:clamp(10px,1.6dvh,13px);}
+  .bn-report-meta {font-size:clamp(9px,1.35dvh,11px);}
+  .bn-report-xp-head {font-size:12px;}
+  .bn-report-xp-track {height:9px;}
+  .bn-report-currency {width:29px;height:29px;flex-basis:29px;}
+  .bn-report-reward-item strong {font-size:16px;}
+  .bn-report-reward-note {font-size:clamp(9px,1.2dvh,11px);}
+  .bn-report-actions {gap:clamp(5px,.8dvh,8px);}
+  .bn-report-replay {min-height:clamp(41px,6.5dvh,57px);font-size:clamp(24px,4.8dvh,33px);}
+  .bn-report-back {min-height:clamp(33px,5.3dvh,43px);font-size:clamp(20px,3.5dvh,26px);}
+}
+@media(max-height:600px) and (max-width:849px) {
+  .bn-result-viewport { gap:4px; padding-block:4px; }
+  .bn-report-hero {gap:1px;}
+  .bn-report-emblem {width:31px;height:31px;}
+  .bn-report-hero h1 {font-size:41px;}
+  .bn-report-hero p {font-size:11px;line-height:1.18;}
+  .bn-report-panel {gap:4px;padding:8px;}
+  .bn-report-panel h2 {font-size:24px;}
+  .bn-report-stat {min-height:44px;padding:4px 9px;}
+  .bn-report-stat strong {font-size:26px;}
+  .bn-report-reward-note {font-size:9px;}
+  .bn-report-replay {min-height:40px;}
+  .bn-report-back {min-height:32px;}
+}
+@media(max-height:625px) and (min-width:850px) {
+  .bn-result-viewport {gap:7px;padding-block:8px;}
+  .bn-report-emblem {height:44px;width:44px;}
+  .bn-report-hero h1 {font-size:58px;}
+  .bn-report-panel {gap:7px;padding:12px;}
+  .bn-report-stat {min-height:66px;padding-block:8px;}
+  .bn-report-replay {min-height:49px;font-size:30px;}
+  .bn-report-back {min-height:37px;font-size:22px;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .bn-result-stage * {animation:none!important;transition:none!important;}
+}
