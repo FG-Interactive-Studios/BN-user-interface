@@ -67,6 +67,9 @@ try {
    await page.locator('#password').fill('valid-password');
    await page.locator('[data-form="login"] button[type="submit"]').click();
    await page.locator('body[data-route="placement"] .bn-placement-screen').waitFor({timeout:15000});
+   // API reconciliation may briefly replace the placement DOM after navigation.
+   // Wait until all 100 cells have been rendered before checking interactions.
+   await page.waitForFunction(()=>document.querySelectorAll('.bn-placement-board-wrap .cell').length===100,{timeout:15000});
 
    async function shipCells(){return page.locator('.bn-placement-board-wrap .cell.ship').count();}
    async function clickCell(row,col){await page.locator('.bn-placement-board-wrap [data-coord="'+row+','+col+'"]').click();}
