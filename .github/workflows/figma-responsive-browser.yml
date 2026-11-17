@@ -9,6 +9,7 @@ on:
       - 'tools/test-figma-placement.mjs'
       - 'tools/test-figma-result.mjs'
       - 'tools/test-figma-profile.mjs'
+      - 'tools/test-figma-settings.mjs'
       - '.github/workflows/figma-responsive-browser.yml'
   workflow_dispatch:
 permissions:
@@ -40,6 +41,8 @@ jobs:
         run: node tools/test-figma-result.mjs
       - name: Check approved Figma player profile and edit forms
         run: node tools/test-figma-profile.mjs
+      - name: Check approved Figma settings layout and real account actions
+        run: node tools/test-figma-settings.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -51,5 +54,6 @@ jobs:
             artifacts/figma-placement/
             artifacts/figma-result/
             artifacts/figma-profile/
+            artifacts/figma-settings/
           if-no-files-found: ignore
           retention-days: 7
