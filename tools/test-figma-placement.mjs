@@ -113,7 +113,8 @@ try {
    assert.equal(await shipCells(),17);
    assert.equal(await page.locator('.bn-placement-confirm').isEnabled(),true);
    await page.locator('.bn-placement-confirm').click();
-   await page.locator('.bn-placement-confirm').waitFor({state:'visible'});
+   await page.waitForFunction(()=>document.querySelector('.bn-placement-confirm')?.disabled
+     && /confirmadas/i.test(document.querySelector('.bn-placement-confirm')?.textContent||''));
    assert.equal(calls.put.length,1,'Manual fleet must be validated/persisted on API before confirming');
    assert.equal(calls.put[0].length,5,'Server must receive all five ship placements');
    assert.equal(new Set(calls.put[0].map(s=>s.type)).size,5);
