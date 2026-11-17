@@ -102,6 +102,7 @@ try {
 
    // Random is generated and persisted by the server, never by the frontend.
    await page.locator('[data-action="random-placement"]').click();
+   await page.waitForFunction(()=>document.querySelectorAll('.bn-placement-board-wrap .cell.ship').length===17);
    assert.equal(calls.random,1);
    assert.equal(await shipCells(),17);
    assert.equal(await page.locator('.bn-placement-confirm').isEnabled(),true);
