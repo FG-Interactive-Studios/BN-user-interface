@@ -2,7 +2,7 @@ import * as api from './client.js';
 import { renderCosmeticStore } from './store-ui.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
-import { roomPlayerCard, compactEnemyContacts } from './mobile-presenters.js';
+import { compactEnemyContacts } from './mobile-presenters.js';
 
 const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20l-3-6H5l-3 6zM8 12V8h4v4M12 6V4"/></svg>`;
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">Batalha Naval</div><div class="brand-sub">Duelo 1v1 em alto-mar</div></div></div>`;
@@ -57,9 +57,9 @@ function header() {
     </div>
   </header>`;
 }
-function screen(content,{active='play',noNav=false}={}) { return `<div class="screen"><div class="shell">${header()}<main class="main">${content}</main>${noNav?'':nav(active)}</div></div>`; }
+function screen(content,{active='play',noNav=false,noHeader=false,variant=''}={}) { return `<div class="screen ${variant}"><div class="shell">${noHeader?'':header()}<main class="main">${content}</main>${noNav?'':nav(active)}</div></div>`; }
 function panel(title,body,cls='') { return `<section class="panel tp-panel ${cls}"><div class="eyebrow">Comando naval</div><h2 class="panel-title" style="margin:8px 0 16px">${title}</h2>${body}</section>`; }
-function mainContent(inner,{active='play',noNav=false}={}) {return screen(`<div class="tp-content">${inner}</div>`,{active,noNav});}
+function mainContent(inner,{active='play',noNav=false,noHeader=false,variant=''}={}) {return screen(`<div class="tp-content">${inner}</div>`,{active,noNav,noHeader,variant});}
 function alertNode() { return state.notice ? `<div class="tp-notice ${state.error?'error':''}" role="alert">${esc(state.notice)} <button type="button" data-action="dismiss" style="float:right;background:transparent;color:inherit;border:0;cursor:pointer">×</button></div>` : ''; }
 function routeForLobby(status) {return status==='WAITING'?'matchmaking':status==='PREPARING'?'placement':status==='PLAYING'?'match':status==='FINISHED'?'result':'lobby';}
 function synchronizeRoute() {
@@ -225,10 +225,53 @@ function waitingScreen() {
     const options=state.modes.map(mode=>`<option value="${esc(mode.id)}" ${state.modeId===mode.id?'selected':''}>${esc(mode.name)} · ${mode.geometry?.cells?.length||0} casas</option>`).join('');
     return mainContent(`<div class="matchmaking-wrap tp-create-room-wrap"><section class="panel mm-card tp-create-room-card tp-room-setup"><div class="eyebrow">Canal de combate</div><h2 class="form-title">Criar sala privada</h2><p class="form-sub tp-setup-description">Escolha o tabuleiro e convide outro capitão.</p><div class="tp-create-mode"><label class="eyebrow" for="mode-picker">Modo de jogo</label><select class="tp-mode-select" id="mode-picker" ${options?'':'disabled'}>${options||'<option>Sem modos habilitados</option>'}</select></div><div class="tp-actions tp-create-actions"><button type="button" class="btn btn-ghost" data-go="lobby">← Voltar</button><button type="button" class="btn btn-orange" data-action="create-lobby" ${options?'':'disabled'}>Criar sala</button></div></section></div>`,{noNav:true});
   }
+  // The backend only exposes name, avatar ID, connection and readiness.
+  // The approved art also depicts level, wins and a countdown, none of which
+  // exist in LobbyResponse yet; never fabricate those values on the client.
+  const host=room.players[0] || null;
+  const guest=room.players[1] || null;
   const me=room.players.find(p=>p.id===state.profile?.id);
   const other=room.players.find(p=>p.id!==state.profile?.id);
-  const players=[roomPlayerCard(room.players[0],{isSelf:room.players[0]?.id===state.profile?.id,role:'Anfitrião'}),roomPlayerCard(room.players[1],{isSelf:room.players[1]?.id===state.profile?.id,role:'Convidado'})].join('');
-  return mainContent(`<div class="matchmaking-wrap tp-room-waiting-wrap"><section class="panel mm-card tp-waiting-card"><div class="eyebrow">Canal de combate • ${esc(room.mode?.name||'Modo clássico')}</div><h2 class="form-title">Sala privada</h2><p class="form-sub tp-waiting-description">Compartilhe o código para convidar outro jogador.</p><button type="button" data-action="copy-code" class="btn btn-primary tp-room-code" aria-label="Copiar código da sala"><strong>${esc(room.code)}</strong><span aria-hidden="true">⧉</span></button><div class="tp-waiting-radar">${radarMarkup()}</div><div class="tp-room-slots" aria-label="Participantes da sala" aria-live="polite">${players}</div><p class="tp-room-hint">${other?'Ambos precisam confirmar prontidão.':'Aguardando outro capitão entrar pelo código.'}</p><div class="tp-actions tp-room-controls"><button class="btn ${me?.ready?'btn-ghost':'btn-orange'}" data-action="ready" ${other?'':'disabled'}>${me?.ready?'Cancelar prontidão':'Estou pronto'}</button><button class="btn btn-danger" data-action="leave-lobby">Sair da sala</button></div></section></div>`,{noNav:true});
+  const readyCount=room.players.filter(p=>p.ready).length;
+  const playerCard=(player,role)=>{
+    const nickname=player?.nickname || 'Vaga disponível';
+    const initial=player ? (Array.from(String(nickname).trim())[0] || '?').toLocaleUpperCase('pt-BR') : '+';
+    const isSelf=player?.id===state.profile?.id;
+    const status=player ? player.ready ? 'Pronto' : !player.connected ? 'Desconectado' : 'Aguardando' : 'Aguardando';
+    return `<article class="bn-room-player ${player?'':'bn-room-player-empty'}" aria-label="${esc(role)}: ${esc(nickname)}, ${status}">
+      <span class="bn-room-avatar" aria-hidden="true">${esc(initial)}</span>
+      <div class="bn-room-player-details">
+        <h2>${esc(nickname)}</h2>
+        <p class="bn-room-player-role">${isSelf?'Você · ':''}${role}${player ? '' : ' · Aguardando jogador'}</p>
+        <span class="bn-room-ready ${player?.ready?'is-ready':'is-waiting'}"><i aria-hidden="true"></i>${status}</span>
+      </div>
+    </article>`;
+  };
+  return mainContent(`<section class="bn-waiting-room" aria-labelledby="bn-waiting-heading">
+    <div class="bn-room-heading">
+      <button type="button" class="bn-room-close" data-action="leave-lobby" aria-label="Sair da sala" title="Sair da sala">×</button>
+      <h1 id="bn-waiting-heading">Sala de espera</h1>
+    </div>
+    <p class="bn-room-description">A batalha começa quando os dois capitães estiverem prontos.</p>
+    <button type="button" data-action="copy-code" class="bn-room-invite" aria-label="Copiar código da sala ${esc(room.code)}">
+      <span>Código da sala</span><strong>${esc(room.code)}</strong><span aria-hidden="true">⧉</span>
+    </button>
+    <div class="bn-room-duel" aria-label="Capitães da sala">
+      ${playerCard(host,'Anfitrião')}
+      <div class="bn-room-versus" aria-hidden="true">VS</div>
+      ${playerCard(guest,'Convidado')}
+    </div>
+    <p class="bn-room-confirmation" role="status" aria-live="polite">
+      <span>${other ? 'Confirmações' : 'Aguardando adversário'}</span>
+      <strong>${readyCount} de 2 prontos</strong>
+    </p>
+    <div class="bn-room-controls">
+      <button type="button" class="bn-room-ready-button" data-action="ready" ${other?'':'disabled'}>
+        ${me?.ready?'Cancelar prontidão':'Pronto'}
+      </button>
+      <button type="button" class="bn-room-leave-button" data-action="leave-lobby">Sair da sala</button>
+    </div>
+  </section>`,{noNav:true,noHeader:true,variant:'bn-waiting-screen'});
 }
 
 function fleetPanel(mode, ships, verified=false) {
