@@ -36,3 +36,6 @@
 
 /* Approved Figma captain profile: complete panel layout, edit in a modal. */
 @import './figma-profile-v8.css';
+
+/* Approved settings screen: Som, Jogo, Conta and coral logout button. */
+@import './figma-settings-v9.css';
