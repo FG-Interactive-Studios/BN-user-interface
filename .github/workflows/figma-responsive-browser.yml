@@ -6,6 +6,7 @@ on:
       - 'tools/test-figma-viewport.mjs'
       - 'tools/test-figma-combat-mobile.mjs'
       - 'tools/test-figma-waiting-room.mjs'
+      - 'tools/test-figma-placement.mjs'
       - '.github/workflows/figma-responsive-browser.yml'
   workflow_dispatch:
 permissions:
@@ -31,6 +32,8 @@ jobs:
         run: node tools/test-figma-combat-mobile.mjs
       - name: Check Figma waiting room layout and readiness
         run: node tools/test-figma-waiting-room.mjs
+      - name: Check Figma fleet placement and API confirmation
+        run: node tools/test-figma-placement.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -39,5 +42,6 @@ jobs:
             artifacts/figma-responsive/
             artifacts/figma-combat/
             artifacts/figma-waiting/
+            artifacts/figma-placement/
           if-no-files-found: ignore
           retention-days: 7
