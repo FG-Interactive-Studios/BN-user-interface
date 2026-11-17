@@ -1,0 +1,267 @@
+/* Sala de espera — approved Figma portrait layout, adapted for desktop.
+ * Reference: Batalha Naval - Fluxo de Telas.pdf, "Sala de espera" artboard.
+ * Only the real WAITING lobby uses this class. Setup and game UI stay intact.
+ */
+body[data-route="matchmaking"] .screen.bn-waiting-screen {
+  min-height: 100dvh !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background:
+    linear-gradient(180deg, #0b101424 0%, #0b10143b 64%, #0b10146d 100%),
+    url('../assets/figma/storm.jpg') center center / cover no-repeat,
+    var(--bn-bg) !important;
+}
+body[data-route="matchmaking"] .bn-waiting-screen .shell {
+  width: 100% !important;
+  max-width: 1060px !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  overflow: visible !important;
+  background: none !important;
+}
+body[data-route="matchmaking"] .bn-waiting-screen .main {
+  display: flex !important;
+  flex: 1 0 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100dvh !important;
+  max-height: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: visible !important;
+  padding: clamp(18px, 3.6dvh, 42px) clamp(12px, 3vw, 38px) !important;
+}
+body[data-route="matchmaking"] .bn-waiting-screen .tp-content {
+  width: 100% !important;
+  max-width: 1000px !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.bn-waiting-room {
+  width: min(100%, 530px);
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(12px, 2dvh, 19px);
+  color: #fff;
+  font-family: 'Lexend', system-ui, sans-serif;
+}
+.bn-room-heading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(9px, 2.3vw, 15px);
+  min-width: 0;
+}
+.bn-room-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  border: 2px solid #e5edf0;
+  background: #0b1014d8;
+  border-radius: 50%;
+  color: #fff;
+  font: 300 39px/1 system-ui,sans-serif;
+  cursor: pointer;
+  padding: 0 0 5px;
+}
+.bn-room-heading h1 {
+  min-width: 0;
+  margin: 0;
+  padding: 8px clamp(12px, 4vw, 23px) 10px;
+  background: #070e13ef;
+  border-radius: 22px;
+  color: #fff;
+  font: 400 clamp(31px, 8.1vw, 49px)/1 'Pirata One',Georgia,serif;
+  white-space: nowrap;
+}
+.bn-room-description {
+  margin: 0;
+  color: #d3dde4;
+  font: 400 clamp(13px, 3.6vw, 16px)/1.48 'Lexend',sans-serif;
+  text-align: left;
+}
+.bn-room-invite {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 7px 12px;
+  border: 1px solid #7f929e;
+  border-radius: 999px;
+  background: #071119d9;
+  color: #dce8ee;
+  font: 500 11px/1.2 'Lexend',sans-serif;
+  cursor: pointer;
+}
+.bn-room-invite strong {
+  font: 600 13px/1.2 'Lexend',sans-serif;
+  letter-spacing: .11em;
+  color: var(--bn-gold);
+}
+.bn-room-invite > span:last-child {font-size:17px;line-height:1}
+
+.bn-room-duel {display:flex;flex-direction:column;align-items:stretch;gap:12px}
+.bn-room-player {
+  min-width: 0;
+  min-height: 142px;
+  display: grid;
+  grid-template-columns: 88px minmax(0,1fr);
+  align-items: center;
+  gap: clamp(12px, 3.4vw, 18px);
+  padding: 17px clamp(15px, 3.7vw, 22px);
+  border: 2px solid #25343d;
+  border-radius: 22px;
+  background: #070e13f2;
+  box-shadow: 0 9px 25px #0009;
+}
+.bn-room-avatar {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  border: 3px solid var(--bn-gold);
+  border-radius: 50%;
+  background: linear-gradient(160deg,#1c3543,#0d1b24);
+  color: #fff;
+  font: 400 51px/1 'Pirata One',Georgia,serif;
+  text-transform: uppercase;
+}
+.bn-room-player-empty .bn-room-avatar {color:#a6b7bf;border-color:#758995}
+.bn-room-player-details {min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.bn-room-player-details h2 {
+  min-width:0;max-width:100%;
+  margin:0;color:#fff;
+  font:400 clamp(25px, 6.7vw, 35px)/1 'Pirata One',Georgia,serif;
+  overflow-wrap:anywhere;
+}
+.bn-room-player-role {
+  margin:0;
+  color:#c4cfd6;
+  font:400 clamp(11px,2.9vw,13px)/1.35 'Lexend',sans-serif;
+}
+.bn-room-ready {
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:28px;max-width:100%;
+  border:1.5px solid #6d8290;border-radius:999px;
+  padding:4px 12px;background:#080f14;
+  color:#d7e0e6;
+  font:500 clamp(12px,3.4vw,15px)/1.2 'Lexend',sans-serif;
+}
+.bn-room-ready i {width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:var(--bn-gold)}
+.bn-room-ready.is-ready {border-color:var(--bn-mint);background:var(--bn-mint);color:#05130d}
+.bn-room-ready.is-ready i {background:#081512}
+.bn-room-versus {
+  display:grid;place-items:center;
+  min-height:64px;
+  color:var(--bn-gold);
+  font:400 clamp(60px,15vw,78px)/1 'Pirata One',Georgia,serif;
+  text-align:center;
+  text-shadow:0 3px 12px #000b;
+}
+.bn-room-confirmation {
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;flex-wrap:wrap;margin:2px 0 0;
+  color:#d4dce1;font:400 clamp(13px,3.3vw,16px)/1.3 'Lexend',sans-serif;
+}
+.bn-room-confirmation strong {
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:39px;padding:7px 16px;
+  border:2px solid var(--bn-gold);border-radius:999px;
+  background:#071119ed;color:white;
+  font:600 clamp(13px,3.4vw,16px)/1.1 'Lexend',sans-serif;
+}
+.bn-room-controls {display:flex;flex-direction:column;align-items:center;gap:12px}
+.bn-room-ready-button,
+.bn-room-leave-button {
+  border-radius:999px;
+  cursor:pointer;
+  font-family:'Pirata One',Georgia,serif;
+  font-weight:400;
+  line-height:1;
+  text-transform:none;
+  letter-spacing:0;
+}
+.bn-room-ready-button {
+  display:grid;place-items:center;
+  width:100%;
+  min-height:65px;
+  padding:12px 20px;
+  border:2px solid #e3edf2;
+  background:var(--bn-gold);
+  color:#090e11;
+  font-size:clamp(30px,8vw,42px);
+}
+.bn-room-ready-button:hover:not(:disabled) {background:#ffd45b}
+.bn-room-ready-button:disabled {opacity:.56;cursor:not-allowed}
+.bn-room-leave-button {
+  min-height:49px;
+  padding:8px 25px;
+  border:2px solid #cbd7de;
+  background:#070d13ef;
+  color:#fff;
+  font-size:clamp(23px,6vw,29px);
+}
+.bn-room-leave-button:hover,.bn-room-close:hover {border-color:var(--bn-gold)}
+.bn-waiting-room button:focus-visible {
+  outline:3px solid var(--bn-gold);outline-offset:3px;
+}
+
+/* The illustration is portrait. On PCs the two captains flank the VS while
+   retaining the same visual language and leaving actions beneath both. */
+@media (min-width: 900px) {
+  .bn-waiting-room {width:100%;max-width:970px;gap:23px}
+  .bn-room-heading {justify-content:center}
+  .bn-room-heading h1 {font-size:54px}
+  .bn-room-close {width:56px;height:56px;flex-basis:56px}
+  .bn-room-description {font-size:18px;text-align:center}
+  .bn-room-invite {align-self:center}
+  .bn-room-duel {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 85px minmax(0,1fr);
+    align-items:center;
+    gap:17px;
+  }
+  .bn-room-player {min-height:205px;grid-template-columns:100px minmax(0,1fr);padding:24px 18px}
+  .bn-room-avatar {width:98px;height:98px;font-size:58px}
+  .bn-room-player-details h2 {font-size:clamp(25px,3vw,39px)}
+  .bn-room-versus {font-size:73px}
+  .bn-room-controls {max-width:580px;width:100%;align-self:center}
+  .bn-room-ready-button {min-height:68px}
+}
+@media (max-width:380px) {
+  .bn-room-heading {gap:8px}
+  .bn-room-close {width:40px;height:40px;flex-basis:40px;font-size:34px}
+  .bn-room-heading h1 {font-size:clamp(28px,8.6vw,32px);padding-inline:12px}
+  .bn-room-player {grid-template-columns:70px minmax(0,1fr);min-height:119px;padding:12px;gap:11px}
+  .bn-room-avatar {width:70px;height:70px;font-size:42px}
+  .bn-room-player-details h2 {font-size:clamp(22px,7vw,28px)}
+  .bn-room-versus {min-height:50px;font-size:58px}
+  .bn-room-ready-button {min-height:55px;font-size:30px}
+}
+@media (max-height:700px) and (max-width:899px) {
+  body[data-route="matchmaking"] .bn-waiting-screen .main {align-items:flex-start!important;padding-top:13px!important}
+  .bn-waiting-room {gap:9px}
+  .bn-room-player {min-height:113px;padding-block:11px}
+  .bn-room-avatar {width:65px;height:65px;font-size:39px}
+  .bn-room-player {grid-template-columns:65px minmax(0,1fr)}
+  .bn-room-player-details {gap:4px}
+  .bn-room-versus {min-height:47px;font-size:55px}
+  .bn-room-ready-button {min-height:53px}
+  .bn-room-leave-button {min-height:43px}
+}
+@media(prefers-reduced-motion:reduce) {
+  .bn-waiting-room * {animation:none!important;transition:none!important}
+}

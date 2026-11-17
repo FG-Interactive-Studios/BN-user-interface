@@ -1,0 +1,299 @@
+/* Mobile-only combat recovery.
+ * The old viewport-v3 container queries require a fixed-height board well.
+ * In the new scrollable layout their 100cqh resolution collapses to zero.
+ * Disable size containment and give the board its own intrinsic square.
+ * Scope exclusively to placement and match. Desktop remains unchanged.
+ */
+@media (max-width:760px) {
+  html:has(body[data-route="placement"]),html:has(body[data-route="match"]){
+    height:auto!important;overflow-x:clip!important;overflow-y:auto!important;
+  }
+  body[data-route="placement"],body[data-route="match"]{
+    width:100%!important;min-width:0!important;max-width:100%!important;
+    height:auto!important;min-height:100dvh!important;max-height:none!important;
+    overflow-x:clip!important;overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  body[data-route="placement"] #app,body[data-route="match"] #app{
+    height:auto!important;min-height:100dvh!important;max-height:none!important;
+    overflow:visible!important;
+  }
+  body[data-route="placement"] .combat-screen,body[data-route="match"] .combat-screen{
+    width:100%!important;max-width:none!important;margin:0!important;
+    height:auto!important;min-height:100dvh!important;max-height:none!important;
+    overflow:visible!important;background-position:center top!important;
+    background-size:cover!important;
+  }
+  body[data-route="placement"] .combat-screen .match-layout,
+  body[data-route="match"] .combat-screen .match-layout{
+    display:flex!important;flex-direction:column!important;
+    width:100%!important;height:auto!important;max-height:none!important;
+    min-height:100dvh!important;overflow:visible!important;
+  }
+  body[data-route="placement"] .combat-screen .match-head,
+  body[data-route="match"] .combat-screen .match-head{
+    position:relative!important;flex:0 0 auto!important;
+    display:flex!important;align-items:center!important;justify-content:space-between!important;
+    height:auto!important;min-height:60px!important;max-height:none!important;
+    width:100%!important;min-width:0!important;gap:8px!important;
+    padding:9px 12px!important;overflow:visible!important;
+  }
+  body[data-route="placement"] .combat-screen .match-head .brand,
+  body[data-route="match"] .combat-screen .match-head .brand{min-width:0!important;flex:0 0 auto!important}
+  body[data-route="placement"] .combat-screen .match-head .brand>div:last-child,
+  body[data-route="match"] .combat-screen .tp-battle-brand .brand>div:last-child{display:none!important}
+  body[data-route="placement"] .combat-screen .match-head .turn-box,
+  body[data-route="match"] .combat-screen .match-head .turn-box{
+    width:auto!important;max-width:calc(100% - 60px)!important;
+    min-width:0!important;height:auto!important;min-height:40px!important;
+    flex:1 1 auto!important;clip-path:none!important;
+    padding:7px 10px!important;border:1px solid #3c8cac77!important;
+    border-radius:10px!important;text-align:center!important;
+  }
+  body[data-route="placement"] .combat-screen .turn-box b,
+  body[data-route="match"] .combat-screen .turn-box b{
+    display:block!important;font:600 clamp(15px,4.2vw,19px)/1.15 'Lexend',sans-serif!important;
+    white-space:normal!important;
+  }
+  body[data-route="placement"] .combat-screen .turn-box small,
+  body[data-route="match"] .combat-screen .turn-box small{
+    display:block!important;font-size:10px!important;line-height:1.25!important;
+    margin-top:3px!important;white-space:normal!important;
+  }
+  body[data-route="placement"] .setup-meta,
+  body[data-route="match"] .enemy-meta{display:none!important}
+
+  /* Break the previous grid / fixed viewport budget. All major sections
+     participate in document flow instead of sharing one 0px-high grid row. */
+  body[data-route="placement"] .combat-screen .match-grid,
+  body[data-route="match"] .combat-screen .match-grid{
+    display:flex!important;flex-direction:column!important;
+    align-items:stretch!important;justify-content:flex-start!important;
+    flex:0 0 auto!important;position:relative!important;
+    width:100%!important;max-width:100%!important;
+    height:auto!important;max-height:none!important;min-height:0!important;
+    grid-template:none!important;grid-auto-rows:auto!important;
+    overflow:visible!important;gap:13px!important;
+    padding:9px 12px calc(26px + env(safe-area-inset-bottom,0px))!important;
+  }
+  body[data-route="placement"] .combat-screen .match-grid>.premium-board-panel,
+  body[data-route="match"] .combat-screen .match-grid>.premium-board-panel{
+    order:1!important;display:flex!important;flex-direction:column!important;
+    align-self:stretch!important;position:relative!important;z-index:auto!important;
+    flex:0 0 auto!important;grid-area:auto!important;
+    width:100%!important;max-width:100%!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    grid-template:none!important;padding:11px!important;
+    overflow:visible!important;border-radius:16px!important;
+  }
+  body[data-route="placement"] .combat-screen .premium-board-head,
+  body[data-route="match"] .combat-screen .premium-board-head{
+    flex:0 0 auto!important;min-width:0!important;
+    display:flex!important;justify-content:space-between!important;align-items:center!important;
+    height:auto!important;min-height:38px!important;max-height:none!important;
+    padding:0 0 8px!important;gap:7px!important;
+  }
+  body[data-route="placement"] .combat-screen .premium-board-head b,
+  body[data-route="match"] .combat-screen .premium-board-head b{
+    font:600 17px/1.2 'Lexend',sans-serif!important;
+  }
+  body[data-route="placement"] .combat-screen .board-meta,
+  body[data-route="match"] .combat-screen .board-meta{
+    display:block!important;position:static!important;
+    flex:0 0 auto!important;height:auto!important;max-height:none!important;
+    min-height:24px!important;overflow:visible!important;
+    margin:5px 0 0!important;padding:5px 3px!important;
+  }
+  body[data-route="placement"] .combat-screen .board-meta .meta-block b,
+  body[data-route="match"] .combat-screen .board-meta .meta-block b{font-size:10px!important}
+  body[data-route="placement"] .combat-screen .board-meta .meta-block small,
+  body[data-route="match"] .combat-screen .board-meta .meta-block small{
+    display:block!important;font-size:10px!important;line-height:1.25!important;
+    white-space:normal!important;
+  }
+
+  /* Container queries are intentionally disabled: square sizing is based
+     on actual available width. A 10x10 board fits a 320px device. */
+  body[data-route="placement"] .combat-screen .match-grid .board-wrap-primary.combat-board-wrap,
+  body[data-route="match"] .combat-screen .match-grid .board-wrap-primary.combat-board-wrap{
+    container-type:normal!important;contain:none!important;position:relative!important;
+    display:flex!important;flex:0 0 auto!important;
+    align-items:center!important;justify-content:center!important;
+    width:100%!important;max-width:100%!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    overflow:visible!important;padding:4px 0!important;
+  }
+  body[data-route="placement"] .combat-screen .combat-board-wrap .setup-board-frame,
+  body[data-route="match"] .combat-screen .combat-board-wrap .tactical-board-frame{
+    display:block!important;position:relative!important;contain:none!important;
+    flex:0 0 auto!important;width:min(100%,440px)!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    max-width:100%!important;aspect-ratio:1/1!important;
+    margin:0 auto!important;transform:none!important;
+  }
+  body[data-route="placement"] .combat-screen .setup-board-frame .board-main,
+  body[data-route="match"] .combat-screen .tactical-board-frame .board-main{
+    display:grid!important;position:relative!important;
+    width:100%!important;max-width:100%!important;
+    height:auto!important;max-height:none!important;min-height:0!important;
+    aspect-ratio:1/1!important;contain:none!important;margin:0!important;
+    padding:clamp(4px,1.3vw,8px)!important;gap:1px!important;
+    grid-template-columns:15px repeat(var(--size),minmax(0,1fr))!important;
+    grid-template-rows:15px repeat(var(--size),minmax(0,1fr))!important;
+  }
+  body[data-route="placement"] .combat-screen .board-main .cell,
+  body[data-route="match"] .combat-screen .board-main .cell{
+    min-width:0!important;min-height:0!important;aspect-ratio:auto!important;
+    padding:0!important;box-sizing:border-box!important;
+  }
+  body[data-route="placement"] .combat-screen .board-main .coord,
+  body[data-route="match"] .combat-screen .board-main .coord{font-size:9px!important}
+
+  /* Protocol and real actions are immediately below the main board. */
+  body[data-route="placement"] .combat-screen .match-grid>.premium-hud,
+  body[data-route="match"] .combat-screen .match-grid>.premium-hud{
+    order:2!important;display:flex!important;flex-direction:column!important;
+    grid-area:auto!important;position:static!important;z-index:auto!important;
+    align-self:stretch!important;flex:0 0 auto!important;
+    width:100%!important;max-width:100%!important;
+    height:auto!important;max-height:none!important;min-height:0!important;
+    overflow:visible!important;gap:10px!important;
+    padding:0!important;margin:0!important;background:none!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-hud>.placement-protocol-card,
+  body[data-route="match"] .combat-screen .premium-hud>.enemy-intel-panel{
+    flex:0 0 auto!important;position:relative!important;
+    display:block!important;width:100%!important;max-width:100%!important;
+    height:auto!important;max-height:none!important;min-height:0!important;
+    overflow:visible!important;padding:12px!important;margin:0!important;
+    border-radius:13px!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-protocol-card .tp-space{
+    display:grid!important;gap:8px!important;margin:11px 0!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-protocol-card .tp-space p{
+    display:block!important;font-size:11px!important;line-height:1.4!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-protocol-card .tp-mode-select{
+    width:100%!important;min-height:40px!important;padding:7px 10px!important;
+    font-size:12px!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-protocol-card .tp-actions{
+    display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;height:auto!important;margin:12px 0 0!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-protocol-card .tp-actions>.btn{
+    width:100%!important;min-width:0!important;min-height:39px!important;
+    padding:7px 5px!important;font-size:11px!important;line-height:1.2!important;
+    white-space:normal!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-actions,
+  body[data-route="match"] .combat-screen .combat-actions{
+    position:static!important;display:grid!important;
+    grid-template-columns:1fr!important;grid-template-rows:auto!important;
+    width:100%!important;max-width:100%!important;flex:0 0 auto!important;
+    height:auto!important;max-height:none!important;min-height:0!important;
+    overflow:visible!important;gap:9px!important;margin:0!important;padding:0!important;
+    background:none!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-actions>.btn,
+  body[data-route="match"] .combat-screen .combat-actions>.btn{
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    width:100%!important;min-width:0!important;
+    height:auto!important;min-height:46px!important;max-height:none!important;
+    padding:9px 11px!important;font:600 14px/1.15 'Lexend',sans-serif!important;
+    white-space:normal!important;border-radius:999px!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-actions .action-copy small,
+  body[data-route="match"] .combat-screen .combat-actions .action-copy small{
+    display:block!important;font-size:10px!important;margin-top:2px!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-actions .action-copy b,
+  body[data-route="match"] .combat-screen .combat-actions .action-copy b{
+    font:600 15px/1.1 'Lexend',sans-serif!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-actions .setup-cancel-btn{
+    min-height:41px!important;
+  }
+
+  /* Fleet and friendly preview follow the primary controls. They have
+     natural height; never compete for a percentage-based grid row. */
+  body[data-route="placement"] .combat-screen .match-grid>.side-stack,
+  body[data-route="match"] .combat-screen .match-grid>.side-stack{
+    order:3!important;grid-area:auto!important;
+    display:flex!important;flex-direction:column!important;
+    align-self:stretch!important;flex:0 0 auto!important;position:static!important;
+    width:100%!important;max-width:100%!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    overflow:visible!important;gap:10px!important;
+    padding:0!important;margin:0!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-fleet-card,
+  body[data-route="placement"] .combat-screen .placement-tip-card,
+  body[data-route="match"] .combat-screen .preview-panel,
+  body[data-route="match"] .combat-screen .combat-left-rail>.combat-side-card{
+    display:block!important;flex:0 0 auto!important;position:relative!important;
+    width:100%!important;max-width:100%!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    overflow:visible!important;padding:11px!important;margin:0!important;
+  }
+  body[data-route="placement"] .combat-screen .tp-ships,
+  body[data-route="match"] .combat-screen .tp-ships{
+    width:100%!important;max-height:none!important;height:auto!important;
+    min-height:0!important;overflow:visible!important;
+  }
+  body[data-route="placement"] .combat-screen .tp-ships>div,
+  body[data-route="match"] .combat-screen .tp-ships>div{
+    display:flex!important;align-items:center!important;justify-content:space-between!important;
+    gap:7px!important;padding:7px 8px!important;min-height:33px!important;
+  }
+  body[data-route="placement"] .combat-screen .placement-tip-card p{
+    display:block!important;font-size:11px!important;
+  }
+  body[data-route="match"] .combat-screen .preview-panel .board-wrap-preview{
+    container-type:normal!important;contain:none!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    width:100%!important;max-width:100%!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    overflow:visible!important;
+  }
+  body[data-route="match"] .combat-screen .preview-panel .board-preview{
+    width:min(58vw,210px)!important;height:auto!important;aspect-ratio:1!important;
+    max-width:100%!important;max-height:none!important;
+    grid-template-columns:12px repeat(var(--size),minmax(0,1fr))!important;
+    grid-template-rows:12px repeat(var(--size),minmax(0,1fr))!important;
+  }
+  body[data-route="match"] .combat-screen .premium-hud .tp-mobile-intel{
+    display:block!important;position:static!important;max-height:none!important;
+  }
+  body[data-route="match"] .combat-screen .tp-mobile-intel>summary{
+    min-height:54px!important;
+  }
+  body[data-route="match"] .combat-screen .tp-mobile-intel-list{
+    position:static!important;display:block;max-height:170px;overflow-y:auto!important;
+    margin:8px 0 0!important;width:100%!important;
+  }
+  body[data-route="match"] .combat-screen .enemy-intel-panel .enemy-intel-head,
+  body[data-route="match"] .combat-screen .enemy-intel-panel .enemy-intel-list{
+    display:none!important;/* compact server-backed summary lives in details */
+  }
+  body[data-route="match"] .combat-screen .combat-actions .skill-btn{
+    display:none!important;/* backend unavailable */
+  }
+  body[data-route="match"] .combat-screen .combat-actions .tp-desktop-forfeit{display:none!important}
+  body[data-route="match"] .combat-screen .combat-actions .tp-mobile-forfeit{display:inline!important}
+  body[data-route="placement"] .combat-screen .match-foot,
+  body[data-route="match"] .combat-screen .match-foot{display:none!important}
+
+  /* User-agent disabled state stays visible; disabled is not hidden. */
+  body[data-route="placement"] .combat-screen .btn:disabled,
+  body[data-route="match"] .combat-screen .btn:disabled{
+    opacity:.55!important;cursor:not-allowed;
+  }
+}
+@media(max-width:345px){
+  body[data-route="placement"] .combat-screen .match-grid,
+  body[data-route="match"] .combat-screen .match-grid{padding-inline:8px!important}
+  body[data-route="placement"] .combat-screen .premium-board-panel,
+  body[data-route="match"] .combat-screen .premium-board-panel{padding:7px!important}
+}
