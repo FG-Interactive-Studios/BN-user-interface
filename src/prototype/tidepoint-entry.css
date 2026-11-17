@@ -27,3 +27,6 @@
 
 /* Approved Figma placement shell; the original board renderer remains intact. */
 @import './figma-placement-v5.css';
+
+/* Fit the approved placement composition in mobile and desktop viewports. */
+@import './figma-placement-fit-v6.css';
