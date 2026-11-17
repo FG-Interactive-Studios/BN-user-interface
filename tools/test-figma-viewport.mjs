@@ -18,7 +18,7 @@ const browser=await chromium.launch({headless:true});
 await mkdir('artifacts/figma-responsive',{recursive:true});
 const errors=[];
 try {
- for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:1366,height:768}]){
+ for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:1361,height:597},{width:1366,height:768}]){
   const page=await browser.newPage({viewport,deviceScaleFactor:1});
   page.on('pageerror',error=>errors.push(String(viewport.width)+': '+error.message));
   await page.route('**/api/**',async route=>{
@@ -49,6 +49,29 @@ try {
   await page.locator('[data-form="login"] button[type="submit"]').click();
   await page.locator('.bn-lobby').waitFor({timeout:18000});
   await horizontalFit('lobby');
+  // Desktop is a real responsive composition, not the 540px portrait shell
+  // stretched into a PC screenshot. Retain the approved mobile layout.
+  if (viewport.width>=900) {
+    const geometry=await page.evaluate(()=>{
+      const box=selector=>document.querySelector(selector).getBoundingClientRect();
+      const shell=box('body[data-route="lobby"] .shell');
+      const event=box('.bn-feature-card');
+      const news=box('.bn-news-grid');
+      const rank=box('.bn-rank-card');
+      const lobby=box('.bn-lobby');
+      return {shellWidth:shell.width,viewport:innerWidth,lobbyWidth:lobby.width,
+        eventRight:event.right,newsLeft:news.left,
+        eventTop:event.top,rankBottom:rank.bottom};
+    });
+    assert.ok(geometry.shellWidth>=geometry.viewport*.95,
+      'desktop lobby must use viewport width: '+JSON.stringify(geometry));
+    assert.ok(geometry.lobbyWidth>=800,
+      'desktop lobby should not be locked to portrait width: '+JSON.stringify(geometry));
+    assert.ok(geometry.newsLeft>=geometry.eventRight-3,
+      'desktop news should be beside the event: '+JSON.stringify(geometry));
+    assert.ok(geometry.eventTop<geometry.rankBottom,
+      'desktop event should visually anchor both right-side rows: '+JSON.stringify(geometry));
+  }
   const join=page.locator('[data-action="open-join-modal"]');
   await join.evaluate(el=>el.scrollIntoView({block:'end'}));
   await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
@@ -58,7 +81,7 @@ try {
     return {joinBottom:join.bottom,navTop:nav.top,navBottom:nav.bottom,viewport:innerHeight};
   });
   assert.ok(visible.joinBottom<=visible.navTop+2,'lobby '+viewport.width+': join behind nav '+JSON.stringify(visible));
-  if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/lobby-'+viewport.width+'.png',fullPage:true});
+  if(viewport.width===375||viewport.width===1361||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/lobby-'+viewport.width+'.png',fullPage:true});
   await join.click();
   const dialog=page.locator('#tp-join-dialog');
   await dialog.waitFor({state:'visible'});
