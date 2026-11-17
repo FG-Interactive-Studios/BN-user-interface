@@ -2,6 +2,7 @@ import * as api from './client.js';
 import { renderCosmeticStore } from './store-ui.js';
 import { renderFigmaResult } from './figma-result.js';
 import { renderFigmaProfile } from './figma-profile.js';
+import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
 import { renderFigmaPlacement } from './figma-placement.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
@@ -15,6 +16,7 @@ const state = {
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
   store: null, storeLoading: false, storeFilter: 'ALL', profileEditorOpen: false, profileSecurityOpen: false,
+  preferences: loadPreferences(),
 };
 let root;
 let refreshTimer;
@@ -56,7 +58,7 @@ function header() {
     <div class="bn-header-actions">
       <span class="bn-connection-status" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span>
       <details class="tp-account-menu bn-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary>
-        <div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div>
+        <div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-go="settings">Configurações</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div>
       </details>
     </div>
   </header>`;
@@ -82,7 +84,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;}
+function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -355,6 +357,9 @@ async function loadStore({quiet=false}={}){
 function profileScreen(){
   return renderFigmaProfile(state.profile);
 }
+function settingsScreen(){
+  return renderFigmaSettings(state.profile,state.preferences);
+}
 
 function roomExitDialog() {
   if (!state.roomExitNotice) return "";
@@ -375,7 +380,7 @@ function render(){ if (!root) return;
     route=resolvedRoute(route,true,state.lobby?.status);
     history.replaceState(null,'',`${location.pathname}${location.search}#${route}`);
   }
-  const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen};
+  const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen};
   root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
   renderedRoute=route;
   updateNotice();
@@ -432,6 +437,45 @@ async function handleForm(form) {
 
 async function runAction(action,itemId=null) {
   switch(action) {
+    case 'toggle-setting': {
+      if(currentRoute()!=='settings'||!settingKeys.includes(itemId))break;
+      state.preferences=savePreferences({...state.preferences,[itemId]:!state.preferences[itemId]});
+      render();
+      root.querySelector(`[data-action="toggle-setting"][data-item-id="${itemId}"]`)?.focus();
+      // The music, sound-effects, vibration and notification engines have not
+      // been integrated yet. These are persisted preferences only.
+      break;
+    }
+    case 'settings-manage-account':{
+      state.profileEditorOpen=true;
+      state.profileSecurityOpen=false;
+      go('profile');
+      break;
+    }
+    case 'settings-language':
+    case 'settings-legal': {
+      if(currentRoute()!=='settings')break;
+      const dialog=root.querySelector('#bn-settings-info-dialog');
+      if(!dialog)break;
+      const title=dialog.querySelector('#bn-settings-dialog-title');
+      const description=dialog.querySelector('#bn-settings-dialog-description');
+      if(action==='settings-language'){
+        title.textContent='Idioma';
+        description.textContent='Português (BR) é o único idioma disponível nesta versão.';
+      } else if(itemId==='terms'){
+        title.textContent='Termos de uso';
+        description.textContent='Os termos de uso ainda não foram publicados nesta versão de testes.';
+      } else if(itemId==='privacy'){
+        title.textContent='Política de privacidade';
+        description.textContent='A política de privacidade ainda não foi publicada nesta versão de testes.';
+      }else break;
+      dialog.showModal();
+      dialog.querySelector('[data-action="settings-close-dialog"]')?.focus();
+      break;
+    }
+    case 'settings-close-dialog':
+      root.querySelector('#bn-settings-info-dialog')?.close();
+      break;
     case 'open-profile-editor': {
       if(currentRoute()!=='profile')break;
       state.profileEditorOpen=true;
