@@ -21,3 +21,6 @@
 
 /* Responsive desktop layout for the Figma lobby; the portrait layout remains intact. */
 @import './figma-desktop-lobby-v3.css';
+
+/* Approved waiting-room artboard, isolated from the create-room flow. */
+@import './figma-waiting-room-v4.css';
