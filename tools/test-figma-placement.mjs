@@ -24,7 +24,7 @@ const browser=await chromium.launch({headless:true});
 await mkdir('artifacts/figma-placement',{recursive:true});
 
 try {
- for(const viewport of [{width:375,height:667},{width:1366,height:768}]){
+ for(const viewport of [{width:320,height:568},{width:328,height:561},{width:375,height:667},{width:390,height:844},{width:1363,height:602},{width:1366,height:768}]){
    let preparation={
      preparationId:'abcdef',revision:1,mode,fleetPlaced:false,fleetConfirmed:false,
      opponentConfirmed:false,opponentPlaced:false,bothConfirmed:false,yourShips:[]
@@ -74,6 +74,51 @@ try {
    assert.equal(await page.locator('.bn-placement-ship').count(),5);
    assert.equal(await page.locator('.bn-placement-ship.is-selected').count(),1);
    assert.equal(await page.locator('.bn-placement-confirm').isDisabled(),true);
+
+   // Viewport is a fixed-height game screen, not a long scrollable document.
+   // Checking the CTA rect (not just CSS overflow:hidden) catches clipped actions.
+   const geometry=await page.evaluate(()=>{
+     const rect=selector=>{
+       const el=document.querySelector(selector);
+       if(!el)throw Error('Missing '+selector);
+       const r=el.getBoundingClientRect();
+       return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};
+     };
+     const tile=document.querySelector('.bn-placement-board-wrap .cell');
+     return {
+       viewportWidth:innerWidth,viewportHeight:innerHeight,
+       docWidth:document.documentElement.scrollWidth,
+       docHeight:document.documentElement.scrollHeight,
+       header:rect('.bn-placement-header'),
+       hint:rect('.bn-placement-instruction'),
+       board:rect('.bn-placement-board-wrap .board-main'),
+       cards:rect('.bn-placement-fleet'),
+       tools:rect('.bn-placement-tools'),
+       progress:rect('.bn-placement-progress'),
+       confirm:rect('.bn-placement-confirm'),
+       exit:rect('.bn-placement-exit'),
+       cellBorder:getComputedStyle(tile).borderStyle,
+     };
+   });
+   const context=viewport.width+'x'+viewport.height+' '+JSON.stringify(geometry);
+   assert.ok(geometry.docWidth<=geometry.viewportWidth+2,'Horizontal document scroll: '+context);
+   assert.ok(geometry.docHeight<=geometry.viewportHeight+2,'Vertical document scroll: '+context);
+   assert.ok(geometry.board.width>=190,'Board collapsed too far: '+context);
+   assert.ok(Math.abs(geometry.board.height-geometry.board.width)<3,'Board distorted: '+context);
+   assert.equal(geometry.cellBorder,'solid','Original board borders must remain solid: '+context);
+   for (const key of ['header','hint','board','cards','tools','progress','confirm','exit']){
+     const box=geometry[key];
+     assert.ok(box.left>=-2&&box.right<=geometry.viewportWidth+2,'Offscreen horizontally '+key+': '+context);
+     assert.ok(box.top>=-2&&box.bottom<=geometry.viewportHeight+2,'Offscreen vertically '+key+': '+context);
+   }
+   if(viewport.width<850){
+     assert.ok(geometry.board.bottom<=geometry.cards.top+3,'Fleet overlaps board mobile: '+context);
+     assert.ok(geometry.cards.bottom<=geometry.tools.top+3,'Actions overlap fleet mobile: '+context);
+     assert.ok(geometry.tools.bottom<=geometry.progress.top+3,'Progress overlaps tools mobile: '+context);
+     assert.ok(geometry.progress.bottom<=geometry.confirm.top+3,'CTA overlaps status mobile: '+context);
+   }else{
+     assert.ok(geometry.board.right<=geometry.cards.left+3,'Fleet must sit alongside board desktop: '+context);
+   }
    await page.screenshot({path:'artifacts/figma-placement/fleet-empty-'+viewport.width+'.png',fullPage:true});
 
    // No out-of-bounds placement can overwrite the draft.
