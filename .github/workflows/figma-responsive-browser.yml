@@ -8,6 +8,7 @@ on:
       - 'tools/test-figma-waiting-room.mjs'
       - 'tools/test-figma-placement.mjs'
       - 'tools/test-figma-result.mjs'
+      - 'tools/test-figma-profile.mjs'
       - '.github/workflows/figma-responsive-browser.yml'
   workflow_dispatch:
 permissions:
@@ -37,6 +38,8 @@ jobs:
         run: node tools/test-figma-placement.mjs
       - name: Check approved Figma result panels and storm framing
         run: node tools/test-figma-result.mjs
+      - name: Check approved Figma player profile and edit forms
+        run: node tools/test-figma-profile.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -47,5 +50,6 @@ jobs:
             artifacts/figma-waiting/
             artifacts/figma-placement/
             artifacts/figma-result/
+            artifacts/figma-profile/
           if-no-files-found: ignore
           retention-days: 7
