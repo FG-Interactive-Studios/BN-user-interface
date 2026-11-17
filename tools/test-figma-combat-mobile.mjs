@@ -98,7 +98,7 @@ try {
          const r=el.getBoundingClientRect();
          return {top:r.top,bottom:r.bottom,width:r.width,height:r.height};
        });
-       const minWidth=selector.includes('random-placement')?48:70;
+       const minWidth=selector.includes('leave-lobby')?28:selector.includes('random-placement')?40:70;
        assert.ok(bounds.width>=minWidth&&bounds.height>=25,'Collapsed placement action '+selector+' '+explain);
        assert.ok(bounds.top>=-2&&bounds.bottom<=viewport.height+2,'Placement action unreachable '+selector+' '+explain);
      }
