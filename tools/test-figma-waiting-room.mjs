@@ -105,16 +105,28 @@ try {
     assert.equal(await page.locator('.bn-room-ready-button').innerText(),'Cancelar prontidão');
     assert.equal(await page.locator('.bn-room-ready.is-ready').count(),1);
 
-    // Host alone: the empty seat is visible and ready cannot be pressed.
-    room={...baseRoom,revision:room.revision+1,players:[
-      {...room.players[0],ready:false}
-    ]};
-    await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-    // The live lobby normally updates on WebSocket; here the state is updated
-    // on a fresh in-app login to avoid introducing a test-only code path.
     await page.locator('.bn-room-leave-button').click();
     await page.locator('.bn-lobby').waitFor({timeout:15000});
-    assert.ok(!room||room.players.length===1);
+    assert.equal(room,null,'leaving the lobby must remove it through the API');
+
+    // Separately verify the actual host-alone lobby, rather than fabricating
+    // an opponent in the UI. Login fetches the next authoritative room state.
+    if(viewport.width===375||viewport.width===1366) {
+      room={...structuredClone(baseRoom),players:[{...baseRoom.players[0]}]};
+      await page.reload({waitUntil:'domcontentloaded'});
+      await page.locator('[data-form="login"]').waitFor();
+      await page.locator('#email').fill('capitao@example.test');
+      await page.locator('#password').fill('test-password');
+      await page.locator('[data-form="login"] button[type="submit"]').click();
+      await page.waitForFunction(()=>document.body.dataset.route==='lobby'||document.body.dataset.route==='matchmaking');
+      if(!await page.locator('.bn-waiting-room').count())
+        await page.evaluate(()=>{location.hash='matchmaking'});
+      await page.locator('.bn-waiting-room').waitFor({timeout:15000});
+      assert.equal(await page.locator('.bn-room-player-empty').count(),1);
+      assert.equal(await page.locator('.bn-room-player-empty h2').innerText(),'Vaga disponível');
+      assert.equal(await page.locator('.bn-room-ready-button').isDisabled(),true);
+      await page.screenshot({path:'artifacts/figma-waiting/waiting-host-alone-'+viewport.width+'.png',fullPage:true});
+    }
 
     await page.close();
     console.log('PASS waiting room '+viewport.width+'x'+viewport.height+': layout, real labels, ready toggle, leave, no overflow');
