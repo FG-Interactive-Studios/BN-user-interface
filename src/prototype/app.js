@@ -514,7 +514,11 @@ async function runAction(action,itemId=null) {
       const mode=activeMode();
       if(currentRoute()!=='placement'||state.preparation?.fleetConfirmed||!mode?.fleet.some(s=>s.id===itemId))break;
       if(mode.geometry.kind!=='RECTANGULAR')break;
-      state.placementShip=itemId;render();break;
+      state.placementShip=itemId;
+      const selectedPlacement=(state.draft??state.preparation?.yourShips??[]).find(s=>s.type===itemId);
+      if(selectedPlacement && mode.placementDirections?.includes(selectedPlacement.orientation))
+        state.orientation=selectedPlacement.orientation;
+      render();break;
     }
     case 'rotate-placement': {
       const mode=activeMode();
