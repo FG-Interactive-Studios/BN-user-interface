@@ -1,5 +1,6 @@
 import * as api from './client.js';
 import { renderCosmeticStore } from './store-ui.js';
+import { renderFigmaPlacement } from './figma-placement.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
 import { compactEnemyContacts } from './mobile-presenters.js';
@@ -8,7 +9,7 @@ const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">Batalha Naval</div><div class="brand-sub">Duelo 1v1 em alto-mar</div></div></div>`;
 const state = {
   profile: null, modes: [], lobby: null, preparation: null, battle: null,
-  modeId: 'classic', selected: null, draft: null, orientation: 'HORIZONTAL',
+  modeId: 'classic', selected: null, draft: null, placementShip: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
   store: null, storeLoading: false, storeFilter: 'ALL',
@@ -78,7 +79,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';}
+function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -139,7 +140,7 @@ async function reconcile() {
       if (!state.preparation || state.preparation.preparationId!==prep.preparationId || prep.revision>=state.preparation.revision) {
         changed ||= JSON.stringify(state.preparation)!==JSON.stringify(prep);
         state.preparation=prep;
-        if (previous!=='PREPARING') state.draft=null;
+        if (previous!=='PREPARING') {state.draft=null;state.placementShip=null;state.orientation='HORIZONTAL';}
       }
     } else if (['PLAYING','FINISHED'].includes(room.status)) {
       if (state.preparation) changed=true;
@@ -284,13 +285,14 @@ function fleetPanel(mode, ships, verified=false) {
 function placementScreen(){
   const p=state.preparation,mode=p?.mode||activeMode();
   if (!p||!mode) return mainContent(panel('Carregando preparação','Aguarde a atualização do servidor.'),{noNav:true});
-  const ships=state.draft??(p.yourShips||[]);
-  const editable=!p.fleetConfirmed;
-  const canManual=editable && mode.geometry.kind==='RECTANGULAR' && mode.placementDirections.includes(state.orientation);
-  const already=new Set(ships.map(s=>s.type));
-  const next=mode.fleet.find(s=>!already.has(s.id));
-  const complete=mode.fleet.every(s=>already.has(s.id));
-  return `<div class="screen combat-screen placement-screen"><div class="match-layout"><header class="match-head setup-head">${brand()}<div class="turn-box"><b>POSICIONE SUA FROTA</b><small>${esc(mode.name)} · ${mode.geometry.cells.length} casas</small></div><div class="setup-meta"><span class="tp-tag">${p.fleetConfirmed?'CONFIRMADO':complete?'FROTA PRONTA':'PREPARANDO'}</span></div></header><main class="match-grid placement-grid premium-placement-grid"><aside class="side-stack placement-left-rail"><section class="panel compact combat-side-card placement-fleet-card"><div class="eyebrow">Frota disponível</div>${fleetPanel(mode,ships,true)}</section><section class="panel compact combat-side-card placement-tip-card"><div class="eyebrow">Status de preparação</div><div class="tp-list"><div>Você <span>${p.fleetConfirmed?'Confirmou':'Preparando'}</span></div><div>Oponente <span>${p.opponentConfirmed?'Confirmou':'Preparando'}</span></div></div><p class="tp-muted tp-small">Somente você vê suas posições. Os navios do adversário permanecem ocultos.</p></section></aside><section class="panel board-panel board-panel-primary premium-board-panel placement-board-panel"><div class="board-head premium-board-head"><div><div class="eyebrow">Seu mapa</div><b>Quadrante Alfa</b></div><div class="placement-readout"><span>Posicionamento</span><strong>${complete?'Completo':'Pendente'}</strong></div></div><div class="board-wrap board-wrap-primary combat-board-wrap placement-board-wrap tp-board"><div class="tactical-board-frame setup-board-frame">${renderBoard(mode,{ships,interactive:canManual})}</div></div><div class="board-meta placement-board-meta"><div class="meta-block"><div><b>Grade de implantação</b><small>${canManual&&next?`Clique no mapa para posicionar ${esc(shipName(next.id))}`:'Use a distribuição automática para qualquer geometria'}</small></div></div></div></section><aside class="action-col premium-hud placement-hud"><section class="panel placement-protocol-card"><div class="eyebrow">Protocolo de implantação</div><b>Frota ${ships.length} / ${mode.fleet.length}</b>${canManual?`<div class="tp-space" style="margin-top:15px"><label>Orientação <select id="orientation" class="tp-mode-select">${mode.placementDirections.map(d=>`<option ${d===state.orientation?'selected':''} value="${esc(d)}">${esc(d)}</option>`).join('')}</select></label><p class="tp-muted tp-small">Para posicionamento manual, selecione uma casa inicial. É necessário completar toda a frota antes de salvar.</p></div>`:''}<div class="tp-actions" style="margin-top:12px"><button class="btn btn-ghost" data-action="clear-draft" ${!canManual||!ships.length?'disabled':''}>Limpar edição</button><button class="btn btn-primary" data-action="save-placement" ${!complete||!editable||state.draft===null?'disabled':''}>Salvar frota</button></div></section><div class="combat-actions placement-actions"><button class="btn btn-primary setup-random-btn" data-action="random-placement" ${!editable?'disabled':''}><span class="action-copy"><b>Aleatório</b><small>Gerar frota válida na API</small></span></button><button class="btn btn-orange attack-btn" data-action="confirm-placement" ${!p.fleetPlaced||!editable?'disabled':''}><span class="action-copy"><b>${p.fleetConfirmed?'Confirmada':'Confirmar frota'}</b><small>${p.opponentConfirmed?'A batalha começará após confirmar':'Aguarde o adversário'}</small></span></button><button class="btn btn-ghost setup-cancel-btn" data-action="leave-lobby">Cancelar / sair da sala</button></div></aside></main><footer class="match-foot combat-foot placement-foot"><span><b>SETUP</b> ${esc(mode.name)}</span><span class="foot-center">${p.fleetConfirmed?'Aguardando o adversário':'Preparação em andamento'}</span><span>TIDEPOINT / PREPARAÇÃO</span></footer></div></div>`;
+  // The approved Figma screen wraps the very same renderBoard(mode, ...) renderer
+  // used in combat and the old placement view. Board tiles and styling are untouched.
+  const directions=mode.placementDirections || [];
+  if (!directions.includes(state.orientation)) state.orientation=directions[0] || 'HORIZONTAL';
+  return renderFigmaPlacement({
+    preparation:p,mode,draft:state.draft,selectedShipId:state.placementShip,
+    orientation:state.orientation,
+  });
 }
 
 function shotSummary(shots){return {hits:shots.filter(x=>x.hit),misses:shots.filter(x=>!x.hit)};}
@@ -507,13 +509,27 @@ async function runAction(action,itemId=null) {
       try {await guard(async()=>{await api.remove('/matchmaking/lobbies/me');state.lobby=null;state.battle=null;state.preparation=null;state.draft=null;go('lobby');});}
       finally {state.leavingRoom=false;}
       break;}
-    case 'random-placement':await guard(async()=>{state.preparation=await api.post('/matches/me/placement/random');state.draft=[...state.preparation.yourShips];});break;
+    case 'random-placement':await guard(async()=>{state.preparation=await api.post('/matches/me/placement/random');state.draft=[...state.preparation.yourShips];state.placementShip=null;});break;
+    case 'select-placement-ship': {
+      const mode=activeMode();
+      if(currentRoute()!=='placement'||state.preparation?.fleetConfirmed||!mode?.fleet.some(s=>s.id===itemId))break;
+      if(mode.geometry.kind!=='RECTANGULAR')break;
+      state.placementShip=itemId;render();break;
+    }
+    case 'rotate-placement': {
+      const mode=activeMode();
+      if(currentRoute()!=='placement'||state.preparation?.fleetConfirmed||mode?.geometry.kind!=='RECTANGULAR')break;
+      const directions=mode.placementDirections||[];
+      if(!directions.includes('HORIZONTAL')||!directions.includes('VERTICAL'))break;
+      state.orientation=state.orientation==='HORIZONTAL'?'VERTICAL':'HORIZONTAL';
+      render();break;
+    }
     case 'save-placement':await guard(async()=>{state.preparation=await api.put('/matches/me/placement',{ships:state.draft});state.draft=[...state.preparation.yourShips];notice('Frota validada e salva pela API.');});break;
     case 'confirm-placement':await guard(async()=>{
       if (state.draft!==null && JSON.stringify(state.draft)!==JSON.stringify(state.preparation.yourShips)) state.preparation=await api.put('/matches/me/placement',{ships:state.draft});
-      state.preparation=await api.post('/matches/me/placement/confirm');state.draft=[...state.preparation.yourShips];await reconcile();
+      state.preparation=await api.post('/matches/me/placement/confirm');state.draft=[...state.preparation.yourShips];state.placementShip=null;await reconcile();
     });break;
-    case 'clear-draft':state.draft=[];render();break;
+    case 'clear-draft':if(currentRoute()==='placement'&&!state.preparation?.fleetConfirmed){state.draft=[];state.placementShip=null;render();}break;
     case 'fire':await guard(async()=>{
       if(!state.selected||!state.battle||state.battle.turnPlayerId!==state.profile.id)return;
       state.battle=await api.post('/matches/me/shots',state.selected);
@@ -544,14 +560,21 @@ function selectCell(row,col){
     if(button){button.disabled=false;const caption=button.querySelector('small');if(caption)caption.textContent=`Disparar em ${coordLabel(state.selected)}`;}
   } else if(route==='placement'){
     if(state.preparation?.fleetConfirmed||mode.geometry.kind!=='RECTANGULAR')return;
-    const placed=[...(state.draft??[])];const next=mode.fleet.find(s=>!placed.some(d=>d.type===s.id));
-    if(!next)return notice('Toda a frota já está posicionada. Salve ou confirme.',false);
-    const candidate={type:next.id,row,col,orientation:state.orientation};
-    const proposed=[...placed,candidate];const occupied=occupiedCells(proposed,mode);
+    const placed=[...(state.draft??state.preparation?.yourShips??[])];
+    const chosen=mode.fleet.find(s=>s.id===state.placementShip)
+      || mode.fleet.find(s=>!placed.some(d=>d.type===s.id));
+    if(!chosen)return notice('Selecione um navio para reposicioná-lo ou confirme a frota.',false);
+    // Replacing a selected ship is atomic in the draft: invalid destinations
+    // must leave the existing coordinates and all other ships intact.
+    const candidate={type:chosen.id,row,col,orientation:state.orientation};
+    const proposed=[...placed.filter(s=>s.type!==chosen.id),candidate];
+    const occupied=occupiedCells(proposed,mode);
     const valid=new Set(mode.geometry.cells.map(keyOf));
     const total=proposed.reduce((sum,s)=>sum+(mode.fleet.find(d=>d.id===s.type)?.length||0),0);
     if(occupied.size!==total||[...occupied].some(key=>!valid.has(key)))return notice('Posição inválida ou sobreposta. Escolha outra célula.',true);
-    state.draft=proposed;state.notice='';render();
+    state.draft=proposed;
+    state.placementShip=mode.fleet.find(s=>!proposed.some(d=>d.type===s.id))?.id||chosen.id;
+    state.notice='';render();
   }
 }
 function bindEvents() {
