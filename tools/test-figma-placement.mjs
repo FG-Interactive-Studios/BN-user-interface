@@ -16,7 +16,8 @@ const room={code:'PREP01',status:'PREPARING',revision:1,mode,players:[
  {id:13,nickname:'QA Capitão',ready:true,connected:true},
  {id:17,nickname:'Oponente',ready:true,connected:true}
 ]};
-const randomShips=mode.fleet.map((s,index)=>({type:s.id,row:index,col:0,orientation:'HORIZONTAL'}));
+// A different arrangement ensures manual edits really require a PUT before confirmation.
+const randomShips=mode.fleet.map((s,index)=>({type:s.id,row:index+5,col:0,orientation:'HORIZONTAL'}));
 const server=await createServer({server:{host:'127.0.0.1',port:4182,strictPort:true},logLevel:'error'});
 await server.listen();
 const browser=await chromium.launch({headless:true});
