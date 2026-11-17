@@ -55,6 +55,59 @@ try {
    const route=status==='PREPARING'?'placement':'match';
    await page.locator('body[data-route="'+route+'"] .combat-screen').waitFor({timeout:15000});
 
+   if(status==='PREPARING') {
+     const layout=await page.evaluate(()=>{
+       const rect=selector=>{
+         const el=document.querySelector(selector);
+         if(!el)throw Error('Missing '+selector);
+         const r=el.getBoundingClientRect();
+         return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};
+       };
+       const board=document.querySelector('.bn-placement-screen .board-main');
+       const tile=board.querySelector('.cell');
+       return {
+         rootWidth:document.documentElement.scrollWidth,
+         pageHeight:document.documentElement.scrollHeight,
+         head:rect('.bn-placement-header'),
+         board:rect('.bn-placement-screen .board-main'),
+         fleet:rect('.bn-placement-fleet'),
+         tools:rect('.bn-placement-tools'),
+         action:rect('.bn-placement-confirm'),
+         cellBorder:getComputedStyle(tile).borderStyle,
+         containerType:getComputedStyle(document.querySelector('.bn-placement-board-wrap')).containerType,
+       };
+     });
+     const explain='PREPARING '+viewport.width+'x'+viewport.height+' '+JSON.stringify(layout);
+     assert.ok(layout.rootWidth<=viewport.width+2,'Document horizontal overflow: '+explain);
+     assert.ok(layout.board.width>=viewport.width*.68,'Tiny preserved board: '+explain);
+     assert.ok(Math.abs(layout.board.height-layout.board.width)<=3,'Board is not square: '+explain);
+     assert.ok(layout.board.left>=-2&&layout.board.right<=viewport.width+2,'Board outside viewport: '+explain);
+     assert.equal(layout.containerType,'normal','Board collapsed by size containment: '+explain);
+     assert.equal(layout.cellBorder,'solid','Grid cell border changed: '+explain);
+     assert.ok(layout.head.bottom<=layout.board.top+3,'Board overlaps header: '+explain);
+     assert.ok(layout.board.bottom<=layout.fleet.top+4,'Ship cards overlap board: '+explain);
+     assert.ok(layout.fleet.bottom<=layout.tools.top+4,'Tools overlap ship cards: '+explain);
+     assert.equal(await page.locator('.bn-placement-screen .board-main .cell').count(),100);
+     assert.equal(await page.locator('.bn-placement-ship').count(),5);
+     assert.equal(await page.locator('.bn-placement-ship.is-selected').count(),1);
+     assert.ok(await page.locator('[data-action="random-placement"]').isEnabled());
+     for(const selector of ['[data-action="random-placement"]','[data-action="confirm-placement"]','[data-action="leave-lobby"]']){
+       const button=page.locator(selector);
+       await button.scrollIntoViewIfNeeded({timeout:5000});
+       const bounds=await button.evaluate(el=>{
+         const r=el.getBoundingClientRect();
+         return {top:r.top,bottom:r.bottom,width:r.width,height:r.height};
+       });
+       assert.ok(bounds.width>70&&bounds.height>=25,'Collapsed placement action '+selector+' '+explain);
+       assert.ok(bounds.top>=-2&&bounds.bottom<=viewport.height+2,'Placement action unreachable '+selector+' '+explain);
+     }
+     await page.screenshot({path:'artifacts/figma-combat/placement-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
+     assert.deepEqual(errors,[],'Page errors '+explain);
+     console.log('PASS PREPARING '+viewport.width+'x'+viewport.height+'; preserved board '+layout.board.width.toFixed(0)+'px, Figma actions reachable');
+     await page.close();
+     continue;
+   }
+
    const metrics=await page.evaluate(()=>{
     const rect=selector=>{
       const el=document.querySelector(selector);
