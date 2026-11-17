@@ -116,7 +116,9 @@ body[data-route="matchmaking"] .tp-content{
    overflow-y:auto prevented sticky from tracking the window's scroll position.
    Clip horizontal overflow without creating a second vertical scrollport. */
 body[data-route="fleet"],
-body[data-route="store"] {
+body[data-route="store"],
+body[data-route="fleet"] #app,
+body[data-route="store"] #app {
   overflow-x: clip !important;
   overflow-y: visible !important;
 }
