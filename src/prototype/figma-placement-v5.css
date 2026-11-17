@@ -1,0 +1,301 @@
+/* "Sua frota" — approved Figma composition around the EXISTING board.
+ * Do not restyle .board/.cell/.coord or change renderBoard(): the current
+ * cyan square grid and frame are intentionally preserved.
+ */
+html:has(body[data-route="placement"]),
+body[data-route="placement"],
+body[data-route="placement"] #app {
+  height: auto !important;
+  min-height: 100dvh !important;
+  max-height: none !important;
+  overflow-x: clip !important;
+  overflow-y: auto !important;
+}
+body[data-route="placement"] .bn-placement-screen {
+  height: auto !important;
+  min-height: 100dvh !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background:
+    linear-gradient(180deg,#07101848,#07101860),
+    url('../assets/figma/storm.jpg') center center / cover no-repeat,
+    #0b1014 !important;
+  color: #fff;
+}
+.bn-placement-screen::before,
+.bn-placement-screen::after { display: none !important; }
+
+.bn-placement-page {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch;
+  gap: clamp(10px,1.8dvh,18px);
+  width: min(100%, 1060px);
+  min-width: 0;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: clamp(16px,3dvh,32px) clamp(12px,3vw,36px) calc(22px + env(safe-area-inset-bottom,0px));
+  position: relative;
+  z-index: 2;
+}
+.bn-placement-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.bn-placement-header h1 {
+  margin: 0;
+  padding: 9px clamp(12px,3vw,23px) 12px;
+  background: #070e13f3;
+  border-radius: 19px;
+  color: #fff;
+  font: 400 clamp(29px,5.2vw,54px)/1 'Pirata One',Georgia,serif;
+  white-space: nowrap;
+}
+.bn-placement-phase {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-height: 48px;
+  max-width: 52%;
+  padding: 8px clamp(10px,2vw,19px);
+  border: 2px solid #ffbf22;
+  border-radius: 999px;
+  background: #080e13ee;
+  color: #fff;
+  font: 600 clamp(11px,2.8vw,16px)/1.15 'Lexend',sans-serif;
+}
+.bn-placement-clock {
+  color: #ffbf22;
+  font: 600 clamp(22px,4vw,29px)/1 'Lexend',sans-serif;
+}
+.bn-placement-instruction {
+  margin: 0;
+  color: #d1dbe2;
+  font: 400 clamp(12px,2.6vw,16px)/1.45 'Lexend',sans-serif;
+}
+body[data-route="placement"] .bn-placement-screen .bn-placement-board-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  align-self: center !important;
+  flex: 0 0 auto !important;
+  width: min(100%, 580px) !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  contain: none !important;
+  container-type: normal !important;
+  overflow: visible !important;
+}
+body[data-route="placement"] .bn-placement-screen .bn-placement-board-wrap .setup-board-frame {
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: min(100%, 520px) !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  margin: 0 auto !important;
+  aspect-ratio: 1 !important;
+  contain: none !important;
+  transform: none !important;
+}
+body[data-route="placement"] .bn-placement-screen .bn-placement-board-wrap .board-main {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  aspect-ratio: 1 / 1 !important;
+}
+
+/* Figma's five fleet cards, with clear selectable/placed/pending states. */
+.bn-placement-fleet {
+  display: grid;
+  grid-template-columns: repeat(5,minmax(0,1fr));
+  gap: clamp(4px,.75vw,9px);
+  min-width: 0;
+  width: 100%;
+}
+.bn-placement-ship {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: clamp(77px,9.5dvh,108px);
+  padding: clamp(6px,1.3vw,13px) 4px;
+  background: #071016f3;
+  border: 2px solid #22333c;
+  border-radius: 14px;
+  color: #fff;
+  cursor: pointer;
+  font: 400 12px/1.25 'Lexend',sans-serif;
+  text-align: center;
+}
+.bn-placement-ship.is-selected {
+  border-color: #2bd5a5;
+  box-shadow: 0 0 0 1px #2bd5a53c, 0 0 16px #2bd5a53c;
+}
+.bn-placement-ship:disabled { cursor: default; opacity: .78; }
+.bn-placement-segments {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 12px;
+  max-width: 100%;
+}
+.bn-placement-segments i {
+  display: block;
+  flex: 0 1 13px;
+  width: 13px;
+  height: 13px;
+  min-width: 4px;
+  border-radius: 2px;
+  background: #728997;
+}
+.bn-placement-ship.is-selected .bn-placement-segments i { background: #2bd5a5; }
+.bn-placement-ship-name {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  font: 400 clamp(10px,1.25vw,15px)/1.2 'Lexend',sans-serif;
+  overflow-wrap: anywhere;
+}
+.bn-placement-ship-status {
+  display: block;
+  font: 500 clamp(9px,1vw,12px)/1.15 'Lexend',sans-serif;
+}
+.bn-placement-ship-status.positioned { color: #b0bdc7; }
+.bn-placement-ship-status.selected { color: #2bd5a5; }
+.bn-placement-ship-status.pending { color: #ffbf22; }
+
+.bn-placement-tools {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(18px,5vw,62px);
+  margin: 1px auto 0;
+}
+.bn-placement-tool {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #d8e0e5;
+  cursor: pointer;
+  font: 400 clamp(12px,2.8vw,17px)/1.2 'Lexend',sans-serif;
+}
+.bn-placement-tool-icon {
+  display: grid;
+  place-items: center;
+  width: clamp(52px,6.5vw,74px);
+  height: clamp(52px,6.5vw,74px);
+  padding: 12px;
+  border-radius: 50%;
+  border: 2px solid #d7e3e9;
+  background: #081119e8;
+  color: #fff;
+}
+.bn-placement-tool svg { display: block; width: 100%; height: 100%; }
+.bn-placement-tool:disabled { opacity: .45; cursor: default; }
+.bn-placement-progress {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 0;
+  color: #d1dce1;
+  font: 400 clamp(10px,2.3vw,13px)/1.35 'Lexend',sans-serif;
+  text-align: center;
+}
+.bn-placement-actions {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  width: 100%;
+  margin-top: auto;
+}
+.bn-placement-confirm {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: clamp(60px,8dvh,80px);
+  padding: 11px 20px;
+  border: 2px solid #dae4ea;
+  border-radius: 999px;
+  background: #ffbf22;
+  color: #0b1014;
+  cursor: pointer;
+  font: 400 clamp(26px,4.5vw,43px)/1 'Pirata One',Georgia,serif;
+  text-transform: none;
+}
+.bn-placement-confirm:hover:not(:disabled) { background: #ffd05d; }
+.bn-placement-confirm:disabled { opacity: .57; cursor: not-allowed; }
+.bn-placement-leave {
+  min-height: 31px;
+  padding: 5px 12px;
+  border: none;
+  background: #071119b8;
+  border-radius: 999px;
+  color: #c7d3db;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font: 400 12px 'Lexend',sans-serif;
+}
+.bn-placement-screen button:focus-visible { outline: 3px solid #ffbf22; outline-offset: 2px; }
+
+@media (max-width: 760px) {
+  body[data-route="placement"] .bn-placement-screen .bn-placement-board-wrap {
+    width: min(100%,440px) !important;
+  }
+  body[data-route="placement"] .bn-placement-screen .bn-placement-board-wrap .setup-board-frame {
+    width: 100% !important;
+  }
+  .bn-placement-page { gap: clamp(9px,1.8dvh,14px); padding-inline: 10px; }
+  .bn-placement-header h1 { padding: 8px 13px 10px; }
+  .bn-placement-phase { min-height: 42px; padding: 7px 10px; }
+  .bn-placement-ship { gap: 5px; border-radius: 10px; }
+  .bn-placement-segments { gap: 2px; }
+  .bn-placement-segments i { width: 9px; height: 10px; flex-basis: 9px; }
+  .bn-placement-ship-name { font-size: clamp(9px,2.7vw,12px); }
+  .bn-placement-ship-status { font-size: clamp(8px,2.25vw,10px); }
+}
+@media (max-width: 345px) {
+  /* Keep touch targets legible on tiny phones; the fleet becomes a swipable strip. */
+  .bn-placement-fleet {
+    grid-auto-flow: column;
+    grid-auto-columns: 84px;
+    grid-template-columns: none;
+    overflow-x: auto;
+    padding: 3px 2px 8px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+  .bn-placement-ship {scroll-snap-align: start;}
+  .bn-placement-ship-name {font-size: 11px;}
+}
+@media (min-width: 900px) and (max-height: 700px) {
+  .bn-placement-page {gap: 9px;}
+  .bn-placement-screen .bn-placement-page .bn-placement-board-wrap .setup-board-frame {
+    width: min(100%,460px) !important;
+  }
+  .bn-placement-tool-icon {width: 54px;height: 54px;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .bn-placement-screen * { animation: none !important; transition: none !important; }
+}
