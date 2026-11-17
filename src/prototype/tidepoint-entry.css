@@ -30,3 +30,6 @@
 
 /* Fit the approved placement composition in mobile and desktop viewports. */
 @import './figma-placement-fit-v6.css';
+
+/* Figma post-battle screen: complete report, rewards and correct storm framing. */
+@import './figma-result-v7.css';
