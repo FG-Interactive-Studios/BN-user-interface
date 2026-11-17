@@ -533,7 +533,7 @@ async function runAction(action,itemId=null) {
       if (state.draft!==null && JSON.stringify(state.draft)!==JSON.stringify(state.preparation.yourShips)) state.preparation=await api.put('/matches/me/placement',{ships:state.draft});
       state.preparation=await api.post('/matches/me/placement/confirm');state.draft=[...state.preparation.yourShips];state.placementShip=null;await reconcile();
     });break;
-    case 'clear-draft':if(currentRoute()==='placement'&&!state.preparation?.fleetConfirmed){state.draft=[];state.placementShip=null;render();}break;
+    case 'clear-draft':if(currentRoute()==='placement'&&!state.preparation?.fleetConfirmed){state.draft=[];state.placementShip=null;state.orientation='HORIZONTAL';render();}break;
     case 'fire':await guard(async()=>{
       if(!state.selected||!state.battle||state.battle.turnPlayerId!==state.profile.id)return;
       state.battle=await api.post('/matches/me/shots',state.selected);
