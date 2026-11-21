@@ -10,6 +10,7 @@ const state = {
   modeId: 'classic', selected: null, draft: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
+  skillMode: null, skillTargets: [], skillDialog: false,
 };
 let root;
 let refreshTimer;
@@ -56,7 +57,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;}
+function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.skillMode=null;state.skillTargets=[];state.skillDialog=false;}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -107,6 +108,7 @@ async function reconcile() {
     }
     state.lobby=room;
     if (!room) {
+      state.skillMode=null;state.skillTargets=[];state.skillDialog=false;
       if (state.preparation || state.battle || state.draft) changed=true;
       state.preparation=null;state.battle=null;state.draft=null;
     }
@@ -123,6 +125,7 @@ async function reconcile() {
       if (state.preparation) changed=true;
       state.preparation=null;
       const battle=await api.get('/matches/me');
+      if (state.battle?.matchId && state.battle.matchId!==battle.matchId) {state.skillMode=null;state.skillTargets=[];state.skillDialog=false;}
       if (!state.battle || state.battle.matchId!==battle.matchId || battle.revision>=state.battle.revision) {
         changed ||= JSON.stringify(state.battle)!==JSON.stringify(battle);
         state.battle=battle;
@@ -188,6 +191,12 @@ function placementScreen(){
   return `<div class="screen combat-screen placement-screen"><div class="match-layout"><header class="match-head setup-head">${brand()}<div class="turn-box"><b>POSICIONE SUA FROTA</b><small>${esc(mode.name)} · ${mode.geometry.cells.length} casas</small></div><div class="setup-meta"><span class="tp-tag">${p.fleetConfirmed?'CONFIRMADO':complete?'FROTA PRONTA':'PREPARANDO'}</span></div></header><main class="match-grid placement-grid premium-placement-grid"><aside class="side-stack placement-left-rail"><section class="panel compact combat-side-card placement-fleet-card"><div class="eyebrow">Frota disponível</div>${fleetPanel(mode,ships,true)}</section><section class="panel compact combat-side-card placement-tip-card"><div class="eyebrow">Status de preparação</div><div class="tp-list"><div>Você <span>${p.fleetConfirmed?'Confirmou':'Preparando'}</span></div><div>Oponente <span>${p.opponentConfirmed?'Confirmou':'Preparando'}</span></div></div><p class="tp-muted tp-small">Somente você vê suas posições. Os navios do adversário permanecem ocultos.</p></section></aside><section class="panel board-panel board-panel-primary premium-board-panel placement-board-panel"><div class="board-head premium-board-head"><div><div class="eyebrow">Seu mapa</div><b>Quadrante Alfa</b></div><div class="placement-readout"><span>Posicionamento</span><strong>${complete?'Completo':'Pendente'}</strong></div></div><div class="board-wrap board-wrap-primary combat-board-wrap placement-board-wrap tp-board"><div class="tactical-board-frame setup-board-frame">${renderBoard(mode,{ships,interactive:canManual})}</div></div><div class="board-meta placement-board-meta"><div class="meta-block"><div><b>Grade de implantação</b><small>${canManual&&next?`Clique no mapa para posicionar ${esc(shipName(next.id))}`:'Use a distribuição automática para qualquer geometria'}</small></div></div></div></section><aside class="action-col premium-hud placement-hud"><section class="panel placement-protocol-card"><div class="eyebrow">Protocolo de implantação</div><b>Frota ${ships.length} / ${mode.fleet.length}</b>${canManual?`<div class="tp-space" style="margin-top:15px"><label>Orientação <select id="orientation" class="tp-mode-select">${mode.placementDirections.map(d=>`<option ${d===state.orientation?'selected':''} value="${esc(d)}">${esc(d)}</option>`).join('')}</select></label><p class="tp-muted tp-small">Para posicionamento manual, selecione uma casa inicial. É necessário completar toda a frota antes de salvar.</p></div>`:''}<div class="tp-actions" style="margin-top:12px"><button class="btn btn-ghost" data-action="clear-draft" ${!canManual||!ships.length?'disabled':''}>Limpar edição</button><button class="btn btn-primary" data-action="save-placement" ${!complete||!editable||state.draft===null?'disabled':''}>Salvar frota</button></div></section><div class="combat-actions placement-actions"><button class="btn btn-primary setup-random-btn" data-action="random-placement" ${!editable?'disabled':''}><span class="action-copy"><b>Aleatório</b><small>Gerar frota válida na API</small></span></button><button class="btn btn-orange attack-btn" data-action="confirm-placement" ${!p.fleetPlaced||!editable?'disabled':''}><span class="action-copy"><b>${p.fleetConfirmed?'Confirmada':'Confirmar frota'}</b><small>${p.opponentConfirmed?'A batalha começará após confirmar':'Aguarde o adversário'}</small></span></button><button class="btn btn-ghost setup-cancel-btn" data-action="leave-lobby">Cancelar / sair da sala</button></div></aside></main><footer class="match-foot combat-foot placement-foot"><span><b>SETUP</b> ${esc(mode.name)}</span><span class="foot-center">${p.fleetConfirmed?'Aguardando o adversário':'Preparação em andamento'}</span><span>TIDEPOINT / PREPARAÇÃO</span></footer></div></div>`;
 }
 
+function skillLimit(id){return id==='double-shot'?2:id==='radar'?1:0;}
+function skillDialogMarkup(){
+  const abilities=state.battle?.yourAbilities||[];
+  if(!abilities.length)return '';
+  return `<dialog id='tp-skill-dialog' class='tp-join-dialog' aria-labelledby='tp-skill-title'><div class='tp-modal-header'><div><div class='eyebrow'>Mecânicas especiais · piloto</div><h2 id='tp-skill-title'>Escolher habilidade</h2></div><button type='button' data-action='close-abilities' aria-label='Fechar'>×</button></div><p class='tp-muted tp-small'>Cada poder é de uso único nesta versão de testes. A ativação consome o turno.</p><div class='tp-skill-options'>${abilities.map(a=>`<button class='btn btn-ghost tp-skill-option' data-action='pick-ability' data-ability-id='${esc(a.id)}' ${a.usesRemaining>0?'':'disabled'}><b>${esc(a.name)}</b><small>${a.usesRemaining>0?'Disponível':'Já utilizado'}</small></button>`).join('')}</div><div class='tp-modal-actions'><button class='btn btn-ghost' data-action='close-abilities'>Cancelar</button></div></dialog>`;
+}
 function shotSummary(shots){return {hits:shots.filter(x=>x.hit),misses:shots.filter(x=>!x.hit)};}
 function battleScreen(){
   const b=state.battle,mode=b?.mode||activeMode();
@@ -198,7 +207,15 @@ function battleScreen(){
   const selected=state.selected && !fired.has(keyOf(state.selected)) ? state.selected:null;
   const sunk=(b.shotsFired||[]).filter(s=>s.sunkShip);
   const opponent=state.lobby?.players.find(p=>p.id!==state.profile?.id);
-  return `<div class="screen combat-screen"><div class="match-layout"><header class="match-head tp-battle-head"><div class="tp-battle-brand">${brand()}</div><div class="turn-box"><b>${finished?'BATALHA CONCLUÍDA':myTurn?'SUA VEZ':'AGUARDANDO O OPONENTE'}</b><small>${finished?'Resultado definido pelo servidor':myTurn?'Escolha um alvo no mapa inimigo':'Aguarde a jogada adversária'}</small></div><div class="enemy-meta"><b>${esc(opponent?.nickname||'Oponente')}</b></div></header><main class="match-grid combat-grid"><aside class="side-stack combat-left-rail"><section class="panel compact combat-side-card"><div class="eyebrow">Sua frota</div>${fleetPanel(mode,b.yourShips||[],true)}</section><section class="panel compact preview-panel combat-side-card"><div class="side-card-heading"><div class="eyebrow">Seu mapa</div></div><div class="board-wrap board-wrap-preview tp-board tp-board-small">${renderBoard(mode,{ships:b.yourShips,hits:own.hits,misses:own.misses,small:true})}</div></section></aside><section class="panel board-panel board-panel-primary premium-board-panel"><div class="board-head premium-board-head"><div><div class="eyebrow enemy-map-label">Mapa inimigo</div><b>Quadrante inimigo</b></div><div class="target-readout"><span>Alvo selecionado</span><strong>${selected?coordLabel(selected):'—'}</strong></div></div><div class="board-wrap board-wrap-primary combat-board-wrap tp-board"><div class="tactical-board-frame">${renderBoard(mode,{hits:enemy.hits,misses:enemy.misses,selected,interactive:myTurn&&!finished})}</div></div><div class="board-meta"><div class="meta-block"><div><b>Inteligência naval</b><small>${enemy.hits.length} acertos · ${enemy.misses.length} disparos na água</small></div></div></div></section><aside class="action-col premium-hud"><section class="panel enemy-intel-panel"><div class="enemy-intel-head"><div><div class="eyebrow">Inteligência inimiga</div><b>Navios identificados</b></div><span class="intel-progress">${sunk.length} / ${mode.fleet.length}</span></div><div class="enemy-intel-list">${mode.fleet.map((ship,i)=>{const sunkType=sunk.some(s=>s.sunkShip===ship.id);return `<article class="intel-ship ${sunkType?'destroyed':'unknown'}"><div class="intel-ship-copy"><div class="intel-state-label">${sunkType?'Afundado':'Não identificado'}</div><b>${sunkType?esc(shipName(ship.id)):'Contato desconhecido'}</b><small>${sunkType?'Classe identificada pelo servidor':`Contato ${i+1} · classe não revelada`}</small></div></article>`}).join('')}</div>${compactEnemyContacts(mode.fleet,sunk)}</section><div class="combat-actions"><button class="btn btn-orange attack-btn" data-action="fire" ${myTurn&&selected&&!finished?'':'disabled'}><span class="action-copy"><b>Atacar</b><small>${selected?`Disparar em ${coordLabel(selected)}`:'Selecione uma casa livre'}</small></span></button><button class="btn btn-ghost skill-btn tp-disabled" disabled><span class="action-copy"><b>Habilidades</b><small>Em desenvolvimento no backend</small></span></button><button class="btn btn-danger tp-forfeit-btn" data-action="forfeit" ${finished?'disabled':''}><span class="tp-desktop-forfeit">Desistir da partida</span><span class="tp-mobile-forfeit">Desistir</span></button></div></aside></main><footer class="match-foot combat-foot"><span>${esc(mode.name)}</span><span class="foot-center">${finished?'Partida finalizada':myTurn?'Sua vez de atacar':'Turno do oponente'}</span><span>${b.shotsFired.length} disparos realizados</span></footer></div></div>`;
+  const available=b.yourAbilities||[];
+  const usable=available.some(a=>a.usesRemaining>0);
+  const activeAbility=available.find(a=>a.id===state.skillMode);
+  const skillCount=skillLimit(state.skillMode);
+  const radarResult=b.yourRadarReports?.at(-1);
+  const skillControls=state.skillMode && activeAbility
+    ? `<div class='tp-pilot-skill-control' role='group' aria-label='Ativação de habilidade'><b>${esc(activeAbility.name)} · ${state.skillTargets.length}/${skillCount}</b><small>Selecione ${skillCount===2?'duas casas':'o centro da varredura'} no mapa inimigo.</small><div class='tp-skill-commands'><button type='button' class='btn btn-orange' data-action='activate-ability' ${state.skillTargets.length===skillCount&&myTurn&&!finished?'':'disabled'}>Ativar poder</button><button type='button' class='btn btn-ghost' data-action='cancel-ability'>Cancelar</button></div></div>` : '';
+  const radarInfo=radarResult ? `<p class='tp-radar-result'>Último radar em ${coordLabel(radarResult)}: ${esc(radarResult.contacts)} contato(s) no setor 3×3.</p>` : '';
+  return `<div class="screen combat-screen"><div class="match-layout"><header class="match-head tp-battle-head"><div class="tp-battle-brand">${brand()}</div><div class="turn-box"><b>${finished?'BATALHA CONCLUÍDA':myTurn?'SUA VEZ':'AGUARDANDO O OPONENTE'}</b><small>${finished?'Resultado definido pelo servidor':myTurn?'Escolha um alvo no mapa inimigo':'Aguarde a jogada adversária'}</small></div><div class="enemy-meta"><b>${esc(opponent?.nickname||'Oponente')}</b></div></header><main class="match-grid combat-grid"><aside class="side-stack combat-left-rail"><section class="panel compact combat-side-card"><div class="eyebrow">Sua frota</div>${fleetPanel(mode,b.yourShips||[],true)}</section><section class="panel compact preview-panel combat-side-card"><div class="side-card-heading"><div class="eyebrow">Seu mapa</div></div><div class="board-wrap board-wrap-preview tp-board tp-board-small">${renderBoard(mode,{ships:b.yourShips,hits:own.hits,misses:own.misses,small:true})}</div></section></aside><section class="panel board-panel board-panel-primary premium-board-panel"><div class="board-head premium-board-head"><div><div class="eyebrow enemy-map-label">Mapa inimigo</div><b>Quadrante inimigo</b></div><div class="target-readout"><span>Alvo selecionado</span><strong>${selected?coordLabel(selected):'—'}</strong></div></div><div class="board-wrap board-wrap-primary combat-board-wrap tp-board"><div class="tactical-board-frame">${renderBoard(mode,{hits:enemy.hits,misses:enemy.misses,selected,interactive:myTurn&&!finished})}</div></div><div class="board-meta"><div class="meta-block"><div><b>Inteligência naval</b><small>${enemy.hits.length} acertos · ${enemy.misses.length} disparos na água</small></div></div></div></section><aside class="action-col premium-hud"><section class="panel enemy-intel-panel"><div class="enemy-intel-head"><div><div class="eyebrow">Inteligência inimiga</div><b>Navios identificados</b></div><span class="intel-progress">${sunk.length} / ${mode.fleet.length}</span></div><div class="enemy-intel-list">${mode.fleet.map((ship,i)=>{const sunkType=sunk.some(s=>s.sunkShip===ship.id);return `<article class="intel-ship ${sunkType?'destroyed':'unknown'}"><div class="intel-ship-copy"><div class="intel-state-label">${sunkType?'Afundado':'Não identificado'}</div><b>${sunkType?esc(shipName(ship.id)):'Contato desconhecido'}</b><small>${sunkType?'Classe identificada pelo servidor':`Contato ${i+1} · classe não revelada`}</small></div></article>`}).join('')}</div>${compactEnemyContacts(mode.fleet,sunk)}</section><div class="combat-actions"><button class="btn btn-orange attack-btn" data-action="fire" ${myTurn&&selected&&!state.skillMode&&!finished?'':'disabled'}><span class="action-copy"><b>Atacar</b><small>${selected?`Disparar em ${coordLabel(selected)}`:'Selecione uma casa livre'}</small></span></button><button class="btn btn-ghost skill-btn" data-action="open-abilities" ${myTurn&&!finished&&usable?'':'disabled'}><span class="action-copy"><b>Habilidades</b><small>${available.length?(usable?'Selecionar poder (piloto)':'Poderes utilizados'):'Indisponíveis neste modo'}</small></span></button>${skillControls}${radarInfo}<button class="btn btn-danger tp-forfeit-btn" data-action="forfeit" ${finished?'disabled':''}><span class="tp-desktop-forfeit">Desistir da partida</span><span class="tp-mobile-forfeit">Desistir</span></button></div></aside></main><footer class="match-foot combat-foot"><span>${esc(mode.name)}</span><span class="foot-center">${finished?'Partida finalizada':myTurn?'Sua vez de atacar':'Turno do oponente'}</span><span>${b.shotsFired.length} disparos realizados</span></footer></div></div>`+skillDialogMarkup();
 }
 function resultScreen(){
   const b=state.battle;
@@ -233,6 +250,14 @@ function render(){ if (!root) return;
   }
   const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen};
   root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
+  if(route==='match'){
+    const chosen=new Set(state.skillTargets.map(keyOf));
+    root.querySelectorAll('.combat-screen .board-panel-primary [data-coord]').forEach(node=>{
+      if(chosen.has(node.dataset.coord))node.classList.add('pilot-skill-target');
+    });
+    const dialog=root.querySelector('#tp-skill-dialog');
+    if(state.skillDialog&&dialog&&!dialog.open)dialog.showModal();
+  }
   renderedRoute=route;
   updateNotice();
   if (state.busy) root.classList.add('tp-loading'); else root.classList.remove('tp-loading');
@@ -277,7 +302,7 @@ async function handleForm(form) {
   }
 }
 
-async function runAction(action) {
+async function runAction(action, abilityId=null) {
   switch(action) {
     case 'ack-room-exit': {
       if (!state.roomExitNotice || state.busy) break;
@@ -315,8 +340,29 @@ async function runAction(action) {
       state.preparation=await api.post('/matches/me/placement/confirm');state.draft=[...state.preparation.yourShips];await reconcile();
     });break;
     case 'clear-draft':state.draft=[];render();break;
+    case 'open-abilities':if((state.battle?.yourAbilities||[]).some(a=>a.usesRemaining>0)){state.skillDialog=true;render();}break;
+    case 'close-abilities':state.skillDialog=false;render();break;
+    case 'pick-ability':{
+      const available=state.battle?.yourAbilities?.find(a=>a.id===abilityId&&a.usesRemaining>0);
+      if(!available||state.battle?.turnPlayerId!==state.profile?.id)break;
+      state.skillMode=available.id;state.skillTargets=[];state.skillDialog=false;state.selected=null;render();break;
+    }
+    case 'cancel-ability':state.skillMode=null;state.skillTargets=[];render();break;
+    case 'activate-ability':await guard(async()=>{
+      if(!state.skillMode||state.skillTargets.length!==skillLimit(state.skillMode)
+          ||state.battle?.turnPlayerId!==state.profile?.id)return;
+      const oldReports=state.battle?.yourRadarReports?.length||0;
+      state.battle=await api.post('/matches/me/abilities',{
+        abilityId:state.skillMode,targets:state.skillTargets,
+      });
+      state.skillMode=null;state.skillTargets=[];state.selected=null;
+      const last=state.battle.yourRadarReports?.at(-1);
+      if(last&&state.battle.yourRadarReports.length>oldReports)
+        notice(`Radar em ${coordLabel(last)}: ${last.contacts} contato(s) no setor 3×3.`);
+      await reconcile();
+    });break;
     case 'fire':await guard(async()=>{
-      if(!state.selected||!state.battle||state.battle.turnPlayerId!==state.profile.id)return;
+      if(!state.selected||state.skillMode||!state.battle||state.battle.turnPlayerId!==state.profile.id)return;
       state.battle=await api.post('/matches/me/shots',state.selected);
       state.selected=null;await reconcile();
     });break;
@@ -328,6 +374,13 @@ function selectCell(row,col){
   if(route==='match') {
     if(state.battle?.turnPlayerId!==state.profile?.id||state.battle?.status!=='PLAYING') return;
     if(state.battle.shotsFired.some(s=>s.row===row&&s.col===col))return;
+    if(state.skillMode){
+      const selected={row,col};
+      if(state.skillTargets.some(cell=>keyOf(cell)===keyOf(selected)))return;
+      const max=skillLimit(state.skillMode);
+      state.skillTargets=[...state.skillTargets.slice(0,Math.max(0,max-1)),selected];
+      render();return;
+    }
     state.selected={row,col};
     // Update only target readout/cells, not the whole combat HUD and its boards.
     const board=root.querySelector('.combat-screen .board-panel-primary');
@@ -366,7 +419,7 @@ function bindEvents() {
   root.addEventListener('click',event=>{
     const target=event.target.closest('[data-coord]');
     if(target){const [row,col]=target.dataset.coord.split(',').map(Number);selectCell(row,col);return;}
-    const action=event.target.closest('[data-action]');if(action){void runAction(action.dataset.action);return;}
+    const action=event.target.closest('[data-action]');if(action){void runAction(action.dataset.action, action.dataset.abilityId);return;}
     const link=event.target.closest('[data-go]');if(link){go(link.dataset.go);}
   });
   root.addEventListener('keydown',event=>{
