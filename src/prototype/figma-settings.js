@@ -2,7 +2,7 @@ import {esc} from './board.js';
 
 /** Approved Figma settings artboard.
  * These settings are local display preferences only, not server/user preferences.
- * Audio, push notices and gameplay vibration require their respective engines.
+ * Music and effects control AudioManager; push notices and vibration still require their engines.
  */
 const STORAGE_KEY='bn.ui.preferences.v1';
 const defaults=Object.freeze({music:true,effects:true,vibration:true,notifications:false,language:'pt-BR'});

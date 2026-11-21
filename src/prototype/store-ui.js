@@ -42,6 +42,6 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
         !catalog?'<p class="tp-store-loading">A loja não está disponível no momento.</p>':
         cards||'<p class="tp-store-loading">Nenhum item nesta categoria.</p>'}
     </div>
-    <footer class="tp-store-footnote">Os pacotes de sons extras aguardam os assets finais. Skins equipadas alteram somente seu tabuleiro.</footer>
+    <footer class="tp-store-footnote">O pacote padrão inclui as trilhas e efeitos oficiais; os pacotes extras aguardam seus próprios arquivos. Skins equipadas alteram somente seu tabuleiro.</footer>
   </section>`;
 }

@@ -250,3 +250,8 @@ O Vite aplica isso apenas em modo de desenvolvimento. **Não use** a reescrita d
 Para diagnosticar: em DevTools → Network → WS, o pedido a `/ws` precisa retornar **101 Switching Protocols** e permanecer aberto. Um `POST /api/realtime/ticket` com status 201 **não prova** que o WebSocket conectou. `BOTH_DISCONNECTED` é a consequência de dois prazos de 120s expirados sem presença WebSocket — requests REST não contam como conexão.
 
 Com socket funcionando, os eventos disparam atualização de estado. Há ainda uma sincronização REST de segurança a cada 60 segundos enquanto online, ou a cada 20 segundos quando o socket está offline. Não recarregue a página durante a partida: tokens estão só em memória e o reload exigirá login novamente.
+
+
+## Sonoplastia e pacotes
+
+Consulte [o contrato de áudio](docs/audio-packs.md) para os eventos, estrutura de arquivos e integração com a loja. O pacote padrão inclui as cinco trilhas e os dez efeitos oficiais em OGG Vorbis; os eventos adicionais sem arquivos permanecem silenciosos.
