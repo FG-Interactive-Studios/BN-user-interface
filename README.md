@@ -254,4 +254,4 @@ Com socket funcionando, os eventos disparam atualização de estado. Há ainda u
 
 ## Sonoplastia e pacotes
 
-Consulte [o contrato de áudio](docs/audio-packs.md) para os eventos, estrutura de arquivos e integração com a loja. Os sons oficiais são ativados quando os arquivos OGG correspondentes forem versionados.
+Consulte [o contrato de áudio](docs/audio-packs.md) para os eventos, estrutura de arquivos e integração com a loja. O pacote padrão inclui as cinco trilhas e os dez efeitos oficiais em OGG Vorbis; os eventos adicionais sem arquivos permanecem silenciosos.

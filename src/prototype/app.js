@@ -27,12 +27,15 @@ const audioEvents=new AudioEvents();
 let audioRoute='';
 let storeLoadGeneration=0;
 function configureAudio(route){
-  audio.setState({packId:state.store?.items?.find(item=>item.category==='SOUND'&&item.equipped&&item.owned)?.id||'sound_default',preferences:state.preferences,scene:sceneEvent(route,state.lobby?.status)});
+  audio.setState({packId:state.store?.items?.find(item=>item.category==='SOUND'&&item.equipped&&item.owned)?.id||'sound_default',preferences:state.preferences,scene:sceneEvent(route,state.lobby?.status,{battle:state.battle,userId:state.profile?.id})});
 }
 function syncAudio(route){
   if((audioRoute==='match'||audioRoute==='result')&&route!==audioRoute&&!(audioRoute==='match'&&route==='result'))audio.stopEffects();
+  const changedRoute=audioRoute&&audioRoute!==route;
   audioRoute=route;
   configureAudio(route);
+  // Do not overlap the outcome or combat entry with generic UI transitions.
+  if(changedRoute&&!['match','result','placement'].includes(route))audio.play('ui_transition');
   for(const event of audioEvents.update({room:state.lobby,battle:state.battle,userId:state.profile?.id}))audio.play(event);
 }
 let root;
@@ -464,6 +467,7 @@ async function joinFromModal(form, code) {
   state.busy=true;
   try {
     state.lobby=await api.post('/matchmaking/lobbies/join',{code:code.trim().toUpperCase()});
+    if((state.lobby?.players||[]).length>=2)audio.play('game_found');
     root.querySelector('#tp-join-dialog')?.close();
     go('matchmaking');
   } catch(error) {

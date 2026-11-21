@@ -19,6 +19,8 @@ export class AudioEvents {
     const prevRoom=this.room;
     if(room&&prevRoom?.code===room.code&&Number(room.revision)<Number(prevRoom.revision))return out;
     if(room&&prevRoom?.code===room.code){
+      if(prevRoom.status==='WAITING'&&['WAITING','PREPARING'].includes(room.status)&&
+        (prevRoom.players||[]).length<2&&(room.players||[]).length>=2)out.push('game_found');
       for(const p of room.players||[]){
         const previous=prevRoom.players?.find(x=>x.id===p.id);
         if(!previous)continue;
@@ -47,13 +49,16 @@ export class AudioEvents {
         return before&&a.usesRemaining<before.usesRemaining;
       });
       if(ability)out.push('ability_'+ability.id);
-      const shots=[...changedShots(old.shotsFired,battle.shotsFired),...changedShots(old.shotsReceived,battle.shotsReceived)];
+      const fired=changedShots(old.shotsFired,battle.shotsFired);
+      const received=changedShots(old.shotsReceived,battle.shotsReceived);
+      const shots=[...fired,...received];
       if(shots.length){
         out.push('shot');
         if(shots.some(s=>s.blocked))out.push('attack_blocked');
         if(shots.some(s=>!s.blocked&&s.hit))out.push('hit');
         if(shots.some(s=>!s.blocked&&!s.hit))out.push('miss');
-        if(shots.some(s=>!s.blocked&&s.sunkShip))out.push('ship_sunk');
+        if(fired.some(s=>!s.blocked&&s.sunkShip))out.push('ship_sunk_enemy');
+        if(received.some(s=>!s.blocked&&s.sunkShip))out.push('ship_sunk_ally');
       }
       if(battle.status==='PLAYING'&&battle.turnPlayerId===userId&&old.turnPlayerId!==userId)out.push('your_turn');
     }

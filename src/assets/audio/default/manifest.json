@@ -21,6 +21,13 @@
     "attack_blocked": "sfx/attack_blocked.ogg",
     "disconnect": "sfx/disconnect.ogg",
     "reconnect": "sfx/reconnect.ogg",
-    "purchase_success": "sfx/purchase_success.ogg"
+    "purchase_success": "sfx/purchase_success.ogg",
+    "positioning_music": "music/positioning.ogg",
+    "victory_music": "music/victory.ogg",
+    "defeat_music": "music/defeat.ogg",
+    "ship_sunk_enemy": "sfx/ship_sunk_enemy.ogg",
+    "ship_sunk_ally": "sfx/ship_sunk_ally.ogg",
+    "game_found": "sfx/game_found.ogg",
+    "ui_transition": "sfx/ui_transition.ogg"
   }
 }

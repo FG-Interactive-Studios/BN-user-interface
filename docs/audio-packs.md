@@ -5,17 +5,22 @@ Arquivos oficiais: [efeitos](https://drive.google.com/drive/folders/1vWTJid9zdA_
 
 ## Integração
 
-AudioManager, AudioEvents e audio-packs separam reprodução, extração de eventos e catálogo. A API continua autoritativa. O catálogo usa imports Vite de arquivos existentes; o manifesto não cria URLs para arquivos ausentes. O pacote padrão está especificado, mas os OGG oficiais ainda precisam ser importados e mapeados: **até isso ocorrer os eventos sem arquivo são silenciosos**. Não há sons artificiais na versão de jogo.
+AudioManager, AudioEvents e audio-packs separam reprodução, extração de eventos e catálogo. A API continua autoritativa. O catálogo usa imports Vite de arquivos existentes; o manifesto não cria URLs para arquivos ausentes. O pacote padrão inclui os 15 arquivos OGG Vorbis oficiais, importados das pastas do GD. Consulte [roteiro de uso](https://docs.google.com/document/d/1vbL_11du98aO5ieMyKxQDCmXriaCv13reQFpx9eSo4k/edit). Eventos adicionais sem arquivo permanecem silenciosos. Não há sons artificiais na versão de jogo.
 
 | Evento | Disparo | Canal |
 | --- | --- | --- |
 | lobby | Login/cadastro, lobby, menus e criação de sala | Música, loop |
-| waiting_radar | Sala WAITING e posicionamento | Efeitos, loop |
+| waiting_radar | Sala WAITING | Efeitos, loop |
+| positioning_music | Posicionamento | Música, loop |
+| victory_music / defeat_music | Tela de resultado, conforme vencedor | Música, loop |
+| game_found | Segundo jogador entra na sala; convidado após confirmação da entrada | Efeito |
+| ui_transition | Navegação entre telas (exceto entradas de preparação, combate e resultado) | Efeito |
 | battle_music | Combate | Música, loop |
 | match_start | Transição observada PREPARING para PLAYING | Efeito |
 | shot | Novo disparo confirmado em snapshot (próprio ou recebido) | Efeito |
 | hit / miss | Resultado confirmado, uma vez por tipo em ação com vários alvos | Efeito |
-| ship_sunk | Afundamento confirmado | Efeito |
+| ship_sunk_enemy / ship_sunk_ally | Afundamento confirmado, conforme perspectiva | Efeito |
+| ship_sunk | Fallback genérico opcional para afundamento | Efeito |
 | victory / defeat | Transição para FINISHED com vencedor definido, perspectiva local | Efeito |
 | ui_click | Botão de navegação/ação (não confirma ataque) | Efeito |
 | your_turn | Turno passa ao jogador | Efeito |
@@ -26,13 +31,13 @@ AudioManager, AudioEvents e audio-packs separam reprodução, extração de even
 | disconnect / reconnect | Mudança de presença adversária em preparação/combate | Efeito |
 | purchase_success | Compra aceita pela API | Efeito |
 
-Os nove primeiros sons do escopo GD são lobby, waiting_radar, match_start, shot, hit, miss, ship_sunk, victory, defeat. battle_music e outros efeitos são extensões propostas; arquivos opcionais podem ficar ausentes. Em resultado não há loop; os jingles tocam uma vez. Lobby/loja/perfil compartilham loop, sem restart na renderização. Música e efeitos respeitam os toggles existentes; radar é efeito. Áudio pausado em aba oculta, e desbloqueado por gesto do usuário. Nenhuma ação sonora altera o jogo.
+O GD entregou lobby, posicionamento, combate, vitória e derrota como músicas, e dez efeitos: radar, partida encontrada, clique, transição, acerto, erro, afundamento aliado/inimigo e os dois jingles. Não há arquivo separado para lançamento do tiro (shot) ou início efetivo do combate (match_start), nem para os poderes; os respectivos slots permanecem opcionais e silenciosos. No resultado a trilha corresponde ao vencedor e os jingles tocam uma vez. Lobby/loja/perfil compartilham loop, sem restart na renderização. Música e efeitos respeitam os toggles existentes; radar é efeito. Áudio pausado em aba oculta, e desbloqueado por gesto do usuário. Nenhuma ação sonora altera o jogo.
 
-Não reproduz histórico ao carregar um match, nem ao receber revisão repetida/antiga. Saltos de revisão não reexecutam tiros; desfecho de partida conhecida pode ser ouvido. A API atual mantém o último registro por célula; múltiplas tentativas bloqueadas idênticas não são distinguíveis nessa estrutura. Não infere poderes secretos do oponente. A renderização conserva o efeito final entre match e result. Prontidão é reconhecida também na transição WAITING → PREPARING quando a mudança aparece no snapshot. Não há histórico de eventos de sala. Web Audio: carregamento sob demanda, um loop, fila limitada de efeitos, cache limitado para clips curtos; falha de arquivo/codec é tratada silenciosamente.
+Não reproduz histórico ao carregar um match, nem ao receber revisão repetida/antiga. Saltos de revisão não reexecutam tiros; desfecho de partida conhecida pode ser ouvido. A API atual mantém o último registro por célula; múltiplas tentativas bloqueadas idênticas não são distinguíveis nessa estrutura. Não infere poderes secretos do oponente. A renderização conserva o efeito final entre match e result. Prontidão é reconhecida também na transição WAITING → PREPARING quando a mudança aparece no snapshot. Não há histórico de eventos de sala. Mídia HTML: um loop reproduzido sob demanda por elemento de áudio reutilizável, sem decodificar músicas longas em memória. Web Audio: fila limitada de efeitos de combate e cache limitado para clips curtos; cliques/transições independentes da fila. Falha de arquivo/codec é tratada silenciosamente.
 
 ## Entrega de arquivos
 
-`src/assets/audio/default/manifest.json` contém os slots e caminhos padronizados. Copie o áudio OGG Vorbis aprovado para o caminho correspondente, por exemplo `default/music/lobby.ogg` e `default/sfx/hit.ogg`. Nomes de arquivos ASCII minúsculos, sem espaços. Validar audição, loops sem emenda perceptível e volume coerente (sem clipping); evitar WAV em produção. Preferir efeitos curtos. Não adotar trilhas só pelo nome sem confirmação do GD.
+`src/assets/audio/default/manifest.json` contém os slots e caminhos padronizados; os 15 OGGs de GD estão presentes (32 kHz, mono ou estéreo original, sem reconversão). Para extensões, copie o áudio OGG Vorbis aprovado para o caminho correspondente, por exemplo `default/music/lobby.ogg` e `default/sfx/hit.ogg`. Nomes de arquivos ASCII minúsculos, sem espaços. Validar audição, loops sem emenda perceptível e volume coerente (sem clipping); evitar WAV em produção. Preferir efeitos curtos. Não adotar trilhas só pelo nome sem confirmação do GD.
 
 ## Pacotes de loja
 
