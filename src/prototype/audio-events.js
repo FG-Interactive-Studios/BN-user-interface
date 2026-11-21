@@ -22,7 +22,7 @@ export class AudioEvents {
       for(const p of room.players||[]){
         const previous=prevRoom.players?.find(x=>x.id===p.id);
         if(!previous)continue;
-        if(room.status==='WAITING'&&p.ready===true&&previous.ready===false)out.push('player_ready');
+        if(prevRoom.status==='WAITING'&&['WAITING','PREPARING'].includes(room.status)&&p.ready===true&&previous.ready===false)out.push('player_ready');
         if(p.id!==userId&&['PREPARING','PLAYING'].includes(room.status)){
           if(previous.connected===true&&p.connected===false)out.push('disconnect');
           if(previous.connected===false&&p.connected===true)out.push('reconnect');
@@ -31,8 +31,9 @@ export class AudioEvents {
     }
     this.room=room;
     if(!battle){if(!room||!['PLAYING','FINISHED'].includes(room.status))this.battle=null;return out;}
+    if(battle.matchId==null||!Number.isFinite(Number(battle.revision)))return out;
     const old=this.battle;
-    if(old?.matchId!==battle.matchId){
+    if(!old||old.matchId!==battle.matchId){
       this.battle=battle;
       if(prevRoom?.code===room?.code&&prevRoom?.status==='PREPARING'&&battle.status==='PLAYING')out.push('match_start');
       return out;

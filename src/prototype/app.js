@@ -25,10 +25,14 @@ const state = {
 const audio=new AudioManager({packs:audioPacks});
 const audioEvents=new AudioEvents();
 let audioRoute='';
-function syncAudio(route){
-  if(audioRoute!==route&&!(audioRoute==='match'&&route==='result'))audio.stopEffects();
-  audioRoute=route;
+let storeLoadGeneration=0;
+function configureAudio(route){
   audio.setState({packId:state.store?.items?.find(item=>item.category==='SOUND'&&item.equipped&&item.owned)?.id||'sound_default',preferences:state.preferences,scene:sceneEvent(route,state.lobby?.status)});
+}
+function syncAudio(route){
+  if((audioRoute==='match'||audioRoute==='result')&&route!==audioRoute&&!(audioRoute==='match'&&route==='result'))audio.stopEffects();
+  audioRoute=route;
+  configureAudio(route);
   for(const event of audioEvents.update({room:state.lobby,battle:state.battle,userId:state.profile?.id}))audio.play(event);
 }
 let root;
@@ -97,7 +101,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -377,20 +381,22 @@ function storeScreen(){
 async function loadStore({quiet=false}={}){
   if(!api.isAuthenticated() || state.storeLoading) return;
   state.storeLoading=true;
+  const generation=++storeLoadGeneration;
+  const userId=state.profile?.id;
   if(currentRoute()==='store') render();
   try {
-    const userId=state.profile?.id;
     const snapshot=await api.get('/store');
-    if(!api.isAuthenticated()||state.profile?.id!==userId)return;
+    if(generation!==storeLoadGeneration||!api.isAuthenticated()||state.profile?.id!==userId)return;
     state.store=snapshot;
-    syncAudio(currentRoute());
+    configureAudio(audioRoute||currentRoute());
     document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
   } catch(error) {
-    if(!quiet) notice(error?.message || 'Catálogo temporariamente indisponível.',true);
-    state.store=null;
+    if(generation===storeLoadGeneration&&!quiet) notice(error?.message || 'Catálogo temporariamente indisponível.',true);
   } finally {
-    state.storeLoading=false;
-    if(currentRoute()==='store') render();
+    if(generation===storeLoadGeneration){
+      state.storeLoading=false;
+      if(currentRoute()==='store') render();
+    }
   }
 }
 function profileScreen(){
@@ -635,6 +641,7 @@ async function runAction(action,itemId=null) {
       state.battle=await api.post('/matches/me/abilities',{
         abilityId:state.skillMode,targets:state.skillTargets,
       });
+      syncAudio(currentRoute());
       state.skillMode=null;state.skillTargets=[];state.selected=null;
       notice(`${chosenName} ativada com sucesso.`);
       const last=state.battle.yourRadarReports?.at(-1);
@@ -645,6 +652,7 @@ async function runAction(action,itemId=null) {
     case 'fire':await guard(async()=>{
       if(!state.selected||state.skillMode||!state.battle||state.battle.turnPlayerId!==state.profile.id)return;
       state.battle=await api.post('/matches/me/shots',state.selected);
+      syncAudio(currentRoute());
       state.selected=null;await reconcile();
     });break;
     case 'forfeit':if(confirm('Confirmar desistência? O adversário receberá a vitória.'))await guard(async()=>{state.battle=await api.post('/matches/me/forfeit');await reconcile();});break;
