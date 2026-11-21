@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "id": "skin_default",
+  "type": "FLEET",
+  "name": "Frota Original",
+  "status": "draft",
+  "source": "https://drive.google.com/drive/folders/1wr8Yq4ZvaWD5cSHmP36D8RS47PKbv9ew",
+  "preview": null,
+  "ships": {
+    "CARRIER": {
+      "intact": null,
+      "sunk": null
+    },
+    "BATTLESHIP": {
+      "intact": null,
+      "sunk": null
+    },
+    "CRUISER": {
+      "intact": null,
+      "sunk": null
+    },
+    "SUBMARINE": {
+      "intact": null,
+      "sunk": null
+    },
+    "DESTROYER": {
+      "intact": null,
+      "sunk": null
+    }
+  },
+  "notes": "Sprites de três embarcações, mapeamento para cinco tipos atuais pendente. CSS padrão em uso."
+}

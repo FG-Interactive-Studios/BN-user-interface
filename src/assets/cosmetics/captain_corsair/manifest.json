@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "captain_corsair",
+  "type": "CAPTAIN",
+  "name": "Capitão corsário",
+  "status": "draft",
+  "source": "https://drive.google.com/drive/folders/1Qnpymy-N4Ajivt78zSJYM27NMBiTcFZi",
+  "preview": null,
+  "expressions": {
+    "neutral": null,
+    "hit": null,
+    "damage": null
+  },
+  "notes": "WEBP neutro, acerto e dano."
+}

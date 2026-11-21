@@ -28,3 +28,6 @@ jobs:
       - run: node tools/test-battle-report.mjs
 
       - run: node tools/test-audio.mjs
+
+      - run: node tools/validate-asset-packs.mjs
+      - run: node tools/test-asset-packs.mjs

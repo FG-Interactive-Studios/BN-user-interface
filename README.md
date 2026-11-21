@@ -255,3 +255,8 @@ Com socket funcionando, os eventos disparam atualização de estado. Há ainda u
 ## Sonoplastia e pacotes
 
 Consulte [o contrato de áudio](docs/audio-packs.md) para os eventos, estrutura de arquivos e integração com a loja. O pacote padrão inclui as cinco trilhas e os dez efeitos oficiais em OGG Vorbis; os eventos adicionais sem arquivos permanecem silenciosos.
+
+
+## Pacotes de assets visuais
+
+[Contrato e inventário dos pacotes cosméticos](docs/cosmetic-asset-packs.md): manifestos de preparação, validação dos arquivos e integração futura com a loja.

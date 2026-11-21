@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "captain_default",
+  "type": "CAPTAIN",
+  "name": "Capitão padrão",
+  "status": "draft",
+  "source": "https://drive.google.com/drive/folders/1iH4peoKgKXo_bTkgv7YZ-SW_U8Ta4L7Y",
+  "preview": null,
+  "expressions": {
+    "neutral": null,
+    "hit": null,
+    "damage": null
+  },
+  "notes": "PNG neutro, feliz e irritado; converter e validar."
+}
