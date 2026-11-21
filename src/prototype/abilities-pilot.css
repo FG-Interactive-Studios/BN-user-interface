@@ -26,3 +26,7 @@
     width:min(100%,300px)!important;
   }
 }
+
+.tp-active-effects{display:flex;flex-direction:column;gap:6px;min-width:0}
+.tp-active-effect{font-size:12px;line-height:1.4;border:1px solid var(--line);
+  border-radius:8px;background:var(--panel);padding:8px 10px;color:var(--cyan);overflow-wrap:anywhere}
