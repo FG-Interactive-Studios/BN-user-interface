@@ -4,6 +4,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {validatePack,SHIP_TYPES,EXPRESSIONS} from './validate-asset-packs.mjs';
 // The header fixtures verify the gate only, not image decoding or final artwork.
+assert.deepEqual(SHIP_TYPES,['SEARCH','DESTROYER','CARRIER']);
 const root=mkdtempSync(join(tmpdir(),'bn-assets-'));
 try{
   const file='sprite.webp';writeFileSync(join(root,file),Buffer.from('RIFF0000WEBP'));

@@ -4,7 +4,7 @@ import {readFileSync,readdirSync,statSync} from 'node:fs';
 import {resolve,relative,sep} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
-export const SHIP_TYPES=Object.freeze(["CARRIER","BATTLESHIP","CRUISER","SUBMARINE","DESTROYER"]);
+export const SHIP_TYPES=Object.freeze(["SEARCH","DESTROYER","CARRIER"]);
 export const EXPRESSIONS=Object.freeze(['neutral','hit','damage']);
 const validPath=/^(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.(?:webp|jpe?g)$/;
 function validateKeys(obj,keys,label){
@@ -31,7 +31,7 @@ export function validatePack(pack,folder){
   assert.ok(typeof pack.name==='string'&&pack.name.trim().length>0);
   assert.ok(['draft','ready'].includes(pack.status),'Unknown status');
   const required=pack.status==='ready';
-  // A ready fleet covers every class in the square base modes. Sprites use
+  // A ready fleet covers the three classes defined by GDD v1.2. Sprites use
   // a canonical horizontal orientation; rotation is a presentation concern.
   imageFile(folder,pack.preview,{required,label:pack.id+' preview'});
   if(pack.type==='FLEET'){

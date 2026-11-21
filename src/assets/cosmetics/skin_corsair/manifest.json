@@ -7,26 +7,18 @@
   "source": "https://drive.google.com/drive/folders/18c9nseV-2D7SDFY-aFh0-ycs8q8F0-ia",
   "preview": null,
   "ships": {
-    "CARRIER": {
-      "intact": null,
-      "sunk": null
-    },
-    "BATTLESHIP": {
-      "intact": null,
-      "sunk": null
-    },
-    "CRUISER": {
-      "intact": null,
-      "sunk": null
-    },
-    "SUBMARINE": {
+    "SEARCH": {
       "intact": null,
       "sunk": null
     },
     "DESTROYER": {
       "intact": null,
       "sunk": null
+    },
+    "CARRIER": {
+      "intact": null,
+      "sunk": null
     }
   },
-  "notes": "Três classes de embarcações, intactas/destruídas; confirmar correspondência, orientações e transparência."
+  "notes": "Três classes oficiais. Pasta do Corsário confirmada em GD #27; identificar a correspondência de Nau, Caravela e Galeão por tamanho."
 }

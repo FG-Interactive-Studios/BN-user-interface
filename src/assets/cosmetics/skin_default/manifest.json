@@ -7,26 +7,18 @@
   "source": "https://drive.google.com/drive/folders/1wr8Yq4ZvaWD5cSHmP36D8RS47PKbv9ew",
   "preview": null,
   "ships": {
-    "CARRIER": {
-      "intact": null,
-      "sunk": null
-    },
-    "BATTLESHIP": {
-      "intact": null,
-      "sunk": null
-    },
-    "CRUISER": {
-      "intact": null,
-      "sunk": null
-    },
-    "SUBMARINE": {
+    "SEARCH": {
       "intact": null,
       "sunk": null
     },
     "DESTROYER": {
       "intact": null,
       "sunk": null
+    },
+    "CARRIER": {
+      "intact": null,
+      "sunk": null
     }
   },
-  "notes": "Sprites de três embarcações, mapeamento para cinco tipos atuais pendente. CSS padrão em uso."
+  "notes": "Três classes oficiais de 1, 2 e 5 casas. Confirmar qual arte corresponde à embarcação de busca; CSS padrão ainda em uso."
 }

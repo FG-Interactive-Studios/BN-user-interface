@@ -7,26 +7,18 @@
   "source": "https://drive.google.com/drive/folders/1gpoOgJYsDp3fOxnV7_lPnwjaPJJyhcBa",
   "preview": null,
   "ships": {
-    "CARRIER": {
-      "intact": null,
-      "sunk": null
-    },
-    "BATTLESHIP": {
-      "intact": null,
-      "sunk": null
-    },
-    "CRUISER": {
-      "intact": null,
-      "sunk": null
-    },
-    "SUBMARINE": {
+    "SEARCH": {
       "intact": null,
       "sunk": null
     },
     "DESTROYER": {
       "intact": null,
       "sunk": null
+    },
+    "CARRIER": {
+      "intact": null,
+      "sunk": null
     }
   },
-  "notes": "Três sprites intactos; destruídos e banner pendentes, issue GD #25."
+  "notes": "Três sprites intactos; destruídos e banner pendentes, GD #25."
 }
