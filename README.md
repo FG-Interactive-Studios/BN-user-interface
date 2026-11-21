@@ -4,6 +4,12 @@ Frontend web responsivo do jogo de Batalha Naval multiplayer.
 
 O projeto utiliza uma abordagem **mobile-first**, mas deve funcionar tanto em celular quanto em desktop.
 
+## 🚢 Quer só baixar e testar o jogo?
+
+**[➡️ ABRIR O GUIA PARA TESTADORES — instalação e execução passo a passo](docs/GUIA-PARA-TESTADORES.md)**
+
+O guia foi feito para quem não programa: ensina a instalar os programas necessários, baixar e abrir o inicializador, executar o jogo e comunicar erros. **Não é preciso clonar repositórios nem usar o terminal.**
+
 ## Stack
 
 - Vite
