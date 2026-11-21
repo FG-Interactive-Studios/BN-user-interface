@@ -2,6 +2,8 @@
 
 Uma interface gráfica para Windows que busca **automaticamente as PRs abertas** dos repositórios `BN-user-interface` e `BN-API-Central`, incluindo rascunhos, e permite executar diferentes combinações de frontend/backend sem atualizar o inicializador para cada PR nova.
 
+> **Vai apenas jogar ou testar e não programa?** Siga o [guia passo a passo para testadores](../../docs/GUIA-PARA-TESTADORES.md). Ele explica a instalação e a execução sem comandos.
+
 ## Como começar
 
 1. Instale **Python 3.10+** com Tkinter (incluso no instalador oficial do Windows), **Git**, **Node.js 22+**, **Java 21** e **Docker Desktop**. Não é necessário `pip install` nem PyInstaller para executar o código-fonte.
