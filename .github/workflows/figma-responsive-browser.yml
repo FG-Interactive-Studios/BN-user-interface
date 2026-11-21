@@ -1,0 +1,59 @@
+name: Figma responsive browser check
+on:
+  pull_request:
+    paths:
+      - 'src/prototype/**'
+      - 'tools/test-figma-viewport.mjs'
+      - 'tools/test-figma-combat-mobile.mjs'
+      - 'tools/test-figma-waiting-room.mjs'
+      - 'tools/test-figma-placement.mjs'
+      - 'tools/test-figma-result.mjs'
+      - 'tools/test-figma-profile.mjs'
+      - 'tools/test-figma-settings.mjs'
+      - '.github/workflows/figma-responsive-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chrome:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright for CI only
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Check mobile and desktop actual geometry
+        run: node tools/test-figma-viewport.mjs
+      - name: Check mobile placement and battle geometry
+        run: node tools/test-figma-combat-mobile.mjs
+      - name: Check Figma waiting room layout and readiness
+        run: node tools/test-figma-waiting-room.mjs
+      - name: Check Figma fleet placement and API confirmation
+        run: node tools/test-figma-placement.mjs
+      - name: Check approved Figma result panels and storm framing
+        run: node tools/test-figma-result.mjs
+      - name: Check approved Figma player profile and edit forms
+        run: node tools/test-figma-profile.mjs
+      - name: Check approved Figma settings layout and real account actions
+        run: node tools/test-figma-settings.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: figma-responsive-captures
+          path: |
+            artifacts/figma-responsive/
+            artifacts/figma-combat/
+            artifacts/figma-waiting/
+            artifacts/figma-placement/
+            artifacts/figma-result/
+            artifacts/figma-profile/
+            artifacts/figma-settings/
+          if-no-files-found: ignore
+          retention-days: 7

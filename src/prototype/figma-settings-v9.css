@@ -1,0 +1,376 @@
+/* Settings V9 — reference: "Configurações" artboard in the approved Figma PDF.
+ * One full-viewport scene with the ship anchored to the left and waves below.
+ * Layout only: device preferences are handled in figma-settings.js.
+ */
+html:has(body[data-route="settings"]),
+body[data-route="settings"],
+body[data-route="settings"] #app {
+  width:100%;
+  height:100dvh!important;
+  min-height:0!important;
+  max-height:100dvh!important;
+  overflow:hidden!important;
+}
+body[data-route="settings"] .screen.bn-settings-stage{
+  position:relative;
+  isolation:isolate;
+  width:100%;
+  height:100dvh!important;
+  min-height:0!important;
+  max-height:100dvh!important;
+  overflow:hidden!important;
+  color:#fff;
+  background:
+    linear-gradient(180deg,#08101664 0%,#08101646 54%,#0810166a 100%),
+    url('../assets/figma/storm.jpg') center center/auto 100% no-repeat,
+    #111c24!important;
+}
+body[data-route="settings"] .bn-settings-stage::after{display:none!important;}
+.bn-settings-layout{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  width:min(100%,1020px);
+  height:100%;
+  min-height:0;
+  margin:0 auto;
+  padding:clamp(8px,1.8dvh,20px) clamp(11px,2.7vw,30px) clamp(8px,1.4dvh,19px);
+  gap:clamp(8px,1.3dvh,16px);
+}
+.bn-settings-heading{
+  display:flex;
+  align-items:center;
+  gap:clamp(8px,1.6vw,17px);
+  min-width:0;
+  flex:0 0 auto;
+}
+.bn-settings-back{
+  flex:0 0 clamp(37px,6.8dvh,61px);
+  width:clamp(37px,6.8dvh,61px);
+  height:clamp(37px,6.8dvh,61px);
+  display:grid;
+  place-items:center;
+  padding:0 0 4px;
+  background:#071017e8;
+  border:2px solid #dce7ee;
+  border-radius:50%;
+  color:#fff;
+  font:400 clamp(29px,5.5dvh,47px)/1 system-ui,sans-serif;
+  cursor:pointer;
+}
+.bn-settings-heading h1{
+  max-width:calc(100% - 48px);
+  margin:0;
+  padding:clamp(6px,1.15dvh,12px) clamp(13px,2.7vw,29px);
+  border-radius:clamp(15px,2.3vw,27px);
+  color:#fff;
+  background:#071017f2;
+  font:400 clamp(30px,5.8vw,71px)/1 'Pirata One',Georgia,serif;
+  white-space:nowrap;
+}
+.bn-settings-panels{
+  display:grid;
+  grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);
+  gap:clamp(10px,1.8vw,22px);
+  align-items:stretch;
+  min-width:0;
+  min-height:0;
+  flex:1 1 auto;
+}
+.bn-settings-left{
+  display:flex;
+  flex-direction:column;
+  gap:clamp(10px,1.6dvh,18px);
+  min-width:0;
+  min-height:0;
+}
+.bn-settings-left .bn-settings-panel{flex:1 1 auto;}
+.bn-settings-panel{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:clamp(4px,.7dvh,10px);
+  min-width:0;
+  padding:clamp(12px,2dvh,23px) clamp(14px,2.4vw,27px);
+  border:2px solid #26343e;
+  border-radius:clamp(18px,2.3vw,31px);
+  background:#070d12f4;
+  box-shadow:0 8px 24px #0008;
+}
+.bn-settings-panel h2{
+  margin:0;
+  color:#ffbf24;
+  font:400 clamp(27px,3vw,40px)/1 'Pirata One',Georgia,serif;
+}
+.bn-settings-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  min-height:clamp(35px,6dvh,65px);
+  gap:13px;
+  min-width:0;
+  width:100%;
+  padding:2px 0;
+  color:#f7f9fa;
+  text-align:left;
+  font:500 clamp(15px,1.7vw,22px)/1.17 'Lexend',sans-serif;
+}
+.bn-settings-row-label{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  min-width:0;
+  gap:2px;
+}
+.bn-settings-row-label span{overflow-wrap:anywhere;}
+.bn-settings-row-label small{
+  font:400 .69em/1.27 'Lexend',sans-serif;
+  color:#c6d2dc;
+  overflow-wrap:anywhere;
+}
+.bn-settings-switch{
+  display:flex;
+  align-items:center;
+  flex:0 0 clamp(57px,8.5vw,90px);
+  justify-content:flex-start;
+  width:clamp(57px,8.5vw,90px);
+  height:clamp(30px,4.1vw,49px);
+  padding:3px;
+  border:2px solid #c9d8e1;
+  border-radius:999px;
+  background:#24323d;
+  cursor:pointer;
+  transition:background .16s;
+}
+.bn-settings-switch>span{
+  display:block;
+  width:calc((clamp(30px,4.1vw,49px)) - 10px);
+  height:calc((clamp(30px,4.1vw,49px)) - 10px);
+  min-width:20px;
+  min-height:20px;
+  max-height:100%;
+  aspect-ratio:1;
+  border-radius:50%;
+  background:#cbd5e1;
+  transition:transform .16s,background .16s;
+}
+.bn-settings-switch.is-on{background:#34d399;}
+.bn-settings-switch.is-on>span{
+  transform:translateX(calc(clamp(57px,8.5vw,90px) - clamp(30px,4.1vw,49px)));
+  background:#071117;
+}
+.bn-settings-link-row{
+  border:0;
+  background:transparent;
+  cursor:pointer;
+}
+.bn-settings-row-value{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  color:#cbd7e0;
+  white-space:nowrap;
+  font-weight:400;
+}
+.bn-settings-chevron{
+  flex:0 0 auto;
+  color:#ced8e1;
+  font:400 clamp(31px,3.2vw,41px)/.8 system-ui,sans-serif;
+}
+.bn-settings-account-link .bn-settings-row-label{max-width:calc(100% - 45px);}
+.bn-settings-account .bn-settings-row-label small{word-break:break-word;}
+.bn-settings-footer{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  gap:clamp(4px,.7dvh,9px);
+  flex:0 0 auto;
+}
+.bn-settings-logout{
+  display:grid;
+  place-items:center;
+  width:min(100%,650px);
+  min-height:clamp(49px,8.7dvh,78px);
+  padding:8px 18px;
+  border:2px solid #dbe6ed;
+  border-radius:999px;
+  background:#f87171;
+  color:#0e1016;
+  font:400 clamp(30px,4.1vw,47px)/1 'Pirata One',Georgia,serif;
+  cursor:pointer;
+}
+.bn-settings-logout:hover{background:#ff8888;}
+.bn-settings-footer p{
+  margin:0;
+  color:#8998a8;
+  font:400 clamp(11px,1.3vw,16px)/1.25 'Lexend',sans-serif;
+}
+.bn-settings-stage button:focus-visible{
+  outline:3px solid #ffbf24;
+  outline-offset:3px;
+}
+.bn-settings-dialog{
+  position:fixed;
+  width:min(calc(100vw - 28px),510px);
+  max-height:80dvh;
+  margin:auto;
+  padding:20px;
+  overflow:auto;
+  border:2px solid #6a8293;
+  border-radius:22px;
+  background:#071119;
+  color:#fff;
+  box-shadow:0 20px 50px #000b;
+}
+.bn-settings-dialog::backdrop{background:#02090dd3;backdrop-filter:blur(4px);}
+.bn-settings-dialog-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.bn-settings-dialog-heading h2{
+  margin:0;
+  color:#ffbf24;
+  font:400 32px/1 'Pirata One',Georgia,serif;
+}
+.bn-settings-dialog-heading button{
+  width:38px;height:38px;
+  border:1.5px solid #cbd8e1;
+  border-radius:50%;
+  background:#10222d;
+  color:#fff;
+  font:400 28px/1 system-ui;
+  cursor:pointer;
+}
+.bn-settings-dialog p{
+  color:#d3e0e7;
+  font:400 13px/1.6 'Lexend',sans-serif;
+}
+.bn-settings-dialog-done{
+  width:100%;
+  min-height:46px;
+  border:2px solid #d8e5eb;
+  border-radius:999px;
+  background:#ffbf24;
+  color:#0b1014;
+  font:400 27px 'Pirata One',Georgia,serif;
+  cursor:pointer;
+}
+@media(min-width:850px){
+  body[data-route="settings"] .screen.bn-settings-stage{
+    background:
+      linear-gradient(90deg,#081016b3 0%,#08101662 29%,#08101663 72%,#081016b4 100%),
+      url('../assets/figma/storm.jpg') center 58%/cover no-repeat,
+      #101a22!important;
+  }
+  body[data-route="settings"] .screen.bn-settings-stage::before{
+    content:'';
+    position:absolute;
+    z-index:0;
+    left:0;top:0;bottom:0;
+    width:min(49vw,710px);
+    background:url('../assets/figma/storm.jpg') left bottom/auto 100% no-repeat;
+    mask-image:linear-gradient(90deg,#000 0%,#0008 55%,transparent 100%);
+    pointer-events:none;
+  }
+}
+@media(max-width:849px){
+  .bn-settings-layout{
+    width:min(100%,540px);
+    gap:clamp(6px,1dvh,10px);
+    padding:clamp(7px,1.3dvh,13px) clamp(10px,3vw,16px) clamp(6px,1.2dvh,12px);
+  }
+  .bn-settings-heading{gap:9px;}
+  .bn-settings-back{
+    flex-basis:clamp(35px,5.7dvh,48px);
+    width:clamp(35px,5.7dvh,48px);
+    height:clamp(35px,5.7dvh,48px);
+    font-size:clamp(29px,4.4dvh,35px);
+  }
+  .bn-settings-heading h1{
+    max-width:calc(100% - 45px);
+    font-size:clamp(28px,8vw,43px);
+    padding:6px clamp(12px,3.5vw,19px) 8px;
+    border-radius:18px;
+  }
+  .bn-settings-panels{
+    display:flex;
+    flex-direction:column;
+    flex:1 1 auto;
+    min-height:0;
+    gap:clamp(6px,1.1dvh,11px);
+  }
+  .bn-settings-left{
+    display:flex;
+    flex:0 0 auto;
+    gap:clamp(6px,1.1dvh,11px);
+  }
+  .bn-settings-left .bn-settings-panel{flex:0 0 auto;}
+  .bn-settings-panel{
+    gap:clamp(1px,.55dvh,5px);
+    flex:0 0 auto;
+    min-width:0;
+    padding:clamp(7px,1.5dvh,14px) clamp(12px,4vw,20px);
+    border-radius:clamp(15px,4vw,22px);
+  }
+  .bn-settings-panel h2{font-size:clamp(25px,6.9vw,34px);}
+  .bn-settings-row{
+    min-height:clamp(30px,5.3dvh,39px);
+    gap:9px;
+    font-size:clamp(13px,4vw,18px);
+  }
+  .bn-settings-switch{
+    flex-basis:clamp(52px,15vw,62px);
+    width:clamp(52px,15vw,62px);
+    height:clamp(28px,8.5vw,33px);
+    padding:2px;
+  }
+  .bn-settings-switch>span{
+    width:calc(clamp(28px,8.5vw,33px) - 8px);
+    height:calc(clamp(28px,8.5vw,33px) - 8px);
+  }
+  .bn-settings-switch.is-on>span{
+    transform:translateX(calc(clamp(52px,15vw,62px) - clamp(28px,8.5vw,33px)));
+  }
+  .bn-settings-row-value{font-size:clamp(12px,3.6vw,17px);}
+  .bn-settings-chevron{font-size:clamp(26px,8vw,34px);}
+  .bn-settings-account{flex:1 1 auto;min-height:0;}
+  .bn-settings-footer{gap:4px;}
+  .bn-settings-logout{
+    min-height:clamp(43px,7.2dvh,57px);
+    font-size:clamp(28px,7.3vw,39px);
+  }
+  .bn-settings-footer p{font-size:clamp(10px,2.7vw,13px);}
+}
+@media(max-width:849px) and (max-height:615px){
+  .bn-settings-layout{gap:5px;padding-block:5px;}
+  .bn-settings-back{height:35px;width:35px;flex-basis:35px;}
+  .bn-settings-heading h1{font-size:clamp(28px,7.6vw,35px);padding:5px 12px 6px;}
+  .bn-settings-panels,.bn-settings-left{gap:5px;}
+  .bn-settings-panel{padding:6px 12px;gap:1px;border-width:1.5px;}
+  .bn-settings-panel h2{font-size:clamp(24px,6.7vw,29px);}
+  .bn-settings-row{min-height:29px;font-size:clamp(12px,3.8vw,16px);}
+  .bn-settings-switch{height:28px;}
+  .bn-settings-switch>span{width:20px;height:20px;}
+  .bn-settings-switch.is-on>span{transform:translateX(calc(clamp(52px,15vw,62px) - 28px));}
+  .bn-settings-row-label small{font-size:10px;}
+  .bn-settings-logout{min-height:43px;}
+  .bn-settings-footer p{font-size:10px;}
+}
+@media(max-width:849px) and (max-height:520px){
+  /* Accessibility safety net for extremely short landscape windows. */
+  html:has(body[data-route="settings"]),body[data-route="settings"],
+  body[data-route="settings"] #app,
+  body[data-route="settings"] .screen.bn-settings-stage{
+    min-height:100dvh!important;height:auto!important;max-height:none!important;overflow-y:auto!important;
+  }
+  .bn-settings-layout{min-height:100dvh;height:auto;overflow:visible;}
+  .bn-settings-account{flex:0 0 auto;}
+}
+@media(prefers-reduced-motion:reduce){
+  .bn-settings-stage *{transition:none!important;animation:none!important;}
+}

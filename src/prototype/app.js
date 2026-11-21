@@ -1,15 +1,23 @@
 import * as api from './client.js';
+import { renderCosmeticStore } from './store-ui.js';
+import { renderFigmaResult } from './figma-result.js';
+import { renderFigmaProfile } from './figma-profile.js';
+import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
+import { renderFigmaPlacement } from './figma-placement.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
-import { roomPlayerCard, compactEnemyContacts } from './mobile-presenters.js';
+import { compactEnemyContacts } from './mobile-presenters.js';
 
 const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20l-3-6H5l-3 6zM8 12V8h4v4M12 6V4"/></svg>`;
-const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">TIDEPOINT</div><div class="brand-sub">Estratégia • Navios • Vitória</div></div></div>`;
+const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">Batalha Naval</div><div class="brand-sub">Duelo 1v1 em alto-mar</div></div></div>`;
 const state = {
   profile: null, modes: [], lobby: null, preparation: null, battle: null,
-  modeId: 'classic', selected: null, draft: null, orientation: 'HORIZONTAL',
+  modeId: 'classic', selected: null, draft: null, placementShip: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
+  skillMode: null, skillTargets: [], skillDialog: false,
+  store: null, storeLoading: false, storeFilter: 'ALL', profileEditorOpen: false, profileSecurityOpen: false,
+  preferences: loadPreferences(),
 };
 let root;
 let refreshTimer;
@@ -31,13 +39,34 @@ function activeMode() { return state.battle?.mode || state.preparation?.mode || 
 function currentRoute() { return decodeURIComponent(location.hash.slice(1).split('?')[0] || 'auth'); }
 function go(route) {
   route = resolvedRoute(route, api.isAuthenticated(), state.lobby?.status);
+  if (route!=='profile') {state.profileEditorOpen=false;state.profileSecurityOpen=false;}
   if (currentRoute()===route) render(); else location.hash=route;
 }
-function nav(active='play') { return `<nav class="bottom-nav"><button class="nav-btn ${active==='fleet'?'active':''}" data-go="fleet">⚓ Frota</button><button class="nav-btn play ${active==='play'?'active':''}" data-go="lobby">⌁ Jogar</button><button class="nav-btn ${active==='store'?'active':''}" data-go="store">◈ Arsenal</button></nav>`; }
-function header() { const player=state.profile; return `<header class="topbar">${brand()}<div class="currencies"><span class="pill">● TidePoint V1</span><span class="pill" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span></div><div class="player-strip"><div class="avatar" aria-hidden="true">⚓</div><div class="name"><b>${esc(player?.nickname || 'Capitão')}</b><div style="font-size:10px;color:var(--muted)">Conta de jogador</div></div><div class="tp-top-actions"><button data-go="profile">Perfil</button><button data-action="logout">Sair</button><a href="/admin" class="tp-small" style="color:var(--cyan)">Admin</a></div><details class="tp-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary><div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div></details></div></header>`; }
-function screen(content,{active='play',noNav=false}={}) { return `<div class="screen"><div class="shell">${header()}<main class="main">${content}</main>${noNav?'':nav(active)}</div></div>`; }
+function nav(active='play') {
+  return `<nav class="bottom-nav bn-bottom-nav" aria-label="Navegação principal">
+    <button type="button" class="nav-btn bn-nav-fleet ${active==='fleet'?'active':''}" data-go="fleet" ${active==='fleet'?'aria-current="page"':''}>Equipe</button>
+    <button type="button" class="nav-btn play bn-nav-play ${active==='play'?'active':''}" data-go="lobby" ${active==='play'?'aria-current="page"':''}>Play</button>
+    <button type="button" class="nav-btn bn-nav-store ${active==='store'?'active':''}" data-go="store" ${active==='store'?'aria-current="page"':''}>Loja</button>
+  </nav>`;
+}
+function header() {
+  const nickname=esc(state.profile?.nickname || 'Capitão');
+  return `<header class="topbar bn-topbar">
+    <button type="button" class="bn-header-identity" data-go="profile" aria-label="Abrir meu perfil">
+      <span class="bn-header-avatar" aria-hidden="true">⚓</span>
+      <span class="bn-header-player"><strong>${nickname}</strong><small>Conta de jogador</small></span>
+    </button>
+    <div class="bn-header-actions">
+      <span class="bn-connection-status" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span>
+      <details class="tp-account-menu bn-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary>
+        <div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-go="settings">Configurações</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div>
+      </details>
+    </div>
+  </header>`;
+}
+function screen(content,{active='play',noNav=false,noHeader=false,variant=''}={}) { return `<div class="screen ${variant}"><div class="shell">${noHeader?'':header()}<main class="main">${content}</main>${noNav?'':nav(active)}</div></div>`; }
 function panel(title,body,cls='') { return `<section class="panel tp-panel ${cls}"><div class="eyebrow">Comando naval</div><h2 class="panel-title" style="margin:8px 0 16px">${title}</h2>${body}</section>`; }
-function mainContent(inner,{active='play',noNav=false}={}) {return screen(`<div class="tp-content">${inner}</div>`,{active,noNav});}
+function mainContent(inner,{active='play',noNav=false,noHeader=false,variant=''}={}) {return screen(`<div class="tp-content">${inner}</div>`,{active,noNav,noHeader,variant});}
 function alertNode() { return state.notice ? `<div class="tp-notice ${state.error?'error':''}" role="alert">${esc(state.notice)} <button type="button" data-action="dismiss" style="float:right;background:transparent;color:inherit;border:0;cursor:pointer">×</button></div>` : ''; }
 function routeForLobby(status) {return status==='WAITING'?'matchmaking':status==='PREPARING'?'placement':status==='PLAYING'?'match':status==='FINISHED'?'result':'lobby';}
 function synchronizeRoute() {
@@ -56,7 +85,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;}
+function reset(){state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -107,6 +136,7 @@ async function reconcile() {
     }
     state.lobby=room;
     if (!room) {
+      state.skillMode=null;state.skillTargets=[];state.skillDialog=false;
       if (state.preparation || state.battle || state.draft) changed=true;
       state.preparation=null;state.battle=null;state.draft=null;
     }
@@ -117,12 +147,13 @@ async function reconcile() {
       if (!state.preparation || state.preparation.preparationId!==prep.preparationId || prep.revision>=state.preparation.revision) {
         changed ||= JSON.stringify(state.preparation)!==JSON.stringify(prep);
         state.preparation=prep;
-        if (previous!=='PREPARING') state.draft=null;
+        if (previous!=='PREPARING') {state.draft=null;state.placementShip=null;state.orientation='HORIZONTAL';}
       }
     } else if (['PLAYING','FINISHED'].includes(room.status)) {
       if (state.preparation) changed=true;
       state.preparation=null;
       const battle=await api.get('/matches/me');
+      if (state.battle?.matchId!==battle.matchId) {state.skillMode=null;state.skillTargets=[];state.skillDialog=false;}
       if (!state.battle || state.battle.matchId!==battle.matchId || battle.revision>=state.battle.revision) {
         changed ||= JSON.stringify(state.battle)!==JSON.stringify(battle);
         state.battle=battle;
@@ -143,8 +174,24 @@ async function reconcile() {
 }
 
 function authForm(isRegister=false) {
-  const inputs=isRegister ? `<div class="field"><label for="nick">Nickname</label><input id="nick" name="nickname" autocomplete="nickname" minlength="3" maxlength="30" required /></div>`:'';
-  return `<div class="screen"><div class="auth-wrap"><section class="auth-art"><div>${brand()}</div><div class="auth-quote"><div class="eyebrow">${isRegister?'Novo recruta':'Comando Naval Online'}</div><h1>${isRegister?'Seu nome.<br>Sua frota.<br><em>Seu oceano.</em>':'Leia o mar.<br><em>Antecipe.</em><br>Afunde.'}</h1><p>Partidas navais de estratégia 1v1. Uma conta, sua frota e decisões reais no campo de batalha.</p></div><div class="eyebrow">TIDEPOINT • Batalha Naval</div></section><section class="auth-form-wrap"><div class="panel auth-card"><div class="eyebrow">${isRegister?'Cadastro':'Acesso ao convés'}</div><h2 class="form-title">${isRegister?'Criar conta':'Entrar no comando'}</h2><p class="form-sub">${isRegister?'Crie um perfil para começar.':'Entre com seu e-mail e senha.'}</p><form class="tp-form" data-form="${isRegister?'register':'login'}">${inputs}<div class="field"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254" /></div><div class="field"><label for="password">Senha</label><input id="password" name="password" type="password" autocomplete="${isRegister?'new-password':'current-password'}" minlength="8" maxlength="72" required /></div>${isRegister?'<div class="field"><label for="repeat">Confirmar senha</label><input id="repeat" name="repeat" type="password" autocomplete="new-password" required /></div>':''}<button type="submit" class="btn btn-primary btn-wide">${isRegister?'Cadastrar e entrar':'Entrar'}</button></form><div class="tp-actions" style="margin-top:15px"><button class="btn btn-ghost" data-go="${isRegister?'auth':'register'}">${isRegister?'Já tenho conta':'Criar conta'}</button></div><p class="tp-small tp-muted" style="margin-top:12px">Recuperação de senha por e-mail ainda não está disponível.</p></div></section></div></div>`;
+  const fields=isRegister
+    ? '<div class="bn-field"><label for="nick">Nome de usuário</label><input id="nick" name="nickname" autocomplete="nickname" minlength="3" maxlength="30" placeholder="Escolha seu nome de capitão" required /></div>'
+    : '';
+  return `<div class="screen bn-design-screen bn-auth-screen"><main class="bn-auth ${isRegister?'bn-register':''}">
+    ${isRegister
+      ? '<header class="bn-register-title"><button type="button" data-go="auth" class="bn-back-button" aria-label="Voltar ao login">‹</button><h1>Cadastro</h1><p>Crie sua conta e monte sua frota</p></header>'
+      : '<div class="bn-auth-logo" aria-label="Batalha Naval"><span class="bn-auth-emblem" aria-hidden="true">⚓</span><h1>Batalha Naval</h1><p>Duelo 1v1 em alto-mar</p></div>'}
+    <section class="bn-auth-panel" aria-label="${isRegister?'Criar conta':'Acessar conta'}">
+      <form class="tp-form bn-auth-form" data-form="${isRegister?'register':'login'}">
+        ${fields}
+        <div class="bn-field"><label for="email">${isRegister?'E-mail':'E-mail'}</label><input id="email" name="email" type="email" autocomplete="email" placeholder="${isRegister?'Digite seu e-mail':'Seu e-mail'}" required maxlength="254" /></div>
+        <div class="bn-field"><label for="password">Senha</label><input id="password" name="password" type="password" autocomplete="${isRegister?'new-password':'current-password'}" placeholder="Digite sua senha" minlength="8" maxlength="72" required /></div>
+        ${isRegister?'<div class="bn-field"><label for="repeat">Confirmar senha</label><input id="repeat" name="repeat" type="password" autocomplete="new-password" placeholder="Confirme sua senha" minlength="8" maxlength="72" required /></div>':'<p class="bn-auth-help">Recuperação de senha em breve</p>'}
+        <button type="submit" class="btn btn-primary bn-primary-button">${isRegister?'Criar conta':'Entrar'}</button>
+      </form>
+    </section>
+    <div class="bn-auth-switch"><span>${isRegister?'Já tem conta?':'Ainda não tem conta?'}</span><button type="button" class="bn-pill-button" data-go="${isRegister?'auth':'register'}">${isRegister?'Entrar':'Criar conta'}</button></div>
+  </main></div>`;
 }
 
 /** Waiting-room radar: uses the existing .radar design. */
@@ -154,7 +201,31 @@ function radarMarkup() {
 
 function lobbyScreen() {
   if (state.lobby) return waitingScreen();
-  return screen(`<div class="hero-grid home-grid"><section class="panel hero-card home-hero"><div class="home-hero-grid"><div class="hero-copy home-copy"><h1 class="hero-title">Domine a<br><span>linha d'água.</span></h1><div class="tp-lobby-intro"><span class="tp-lobby-sign">⚓ PONTO DE PARTIDA</span><span class="tp-lobby-sign-line" aria-hidden="true"></span></div><div class="hero-actions tp-lobby-actions" aria-label="Escolha sua próxima ação"><button class="btn btn-orange home-primary-action tp-launch-card" type="button" data-go="matchmaking" ${state.modes.length?'':'disabled'}><span class="home-btn-icon">◎</span><span class="tp-action-copy"><b>Criar sala</b><small>Escolha o cenário e convoque um capitão</small></span><span class="tp-action-chevron" aria-hidden="true">↗</span></button><button class="btn btn-ghost home-ranked-action tp-join-card" type="button" data-action="open-join-modal"><span class="home-btn-icon">⌁</span><span class="tp-action-copy"><b>Entrar na sala</b><small>Recebeu um convite? Embarque aqui</small></span><span class="tp-action-chevron" aria-hidden="true">→</span></button></div><div class="tp-lobby-dock" aria-label="Características das partidas"><span><i aria-hidden="true">◈</i> Duelo 1×1</span><span><i aria-hidden="true">◎</i> Estratégia por turnos</span></div></div><div class="home-ocean-art" aria-hidden="true"><div class="home-radar-disc"><i class="home-radar-ring ring-a"></i><i class="home-radar-ring ring-b"></i><i class="home-radar-axis axis-x"></i><i class="home-radar-axis axis-y"></i><i class="home-radar-sweep"></i><span class="home-radar-contact contact-a"></span><span class="home-radar-contact contact-b"></span><span class="home-radar-contact contact-c"></span></div><div class="home-ship-silhouette"><i class="home-ship-hull"></i><i class="home-ship-deck"></i><i class="home-ship-tower"></i><i class="home-ship-gun"></i></div><div class="home-art-label"><span>Seu próximo desafio</span><b>1 × 1</b></div></div></div></section><aside class="panel mission-card home-missions tp-player-journal" aria-label="Diário de bordo do jogador"><div class="home-mission-head"><div><div class="eyebrow">Diário de bordo</div><div class="panel-title">Minha jornada</div></div></div><div class="mission-list home-mission-list tp-player-status-list"><div class="mission tp-player-status"><div class="tp-mission-info"><small>Situação</small><b>Pronto para jogar</b></div><span class="tp-status-dot" aria-hidden="true"></span></div><div class="mission tp-player-status"><div class="tp-mission-info"><small>Ranking</small><b>Em breve</b></div><span class="tp-journal-icon" aria-hidden="true">◈</span></div><div class="mission tp-player-status"><div class="tp-mission-info"><small>Missões</small><b>Em breve</b></div><span class="tp-journal-icon" aria-hidden="true">◎</span></div></div><div class="home-event-card tp-journal-upcoming"><div class="home-event-copy"><div class="eyebrow">Próximas atualizações</div><b>Histórico e estatísticas de batalha</b><small>Disponíveis quando a API oferecer dados de progressão.</small></div></div></aside></div><dialog id="tp-join-dialog" class="tp-join-dialog" aria-labelledby="tp-join-title"><div class="tp-modal-header"><div><div class="eyebrow">Convite de partida</div><h2 id="tp-join-title">Entrar em uma sala</h2></div><button type="button" data-action="close-join-modal" aria-label="Fechar janela">×</button></div><form data-form="join" class="tp-form"><div class="field"><label for="room-code">Código de seis caracteres</label><input id="room-code" name="code" placeholder="ABC234" maxlength="6" minlength="6" pattern="[a-zA-Z0-9]{6}" autocomplete="off" required style="text-transform:uppercase" /></div><p class="tp-modal-feedback" role="alert" aria-live="polite"></p><div class="tp-modal-actions"><button class="btn btn-ghost" type="button" data-action="close-join-modal">Cancelar</button><button class="btn btn-primary" type="submit">Entrar na sala</button></div></form></dialog>`);
+  return mainContent(`<div class="bn-lobby">
+    <section class="bn-feature-card" aria-labelledby="bn-feature-title">
+      <span class="bn-feature-icon" aria-hidden="true"></span>
+      <div class="bn-feature-copy"><span class="bn-kicker">EVENTO</span><h1 id="bn-feature-title">Tempestade de Aço</h1>
+        <p>Novos desafios e recompensas chegarão em breve.</p><small>Em desenvolvimento</small></div>
+    </section>
+    <section class="bn-news-grid" aria-label="Novidades">
+      <article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas embarcações</strong><small>Personalizações em breve</small></article>
+      <article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas temporadas</strong><small>Progressão em breve</small></article>
+    </section>
+    <div class="bn-rank-card"><span class="bn-rank-emblem" aria-hidden="true">⚓</span><div><strong>Patentes em breve</strong><small>Batalhas privadas 1v1</small></div></div>
+    <div class="bn-lobby-actions">
+      <button type="button" class="btn btn-primary bn-primary-button" data-go="matchmaking" ${state.modes.length?'':'disabled'}>Jogar</button>
+      <button type="button" class="bn-pill-button bn-join-button" data-action="open-join-modal">Entrar com código</button>
+    </div>
+  </div>
+  <dialog id="tp-join-dialog" class="tp-join-dialog" aria-labelledby="tp-join-title">
+    <div class="tp-modal-header"><div><div class="eyebrow">Convite de partida</div><h2 id="tp-join-title">Entrar em uma sala</h2></div>
+      <button type="button" data-action="close-join-modal" aria-label="Fechar janela">×</button></div>
+    <form data-form="join" class="tp-form"><div class="field"><label for="room-code">Código de seis caracteres</label>
+      <input id="room-code" name="code" placeholder="ABC234" maxlength="6" minlength="6" pattern="[a-zA-Z0-9]{6}" autocomplete="off" required style="text-transform:uppercase" /></div>
+      <p class="tp-modal-feedback" role="alert" aria-live="polite"></p><div class="tp-modal-actions">
+      <button class="btn btn-ghost" type="button" data-action="close-join-modal">Cancelar</button>
+      <button class="btn btn-primary" type="submit">Entrar na sala</button></div></form>
+  </dialog>`);
 }
 
 function waitingScreen() {
@@ -163,10 +234,53 @@ function waitingScreen() {
     const options=state.modes.map(mode=>`<option value="${esc(mode.id)}" ${state.modeId===mode.id?'selected':''}>${esc(mode.name)} · ${mode.geometry?.cells?.length||0} casas</option>`).join('');
     return mainContent(`<div class="matchmaking-wrap tp-create-room-wrap"><section class="panel mm-card tp-create-room-card tp-room-setup"><div class="eyebrow">Canal de combate</div><h2 class="form-title">Criar sala privada</h2><p class="form-sub tp-setup-description">Escolha o tabuleiro e convide outro capitão.</p><div class="tp-create-mode"><label class="eyebrow" for="mode-picker">Modo de jogo</label><select class="tp-mode-select" id="mode-picker" ${options?'':'disabled'}>${options||'<option>Sem modos habilitados</option>'}</select></div><div class="tp-actions tp-create-actions"><button type="button" class="btn btn-ghost" data-go="lobby">← Voltar</button><button type="button" class="btn btn-orange" data-action="create-lobby" ${options?'':'disabled'}>Criar sala</button></div></section></div>`,{noNav:true});
   }
+  // The backend only exposes name, avatar ID, connection and readiness.
+  // The approved art also depicts level, wins and a countdown, none of which
+  // exist in LobbyResponse yet; never fabricate those values on the client.
+  const host=room.players[0] || null;
+  const guest=room.players[1] || null;
   const me=room.players.find(p=>p.id===state.profile?.id);
   const other=room.players.find(p=>p.id!==state.profile?.id);
-  const players=[roomPlayerCard(room.players[0],{isSelf:room.players[0]?.id===state.profile?.id,role:'Anfitrião'}),roomPlayerCard(room.players[1],{isSelf:room.players[1]?.id===state.profile?.id,role:'Convidado'})].join('');
-  return mainContent(`<div class="matchmaking-wrap tp-room-waiting-wrap"><section class="panel mm-card tp-waiting-card"><div class="eyebrow">Canal de combate • ${esc(room.mode?.name||'Modo clássico')}</div><h2 class="form-title">Sala privada</h2><p class="form-sub tp-waiting-description">Compartilhe o código para convidar outro jogador.</p><button type="button" data-action="copy-code" class="btn btn-primary tp-room-code" aria-label="Copiar código da sala"><strong>${esc(room.code)}</strong><span aria-hidden="true">⧉</span></button><div class="tp-waiting-radar">${radarMarkup()}</div><div class="tp-room-slots" aria-label="Participantes da sala" aria-live="polite">${players}</div><p class="tp-room-hint">${other?'Ambos precisam confirmar prontidão.':'Aguardando outro capitão entrar pelo código.'}</p><div class="tp-actions tp-room-controls"><button class="btn ${me?.ready?'btn-ghost':'btn-orange'}" data-action="ready" ${other?'':'disabled'}>${me?.ready?'Cancelar prontidão':'Estou pronto'}</button><button class="btn btn-danger" data-action="leave-lobby">Sair da sala</button></div></section></div>`,{noNav:true});
+  const readyCount=room.players.filter(p=>p.ready).length;
+  const playerCard=(player,role)=>{
+    const nickname=player?.nickname || 'Vaga disponível';
+    const initial=player ? (Array.from(String(nickname).trim())[0] || '?').toLocaleUpperCase('pt-BR') : '+';
+    const isSelf=player?.id===state.profile?.id;
+    const status=player ? player.ready ? 'Pronto' : !player.connected ? 'Desconectado' : 'Aguardando' : 'Aguardando';
+    return `<article class="bn-room-player ${player?'':'bn-room-player-empty'}" aria-label="${esc(role)}: ${esc(nickname)}, ${status}">
+      <span class="bn-room-avatar" aria-hidden="true">${esc(initial)}</span>
+      <div class="bn-room-player-details">
+        <h2>${esc(nickname)}</h2>
+        <p class="bn-room-player-role">${isSelf?'Você · ':''}${role}${player ? '' : ' · Aguardando jogador'}</p>
+        <span class="bn-room-ready ${player?.ready?'is-ready':'is-waiting'}"><i aria-hidden="true"></i>${status}</span>
+      </div>
+    </article>`;
+  };
+  return mainContent(`<section class="bn-waiting-room" aria-labelledby="bn-waiting-heading">
+    <div class="bn-room-heading">
+      <button type="button" class="bn-room-close" data-action="leave-lobby" aria-label="Sair da sala" title="Sair da sala">×</button>
+      <h1 id="bn-waiting-heading">Sala de espera</h1>
+    </div>
+    <p class="bn-room-description">A batalha começa quando os dois capitães estiverem prontos.</p>
+    <button type="button" data-action="copy-code" class="bn-room-invite" aria-label="Copiar código da sala ${esc(room.code)}">
+      <span>Código da sala</span><strong>${esc(room.code)}</strong><span aria-hidden="true">⧉</span>
+    </button>
+    <div class="bn-room-duel" aria-label="Capitães da sala">
+      ${playerCard(host,'Anfitrião')}
+      <div class="bn-room-versus" aria-hidden="true">VS</div>
+      ${playerCard(guest,'Convidado')}
+    </div>
+    <p class="bn-room-confirmation" role="status" aria-live="polite">
+      <span>${other ? 'Confirmações' : 'Aguardando adversário'}</span>
+      <strong>${readyCount} de 2 prontos</strong>
+    </p>
+    <div class="bn-room-controls">
+      <button type="button" class="bn-room-ready-button" data-action="ready" ${other?'':'disabled'}>
+        ${me?.ready?'Cancelar prontidão':'Pronto'}
+      </button>
+      <button type="button" class="bn-room-leave-button" data-action="leave-lobby">Sair da sala</button>
+    </div>
+  </section>`,{noNav:true,noHeader:true,variant:'bn-waiting-screen'});
 }
 
 function fleetPanel(mode, ships, verified=false) {
@@ -179,38 +293,95 @@ function fleetPanel(mode, ships, verified=false) {
 function placementScreen(){
   const p=state.preparation,mode=p?.mode||activeMode();
   if (!p||!mode) return mainContent(panel('Carregando preparação','Aguarde a atualização do servidor.'),{noNav:true});
-  const ships=state.draft??(p.yourShips||[]);
-  const editable=!p.fleetConfirmed;
-  const canManual=editable && mode.geometry.kind==='RECTANGULAR' && mode.placementDirections.includes(state.orientation);
-  const already=new Set(ships.map(s=>s.type));
-  const next=mode.fleet.find(s=>!already.has(s.id));
-  const complete=mode.fleet.every(s=>already.has(s.id));
-  return `<div class="screen combat-screen placement-screen"><div class="match-layout"><header class="match-head setup-head">${brand()}<div class="turn-box"><b>POSICIONE SUA FROTA</b><small>${esc(mode.name)} · ${mode.geometry.cells.length} casas</small></div><div class="setup-meta"><span class="tp-tag">${p.fleetConfirmed?'CONFIRMADO':complete?'FROTA PRONTA':'PREPARANDO'}</span></div></header><main class="match-grid placement-grid premium-placement-grid"><aside class="side-stack placement-left-rail"><section class="panel compact combat-side-card placement-fleet-card"><div class="eyebrow">Frota disponível</div>${fleetPanel(mode,ships,true)}</section><section class="panel compact combat-side-card placement-tip-card"><div class="eyebrow">Status de preparação</div><div class="tp-list"><div>Você <span>${p.fleetConfirmed?'Confirmou':'Preparando'}</span></div><div>Oponente <span>${p.opponentConfirmed?'Confirmou':'Preparando'}</span></div></div><p class="tp-muted tp-small">Somente você vê suas posições. Os navios do adversário permanecem ocultos.</p></section></aside><section class="panel board-panel board-panel-primary premium-board-panel placement-board-panel"><div class="board-head premium-board-head"><div><div class="eyebrow">Seu mapa</div><b>Quadrante Alfa</b></div><div class="placement-readout"><span>Posicionamento</span><strong>${complete?'Completo':'Pendente'}</strong></div></div><div class="board-wrap board-wrap-primary combat-board-wrap placement-board-wrap tp-board"><div class="tactical-board-frame setup-board-frame">${renderBoard(mode,{ships,interactive:canManual})}</div></div><div class="board-meta placement-board-meta"><div class="meta-block"><div><b>Grade de implantação</b><small>${canManual&&next?`Clique no mapa para posicionar ${esc(shipName(next.id))}`:'Use a distribuição automática para qualquer geometria'}</small></div></div></div></section><aside class="action-col premium-hud placement-hud"><section class="panel placement-protocol-card"><div class="eyebrow">Protocolo de implantação</div><b>Frota ${ships.length} / ${mode.fleet.length}</b>${canManual?`<div class="tp-space" style="margin-top:15px"><label>Orientação <select id="orientation" class="tp-mode-select">${mode.placementDirections.map(d=>`<option ${d===state.orientation?'selected':''} value="${esc(d)}">${esc(d)}</option>`).join('')}</select></label><p class="tp-muted tp-small">Para posicionamento manual, selecione uma casa inicial. É necessário completar toda a frota antes de salvar.</p></div>`:''}<div class="tp-actions" style="margin-top:12px"><button class="btn btn-ghost" data-action="clear-draft" ${!canManual||!ships.length?'disabled':''}>Limpar edição</button><button class="btn btn-primary" data-action="save-placement" ${!complete||!editable||state.draft===null?'disabled':''}>Salvar frota</button></div></section><div class="combat-actions placement-actions"><button class="btn btn-primary setup-random-btn" data-action="random-placement" ${!editable?'disabled':''}><span class="action-copy"><b>Aleatório</b><small>Gerar frota válida na API</small></span></button><button class="btn btn-orange attack-btn" data-action="confirm-placement" ${!p.fleetPlaced||!editable?'disabled':''}><span class="action-copy"><b>${p.fleetConfirmed?'Confirmada':'Confirmar frota'}</b><small>${p.opponentConfirmed?'A batalha começará após confirmar':'Aguarde o adversário'}</small></span></button><button class="btn btn-ghost setup-cancel-btn" data-action="leave-lobby">Cancelar / sair da sala</button></div></aside></main><footer class="match-foot combat-foot placement-foot"><span><b>SETUP</b> ${esc(mode.name)}</span><span class="foot-center">${p.fleetConfirmed?'Aguardando o adversário':'Preparação em andamento'}</span><span>TIDEPOINT / PREPARAÇÃO</span></footer></div></div>`;
+  // The approved Figma screen wraps the very same renderBoard(mode, ...) renderer
+  // used in combat and the old placement view. Board tiles and styling are untouched.
+  const directions=mode.placementDirections || [];
+  if (!directions.includes(state.orientation)) state.orientation=directions[0] || 'HORIZONTAL';
+  return renderFigmaPlacement({
+    preparation:p,mode,draft:state.draft,selectedShipId:state.placementShip,
+    orientation:state.orientation,
+  });
 }
 
-function shotSummary(shots){return {hits:shots.filter(x=>x.hit),misses:shots.filter(x=>!x.hit)};}
+function skillMeta(id) { return (state.battle?.yourAbilities||[]).find(a=>a.id===id); }
+function skillLimit(id){return Number(skillMeta(id)?.targetCount)||0;}
+function skillScope(id){return skillMeta(id)?.targetScope||'ENEMY';}
+function skillDialogMarkup(){
+  const abilities=state.battle?.yourAbilities||[];
+  if(!abilities.length)return '';
+  return `<dialog id='tp-skill-dialog' class='tp-join-dialog' aria-labelledby='tp-skill-title'><div class='tp-modal-header'><div><div class='eyebrow'>Mecânicas especiais · piloto</div><h2 id='tp-skill-title'>Escolher habilidade</h2></div><button type='button' data-action='close-abilities' aria-label='Fechar'>×</button></div><p class='tp-muted tp-small'>As regras são experimentais. Cada poder custa um turno.</p><div class='tp-skill-options'>${abilities.map(a=>`<button class='btn btn-ghost tp-skill-option' data-action='pick-ability' data-ability-id='${esc(a.id)}' ${a.usesRemaining>0&&!a.locked?'':'disabled'}><b>${esc(a.name)} · ${a.usesRemaining} uso(s)</b><small>${esc(a.description||'Habilidade tática')}${a.locked?' · Bloqueada por interferência':''}</small></button>`).join('')}</div><div class='tp-modal-actions'><button class='btn btn-ghost' data-action='close-abilities'>Cancelar</button></div></dialog>`;
+}
+function shotSummary(shots){return {hits:shots.filter(x=>x.hit&&!x.blocked),misses:shots.filter(x=>!x.hit&&!x.blocked)};}
 function battleScreen(){
   const b=state.battle,mode=b?.mode||activeMode();
   if (!b||!mode) return mainContent(panel('Sincronizando batalha','Aguardando estado da partida...'),{noNav:true});
   const own=shotSummary(b.shotsReceived||[]),enemy=shotSummary(b.shotsFired||[]);
   const myTurn=b.turnPlayerId===state.profile?.id,finished=b.status==='FINISHED';
-  const fired=new Set((b.shotsFired||[]).map(keyOf));
+  const fired=new Set((b.shotsFired||[]).filter(s=>!s.blocked).map(keyOf));
   const selected=state.selected && !fired.has(keyOf(state.selected)) ? state.selected:null;
   const sunk=(b.shotsFired||[]).filter(s=>s.sunkShip);
   const opponent=state.lobby?.players.find(p=>p.id!==state.profile?.id);
-  return `<div class="screen combat-screen"><div class="match-layout"><header class="match-head tp-battle-head"><div class="tp-battle-brand">${brand()}</div><div class="turn-box"><b>${finished?'BATALHA CONCLUÍDA':myTurn?'SUA VEZ':'AGUARDANDO O OPONENTE'}</b><small>${finished?'Resultado definido pelo servidor':myTurn?'Escolha um alvo no mapa inimigo':'Aguarde a jogada adversária'}</small></div><div class="enemy-meta"><b>${esc(opponent?.nickname||'Oponente')}</b></div></header><main class="match-grid combat-grid"><aside class="side-stack combat-left-rail"><section class="panel compact combat-side-card"><div class="eyebrow">Sua frota</div>${fleetPanel(mode,b.yourShips||[],true)}</section><section class="panel compact preview-panel combat-side-card"><div class="side-card-heading"><div class="eyebrow">Seu mapa</div></div><div class="board-wrap board-wrap-preview tp-board tp-board-small">${renderBoard(mode,{ships:b.yourShips,hits:own.hits,misses:own.misses,small:true})}</div></section></aside><section class="panel board-panel board-panel-primary premium-board-panel"><div class="board-head premium-board-head"><div><div class="eyebrow enemy-map-label">Mapa inimigo</div><b>Quadrante inimigo</b></div><div class="target-readout"><span>Alvo selecionado</span><strong>${selected?coordLabel(selected):'—'}</strong></div></div><div class="board-wrap board-wrap-primary combat-board-wrap tp-board"><div class="tactical-board-frame">${renderBoard(mode,{hits:enemy.hits,misses:enemy.misses,selected,interactive:myTurn&&!finished})}</div></div><div class="board-meta"><div class="meta-block"><div><b>Inteligência naval</b><small>${enemy.hits.length} acertos · ${enemy.misses.length} disparos na água</small></div></div></div></section><aside class="action-col premium-hud"><section class="panel enemy-intel-panel"><div class="enemy-intel-head"><div><div class="eyebrow">Inteligência inimiga</div><b>Navios identificados</b></div><span class="intel-progress">${sunk.length} / ${mode.fleet.length}</span></div><div class="enemy-intel-list">${mode.fleet.map((ship,i)=>{const sunkType=sunk.some(s=>s.sunkShip===ship.id);return `<article class="intel-ship ${sunkType?'destroyed':'unknown'}"><div class="intel-ship-copy"><div class="intel-state-label">${sunkType?'Afundado':'Não identificado'}</div><b>${sunkType?esc(shipName(ship.id)):'Contato desconhecido'}</b><small>${sunkType?'Classe identificada pelo servidor':`Contato ${i+1} · classe não revelada`}</small></div></article>`}).join('')}</div>${compactEnemyContacts(mode.fleet,sunk)}</section><div class="combat-actions"><button class="btn btn-orange attack-btn" data-action="fire" ${myTurn&&selected&&!finished?'':'disabled'}><span class="action-copy"><b>Atacar</b><small>${selected?`Disparar em ${coordLabel(selected)}`:'Selecione uma casa livre'}</small></span></button><button class="btn btn-ghost skill-btn tp-disabled" disabled><span class="action-copy"><b>Habilidades</b><small>Em desenvolvimento no backend</small></span></button><button class="btn btn-danger tp-forfeit-btn" data-action="forfeit" ${finished?'disabled':''}><span class="tp-desktop-forfeit">Desistir da partida</span><span class="tp-mobile-forfeit">Desistir</span></button></div></aside></main><footer class="match-foot combat-foot"><span>${esc(mode.name)}</span><span class="foot-center">${finished?'Partida finalizada':myTurn?'Sua vez de atacar':'Turno do oponente'}</span><span>${b.shotsFired.length} disparos realizados</span></footer></div></div>`;
+  const available=b.yourAbilities||[];
+  const usable=available.some(a=>a.usesRemaining>0&&!a.locked);
+  const activeAbility=available.find(a=>a.id===state.skillMode);
+  const skillCount=skillLimit(state.skillMode);
+  const radarResult=b.yourRadarReports?.at(-1);
+  const skillControls=state.skillMode && activeAbility
+    ? `<div class='tp-pilot-skill-control' role='group' aria-label='Ativação de habilidade'><b>${esc(activeAbility.name)} · ${state.skillTargets.length}/${skillCount}</b><small>${esc(activeAbility.description)} ${skillCount?`· Selecione ${skillCount} casa(s) ${skillScope(state.skillMode)==='OWN'?'no seu mapa':'no mapa inimigo'}.`:'· Nenhum alvo necessário.'}</small><div class='tp-skill-commands'><button type='button' class='btn btn-orange' data-action='activate-ability' ${state.skillTargets.length===skillCount&&myTurn&&!finished&&!activeAbility.locked?'':'disabled'}>Ativar poder</button><button type='button' class='btn btn-ghost' data-action='cancel-ability'>Cancelar</button></div></div>` : '';
+  const radarInfo=radarResult ? `<p class='tp-radar-result'>Último radar em ${coordLabel(radarResult)}: ${esc(radarResult.contacts)} contato(s) no setor 3×3.</p>` : '';
+  const activeEffects=(b.yourActiveEffects||[]).length
+    ? `<div class='tp-active-effects' aria-live='polite'>${b.yourActiveEffects.map(effect=>`<span class='tp-active-effect'>${esc(effect.label)} · ${effect.actionsRemaining} ação(ões) restante(s)</span>`).join('')}</div>`
+    : '';
+  return `<div class="screen combat-screen"><div class="match-layout"><header class="match-head tp-battle-head"><div class="tp-battle-brand">${brand()}</div><div class="turn-box"><b>${finished?'BATALHA CONCLUÍDA':myTurn?'SUA VEZ':'AGUARDANDO O OPONENTE'}</b><small>${finished?'Resultado definido pelo servidor':myTurn?'Escolha um alvo no mapa inimigo':'Aguarde a jogada adversária'}</small></div><div class="enemy-meta"><b>${esc(opponent?.nickname||'Oponente')}</b></div></header><main class="match-grid combat-grid"><aside class="side-stack combat-left-rail"><section class="panel compact combat-side-card"><div class="eyebrow">Sua frota</div>${fleetPanel(mode,b.yourShips||[],true)}</section><section class="panel compact preview-panel combat-side-card"><div class="side-card-heading"><div class="eyebrow">Seu mapa</div></div><div class="board-wrap board-wrap-preview tp-board tp-board-small">${renderBoard(mode,{ships:b.yourShips,hits:own.hits,misses:own.misses,small:true,interactive:myTurn&&!finished&&Boolean(state.skillMode)&&skillScope(state.skillMode)==='OWN'})}</div></section></aside><section class="panel board-panel board-panel-primary premium-board-panel"><div class="board-head premium-board-head"><div><div class="eyebrow enemy-map-label">Mapa inimigo</div><b>Quadrante inimigo</b></div><div class="target-readout"><span>Alvo selecionado</span><strong>${selected?coordLabel(selected):'—'}</strong></div></div><div class="board-wrap board-wrap-primary combat-board-wrap tp-board"><div class="tactical-board-frame">${renderBoard(mode,{hits:enemy.hits,misses:enemy.misses,selected,interactive:myTurn&&!finished&&(!state.skillMode||skillScope(state.skillMode)==='ENEMY')})}</div></div><div class="board-meta"><div class="meta-block"><div><b>Inteligência naval</b><small>${enemy.hits.length} acertos · ${enemy.misses.length} disparos na água</small></div></div></div></section><aside class="action-col premium-hud"><section class="panel enemy-intel-panel"><div class="enemy-intel-head"><div><div class="eyebrow">Inteligência inimiga</div><b>Navios identificados</b></div><span class="intel-progress">${sunk.length} / ${mode.fleet.length}</span></div><div class="enemy-intel-list">${mode.fleet.map((ship,i)=>{const sunkType=sunk.some(s=>s.sunkShip===ship.id);return `<article class="intel-ship ${sunkType?'destroyed':'unknown'}"><div class="intel-ship-copy"><div class="intel-state-label">${sunkType?'Afundado':'Não identificado'}</div><b>${sunkType?esc(shipName(ship.id)):'Contato desconhecido'}</b><small>${sunkType?'Classe identificada pelo servidor':`Contato ${i+1} · classe não revelada`}</small></div></article>`}).join('')}</div>${compactEnemyContacts(mode.fleet,sunk)}</section><div class="combat-actions"><button class="btn btn-orange attack-btn" data-action="fire" ${myTurn&&selected&&!state.skillMode&&!finished?'':'disabled'}><span class="action-copy"><b>Atacar</b><small>${selected?`Disparar em ${coordLabel(selected)}`:'Selecione uma casa livre'}</small></span></button><button class="btn btn-ghost skill-btn" data-action="open-abilities" ${myTurn&&!finished&&usable?'':'disabled'}><span class="action-copy"><b>Habilidades</b><small>${available.length?(usable?'Selecionar poder (piloto)':'Poderes utilizados'):'Indisponíveis neste modo'}</small></span></button>${skillControls}${activeEffects}${radarInfo}<button class="btn btn-danger tp-forfeit-btn" data-action="forfeit" ${finished?'disabled':''}><span class="tp-desktop-forfeit">Desistir da partida</span><span class="tp-mobile-forfeit">Desistir</span></button></div></aside></main><footer class="match-foot combat-foot"><span>${esc(mode.name)}</span><span class="foot-center">${finished?'Partida finalizada':myTurn?'Sua vez de atacar':'Turno do oponente'}</span><span>${b.shotsFired.length} disparos realizados</span></footer></div></div>`+skillDialogMarkup();
 }
-function resultScreen(){
-  const b=state.battle;
-  if(!b) return mainContent(panel('Resultado','Aguardando dados da partida.'),{noNav:true});
-  const won=b.winnerId===state.profile?.id,draw=b.winnerId===null;
-  const label=draw?'Sem vencedor':won?'Vitória':'Derrota';
-  const shots=b.shotsFired||[],hits=shots.filter(s=>s.hit).length;
-  return mainContent(`<section class="panel result-card tp-result"><div class="eyebrow">Relatório pós-batalha</div><div class="result-stamp">${label}</div><h2 class="form-title">${won?'O mar ficou com você.':draw?'O oceano segue sem dono.':'Uma batalha, uma lição.'}</h2><p class="tp-muted">Resultado confirmado pela API · ${esc(b.finishReason||'Batalha finalizada')}</p><div class="result-grid"><div class="result-stat"><b>${shots.length?Math.round(hits/shots.length*100):0}%</b><span>Precisão</span></div><div class="result-stat"><b>${hits}</b><span>Acertos</span></div><div class="result-stat"><b>${shots.length}</b><span>Disparos</span></div></div><div class="tp-actions" style="justify-content:center;margin-top:26px"><button class="btn btn-orange" data-action="leave-lobby">Voltar ao lobby</button></div></section>`,{noNav:true});
+function resultScreen() {
+  const battle=state.battle;
+  if(!battle)return mainContent(panel('Resultado','Aguardando dados da partida.'),{noNav:true});
+  return renderFigmaResult({battle,profile:state.profile,lobby:state.lobby});
 }
-function fleetScreen(){const mode=activeMode()||state.modes[0];return mainContent(`<div class="tp-page-header"><div class="eyebrow">Frota / Arsenal pessoal</div><h2 class="form-title">Navios do ${esc(mode?.name||'TidePoint')}</h2></div><div class="tp-flow">${panel('Catálogo de embarcações',mode?fleetPanel(mode,[],false):'Não há modos disponíveis.')}${panel('Configuração atual','<p class="tp-muted">A frota de cada modo é definida no servidor e posicionada para cada partida. Inventário, skins equipáveis e habilidades personalizadas ainda não possuem endpoints na API.</p><button class="btn btn-orange" data-go="lobby">Preparar partida</button>')}</div>`,{active:'fleet'});}
-function storeScreen(){return mainContent(`<div class="tp-page-header"><div class="eyebrow">Arsenal TidePoint</div><h2 class="form-title">Loja e coleções</h2></div>${panel('Em construção','<p>O layout de cosméticos do protótipo foi reservado para o futuro catálogo. Compras, moedas, skins e pacotes de som ainda não existem na API e, portanto, não há preços ou saldos fictícios aqui.</p><p class="tp-muted">As partidas reais e os tabuleiros estão disponíveis no lobby.</p><button class="btn btn-orange" data-go="lobby">Voltar para jogar</button>')}`,{active:'store'});}
-function profileScreen(){const p=state.profile;return mainContent(`<div class="tp-page-header"><button class="btn btn-ghost tp-back" type="button" data-go="lobby">← Voltar</button><div class="eyebrow">Conta de jogador</div><h2 class="form-title">Meu perfil</h2></div><div class="tp-flow"><section class="panel tp-panel"><div class="eyebrow">Identidade</div><form class="tp-form" data-form="profile"><div class="field"><label for="profile-name">Nickname</label><input id="profile-name" name="nickname" maxlength="30" minlength="3" required value="${esc(p?.nickname)}" /></div><div class="field"><label for="avatar">Avatar</label><select name="avatarId" id="avatar" class="tp-mode-select">${['captain','submarine','destroyer','carrier'].map(id=>`<option value="${id}" ${p?.avatarId===id?'selected':''}>${esc(shipName(id.toUpperCase()))}</option>`).join('')}</select></div><button class="btn btn-primary" type="submit">Salvar perfil</button></form><p class="tp-muted tp-small" style="margin-top:12px">E-mail: ${esc(p?.email||'—')}</p></section><section class="panel tp-panel"><div class="eyebrow">Segurança</div><h2 class="panel-title">Alterar senha</h2><form class="tp-form" data-form="password"><div class="field"><label>Senha atual<input name="currentPassword" type="password" autocomplete="current-password" required /></label></div><div class="field"><label>Nova senha<input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></label></div><button class="btn btn-orange" type="submit">Alterar senha</button></form><p class="tp-muted tp-small">A sessão continua ativa após a troca de senha.</p></section></div>`,{noNav:true});}
+
+function fleetScreen(){
+  const mode=activeMode()||state.modes[0];
+  const ships=mode?.fleet||[];
+  const catalogue=ships.length
+    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">⚓</span>
+       <div><strong>${esc(shipName(def.id))}</strong><small>${def.length} casas</small></div>
+       <span class="bn-ship-status">Disponível</span></article>`).join('')
+    : '<p class="bn-available-note">Nenhum modo de jogo habilitado no momento.</p>';
+  return mainContent(`<div class="bn-page bn-fleet-page">
+    <header class="bn-page-heading"><h1>Sua frota</h1><p>Escolha sua estratégia antes de entrar em batalha.</p></header>
+    <section class="bn-surface bn-fleet-catalogue"><div class="bn-section-title"><span>EMBARCAÇÕES</span><strong>${esc(mode?.name||'Clássico')}</strong></div>
+      <div class="bn-ship-list">${catalogue}</div></section>
+    <section class="bn-surface bn-fleet-info"><div class="bn-section-title"><span>PREPARAÇÃO</span><strong>Frota de combate</strong></div>
+      <p>A frota é definida pela API para cada modo. Você posiciona seus navios ao entrar na partida.</p>
+      <button type="button" class="btn btn-primary bn-primary-button" data-go="lobby">Preparar partida</button>
+    </section>
+  </div>`,{active:'fleet'});
+}
+function storeScreen(){
+  return mainContent(renderCosmeticStore(state.store,{loading:state.storeLoading,filter:state.storeFilter}),{active:'store'});
+}
+async function loadStore({quiet=false}={}){
+  if(!api.isAuthenticated() || state.storeLoading) return;
+  state.storeLoading=true;
+  if(currentRoute()==='store') render();
+  try {
+    state.store=await api.get('/store');
+    document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
+  } catch(error) {
+    if(!quiet) notice(error?.message || 'Catálogo temporariamente indisponível.',true);
+    state.store=null;
+  } finally {
+    state.storeLoading=false;
+    if(currentRoute()==='store') render();
+  }
+}
+function profileScreen(){
+  return renderFigmaProfile(state.profile);
+}
+function settingsScreen(){
+  return renderFigmaSettings(state.profile,state.preferences);
+}
 
 function roomExitDialog() {
   if (!state.roomExitNotice) return "";
@@ -231,12 +402,30 @@ function render(){ if (!root) return;
     route=resolvedRoute(route,true,state.lobby?.status);
     history.replaceState(null,'',`${location.pathname}${location.search}#${route}`);
   }
-  const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen};
+  if(route!=='match'||state.battle?.status==='FINISHED'){state.skillMode=null;state.skillTargets=[];state.skillDialog=false;}
+  const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen};
   root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
+  if(route==='match'){
+    const chosen=new Set(state.skillTargets.map(keyOf));
+    root.querySelectorAll('.combat-screen [data-coord]').forEach(node=>{
+      if(chosen.has(node.dataset.coord))node.classList.add('pilot-skill-target');
+    });
+    const dialog=root.querySelector('#tp-skill-dialog');
+    if(state.skillDialog&&dialog&&!dialog.open)dialog.showModal();
+  }
   renderedRoute=route;
   updateNotice();
   if (state.busy) root.classList.add('tp-loading'); else root.classList.remove('tp-loading');
   document.body.dataset.route=route;
+  document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
+  if(route==='profile'&&state.profileEditorOpen){
+    const profileDialog=root.querySelector('#bn-profile-editor');
+    if(profileDialog && !profileDialog.open)profileDialog.showModal();
+    if(state.profileSecurityOpen){
+      const security=profileDialog?.querySelector('.bn-profile-security');
+      if(security)security.open=true;
+    }
+  }
   const exitDialog=root.querySelector('#tp-room-exit-dialog');
   if (exitDialog && !exitDialog.open) exitDialog.showModal();
 }
@@ -272,13 +461,66 @@ async function handleForm(form) {
       if (values.password!==values.repeat) return notice('As senhas digitadas são diferentes.',true);
       await guard(async()=>{await api.register(values.nickname.trim(),values.email.trim(),values.password);await api.login(values.email.trim(),values.password);await sessionInit();go('lobby');});break;
     case 'join':await joinFromModal(form,values.code);break;
-    case 'profile':await guard(async()=>{state.profile=await api.patch('/users/me',{nickname:values.nickname.trim(),avatarId:values.avatarId});notice('Perfil atualizado com sucesso.');});break;
-    case 'password':await guard(async()=>{await api.post('/auth/change-password',{currentPassword:values.currentPassword,newPassword:values.newPassword});notice('Senha atualizada. Sua sessão permanece ativa.');});break;
+    case 'profile':await guard(async()=>{state.profile=await api.patch('/users/me',{nickname:values.nickname.trim(),avatarId:values.avatarId});state.profileEditorOpen=false;state.profileSecurityOpen=false;notice('Perfil atualizado com sucesso.');});break;
+    case 'password':state.profileSecurityOpen=true;await guard(async()=>{await api.post('/auth/change-password',{currentPassword:values.currentPassword,newPassword:values.newPassword});state.profileSecurityOpen=false;notice('Senha atualizada. Sua sessão permanece ativa.');});break;
   }
 }
 
-async function runAction(action) {
+async function runAction(action,itemId=null) {
   switch(action) {
+    case 'toggle-setting': {
+      if(currentRoute()!=='settings'||!settingKeys.includes(itemId))break;
+      state.preferences=savePreferences({...state.preferences,[itemId]:!state.preferences[itemId]});
+      render();
+      root.querySelector(`[data-action="toggle-setting"][data-item-id="${itemId}"]`)?.focus();
+      // The music, sound-effects, vibration and notification engines have not
+      // been integrated yet. These are persisted preferences only.
+      break;
+    }
+    case 'settings-manage-account':{
+      state.profileEditorOpen=true;
+      state.profileSecurityOpen=false;
+      go('profile');
+      break;
+    }
+    case 'settings-language':
+    case 'settings-legal': {
+      if(currentRoute()!=='settings')break;
+      const dialog=root.querySelector('#bn-settings-info-dialog');
+      if(!dialog)break;
+      const title=dialog.querySelector('#bn-settings-dialog-title');
+      const description=dialog.querySelector('#bn-settings-dialog-description');
+      if(action==='settings-language'){
+        title.textContent='Idioma';
+        description.textContent='Português (BR) é o único idioma disponível nesta versão.';
+      } else if(itemId==='terms'){
+        title.textContent='Termos de uso';
+        description.textContent='Os termos de uso ainda não foram publicados nesta versão de testes.';
+      } else if(itemId==='privacy'){
+        title.textContent='Política de privacidade';
+        description.textContent='A política de privacidade ainda não foi publicada nesta versão de testes.';
+      }else break;
+      dialog.showModal();
+      dialog.querySelector('[data-action="settings-close-dialog"]')?.focus();
+      break;
+    }
+    case 'settings-close-dialog':
+      root.querySelector('#bn-settings-info-dialog')?.close();
+      break;
+    case 'open-profile-editor': {
+      if(currentRoute()!=='profile')break;
+      state.profileEditorOpen=true;
+      const dialog=root.querySelector('#bn-profile-editor');
+      if(dialog&&!dialog.open)dialog.showModal();
+      dialog?.querySelector('#profile-name')?.focus();
+      break;
+    }
+    case 'close-profile-editor': {
+      state.profileEditorOpen=false;
+      state.profileSecurityOpen=false;
+      root.querySelector('#bn-profile-editor')?.close();
+      break;
+    }
     case 'ack-room-exit': {
       if (!state.roomExitNotice || state.busy) break;
       const hostLeft=state.roomExitNotice.type==='host-left';
@@ -295,6 +537,17 @@ async function runAction(action) {
       render();
       break;
     }
+    case 'store-buy':await guard(async()=>{
+      if(!itemId) return;
+      state.store=await api.post('/store/purchase/'+encodeURIComponent(itemId));
+      notice('Item adquirido. Você pode equipá-lo no catálogo.');
+    });break;
+    case 'store-equip':await guard(async()=>{
+      if(!itemId) return;
+      state.store=await api.put('/store/equip/'+encodeURIComponent(itemId));
+      document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
+      notice('Item equipado com sucesso.');
+    });break;
     case 'dismiss':state.notice='';updateNotice();break;
     case 'open-join-modal': { const dialog=root.querySelector('#tp-join-dialog'); if (dialog && !dialog.open) { dialog.showModal(); dialog.querySelector('input[name=code]')?.focus(); } break; }
     case 'close-join-modal':root.querySelector('#tp-join-dialog')?.close();break;
@@ -308,26 +561,92 @@ async function runAction(action) {
       try {await guard(async()=>{await api.remove('/matchmaking/lobbies/me');state.lobby=null;state.battle=null;state.preparation=null;state.draft=null;go('lobby');});}
       finally {state.leavingRoom=false;}
       break;}
-    case 'random-placement':await guard(async()=>{state.preparation=await api.post('/matches/me/placement/random');state.draft=[...state.preparation.yourShips];});break;
+    case 'play-again': {
+      // A finished battle retains room membership until each player leaves.
+      // Release it server-side before opening the existing create-room flow.
+      if(state.lobby?.status!=='FINISHED'||state.busy)break;
+      state.leavingRoom=true;
+      try {
+        await guard(async()=>{
+          await api.remove('/matchmaking/lobbies/me');
+          state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;
+          state.selected=null;state.placementShip=null;
+          go('matchmaking');
+        });
+      } finally {state.leavingRoom=false;}
+      break;
+    }
+    case 'random-placement':await guard(async()=>{state.preparation=await api.post('/matches/me/placement/random');state.draft=[...state.preparation.yourShips];state.placementShip=null;});break;
+    case 'select-placement-ship': {
+      const mode=activeMode();
+      if(currentRoute()!=='placement'||state.preparation?.fleetConfirmed||!mode?.fleet.some(s=>s.id===itemId))break;
+      if(mode.geometry.kind!=='RECTANGULAR')break;
+      state.placementShip=itemId;
+      const selectedPlacement=(state.draft??state.preparation?.yourShips??[]).find(s=>s.type===itemId);
+      if(selectedPlacement && mode.placementDirections?.includes(selectedPlacement.orientation))
+        state.orientation=selectedPlacement.orientation;
+      render();break;
+    }
+    case 'rotate-placement': {
+      const mode=activeMode();
+      if(currentRoute()!=='placement'||state.preparation?.fleetConfirmed||mode?.geometry.kind!=='RECTANGULAR')break;
+      const directions=mode.placementDirections||[];
+      if(!directions.includes('HORIZONTAL')||!directions.includes('VERTICAL'))break;
+      state.orientation=state.orientation==='HORIZONTAL'?'VERTICAL':'HORIZONTAL';
+      render();break;
+    }
     case 'save-placement':await guard(async()=>{state.preparation=await api.put('/matches/me/placement',{ships:state.draft});state.draft=[...state.preparation.yourShips];notice('Frota validada e salva pela API.');});break;
     case 'confirm-placement':await guard(async()=>{
       if (state.draft!==null && JSON.stringify(state.draft)!==JSON.stringify(state.preparation.yourShips)) state.preparation=await api.put('/matches/me/placement',{ships:state.draft});
-      state.preparation=await api.post('/matches/me/placement/confirm');state.draft=[...state.preparation.yourShips];await reconcile();
+      state.preparation=await api.post('/matches/me/placement/confirm');state.draft=[...state.preparation.yourShips];state.placementShip=null;await reconcile();
     });break;
-    case 'clear-draft':state.draft=[];render();break;
+    case 'clear-draft':if(currentRoute()==='placement'&&!state.preparation?.fleetConfirmed){state.draft=[];state.placementShip=null;state.orientation='HORIZONTAL';render();}break;
+    case 'open-abilities':if((state.battle?.yourAbilities||[]).some(a=>a.usesRemaining>0&&!a.locked)){state.skillDialog=true;render();}break;
+    case 'close-abilities':state.skillDialog=false;render();break;
+    case 'pick-ability':{
+      const available=state.battle?.yourAbilities?.find(a=>a.id===itemId&&a.usesRemaining>0&&!a.locked);
+      if(!available||state.battle?.turnPlayerId!==state.profile?.id)break;
+      state.skillMode=available.id;state.skillTargets=[];state.skillDialog=false;state.selected=null;render();break;
+    }
+    case 'cancel-ability':state.skillMode=null;state.skillTargets=[];render();break;
+    case 'activate-ability':await guard(async()=>{
+      if(!state.skillMode||state.skillTargets.length!==skillLimit(state.skillMode)
+          ||skillMeta(state.skillMode)?.locked||state.battle?.turnPlayerId!==state.profile?.id)return;
+      const oldReports=state.battle?.yourRadarReports?.length||0;
+      const chosenName=skillMeta(state.skillMode)?.name||'Habilidade';
+      state.battle=await api.post('/matches/me/abilities',{
+        abilityId:state.skillMode,targets:state.skillTargets,
+      });
+      state.skillMode=null;state.skillTargets=[];state.selected=null;
+      notice(`${chosenName} ativada com sucesso.`);
+      const last=state.battle.yourRadarReports?.at(-1);
+      if(last&&state.battle.yourRadarReports.length>oldReports)
+        notice(`Radar em ${coordLabel(last)}: ${last.contacts} contato(s) no setor 3×3.`);
+      await reconcile();
+    });break;
     case 'fire':await guard(async()=>{
-      if(!state.selected||!state.battle||state.battle.turnPlayerId!==state.profile.id)return;
+      if(!state.selected||state.skillMode||!state.battle||state.battle.turnPlayerId!==state.profile.id)return;
       state.battle=await api.post('/matches/me/shots',state.selected);
       state.selected=null;await reconcile();
     });break;
     case 'forfeit':if(confirm('Confirmar desistência? O adversário receberá a vitória.'))await guard(async()=>{state.battle=await api.post('/matches/me/forfeit');await reconcile();});break;
   }
 }
-function selectCell(row,col){
+function selectCell(row,col,side='ENEMY'){
   const route=currentRoute(),mode=activeMode();if(!mode || state.busy) return;
   if(route==='match') {
     if(state.battle?.turnPlayerId!==state.profile?.id||state.battle?.status!=='PLAYING') return;
-    if(state.battle.shotsFired.some(s=>s.row===row&&s.col===col))return;
+    if(state.skillMode){
+      if(skillScope(state.skillMode)!==side)return;
+      if(side==='ENEMY'&&state.battle.shotsFired.some(s=>s.row===row&&s.col===col&&!s.blocked))return;
+      const selected={row,col};
+      if(state.skillTargets.some(cell=>keyOf(cell)===keyOf(selected)))return;
+      const max=skillLimit(state.skillMode);
+      state.skillTargets=[...state.skillTargets.slice(0,Math.max(0,max-1)),selected];
+      render();return;
+    }
+    if(side!=='ENEMY')return;
+    if(state.battle.shotsFired.some(s=>s.row===row&&s.col===col&&!s.blocked))return;
     state.selected={row,col};
     // Update only target readout/cells, not the whole combat HUD and its boards.
     const board=root.querySelector('.combat-screen .board-panel-primary');
@@ -345,41 +664,56 @@ function selectCell(row,col){
     if(button){button.disabled=false;const caption=button.querySelector('small');if(caption)caption.textContent=`Disparar em ${coordLabel(state.selected)}`;}
   } else if(route==='placement'){
     if(state.preparation?.fleetConfirmed||mode.geometry.kind!=='RECTANGULAR')return;
-    const placed=[...(state.draft??[])];const next=mode.fleet.find(s=>!placed.some(d=>d.type===s.id));
-    if(!next)return notice('Toda a frota já está posicionada. Salve ou confirme.',false);
-    const candidate={type:next.id,row,col,orientation:state.orientation};
-    const proposed=[...placed,candidate];const occupied=occupiedCells(proposed,mode);
+    const placed=[...(state.draft??state.preparation?.yourShips??[])];
+    const chosen=mode.fleet.find(s=>s.id===state.placementShip)
+      || mode.fleet.find(s=>!placed.some(d=>d.type===s.id));
+    if(!chosen)return notice('Selecione um navio para reposicioná-lo ou confirme a frota.',false);
+    // Replacing a selected ship is atomic in the draft: invalid destinations
+    // must leave the existing coordinates and all other ships intact.
+    const candidate={type:chosen.id,row,col,orientation:state.orientation};
+    const proposed=[...placed.filter(s=>s.type!==chosen.id),candidate];
+    const occupied=occupiedCells(proposed,mode);
     const valid=new Set(mode.geometry.cells.map(keyOf));
     const total=proposed.reduce((sum,s)=>sum+(mode.fleet.find(d=>d.id===s.type)?.length||0),0);
     if(occupied.size!==total||[...occupied].some(key=>!valid.has(key)))return notice('Posição inválida ou sobreposta. Escolha outra célula.',true);
-    state.draft=proposed;state.notice='';render();
+    state.draft=proposed;
+    state.placementShip=mode.fleet.find(s=>!proposed.some(d=>d.type===s.id))?.id||chosen.id;
+    state.notice='';render();
   }
 }
 function bindEvents() {
   root.addEventListener('cancel', event=>{
     if (event.target?.id==='tp-room-exit-dialog') event.preventDefault();
+    if (event.target?.id==='tp-skill-dialog') state.skillDialog=false;
+    if (event.target?.id==='bn-profile-editor'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
   });
+  root.addEventListener('close', event=>{if(event.target?.id==='bn-profile-editor'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}},true);
   root.addEventListener('submit', event=>{
     const form=event.target.closest('form[data-form]');if(!form)return;
     event.preventDefault(); void handleForm(form);
   });
   root.addEventListener('click',event=>{
     const target=event.target.closest('[data-coord]');
-    if(target){const [row,col]=target.dataset.coord.split(',').map(Number);selectCell(row,col);return;}
-    const action=event.target.closest('[data-action]');if(action){void runAction(action.dataset.action);return;}
+    if(target){const [row,col]=target.dataset.coord.split(',').map(Number);selectCell(row,col,target.closest('.combat-left-rail')?'OWN':'ENEMY');return;}
+    const action=event.target.closest('[data-action]');if(action){void runAction(action.dataset.action,action.dataset.abilityId||action.dataset.itemId);return;}
     const link=event.target.closest('[data-go]');if(link){go(link.dataset.go);}
   });
   root.addEventListener('keydown',event=>{
     if((event.key==='Enter'||event.key===' ')&&event.target.matches('g[data-coord]')) {
-      event.preventDefault();const [r,c]=event.target.dataset.coord.split(',').map(Number);selectCell(r,c);
+      event.preventDefault();const [r,c]=event.target.dataset.coord.split(',').map(Number);selectCell(r,c,event.target.closest('.combat-left-rail')?'OWN':'ENEMY');
     }
   });
   root.addEventListener('change',event=>{
+    if(event.target.id==='store-filter'){state.storeFilter=event.target.value;render();}
     if(event.target.id==='mode-picker')state.modeId=event.target.value;
     if(event.target.id==='orientation')state.orientation=event.target.value;
+    if(event.target.matches('.bn-profile-security'))state.profileSecurityOpen=event.target.open;
   });
   window.addEventListener('hashchange',()=>{
-    if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();render();
+    if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();
+    if(currentRoute()!=='profile'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
+    render();
+    if(currentRoute()==='store' && !state.store && !state.storeLoading) void loadStore();
   });
 }
 export function startTidepoint(element) {

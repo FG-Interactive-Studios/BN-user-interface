@@ -1,0 +1,230 @@
+/* Desktop adaptation of the approved portrait lobby.
+ * Keep the Figma palette, artwork, hierarchy and existing server-backed actions.
+ * The reference only defines portrait artboards, so this is a responsive
+ * composition, not a claim that a desktop frame was approved in Figma.
+ * Scoped to the lobby: no impact on auth, battle, placement, store or fleet.
+ */
+@media (min-width: 900px) {
+  body[data-route="lobby"] .screen {
+    min-height: 100dvh !important;
+    background:
+      linear-gradient(90deg, rgba(7, 13, 19, .66), rgba(7, 13, 19, .28) 48%, rgba(7, 13, 19, .66)),
+      url('../assets/figma/storm.jpg') center 56% / cover no-repeat,
+      var(--bn-bg) !important;
+  }
+
+  /* Avoid presenting a 540px phone screen in the middle of a desktop. */
+  body[data-route="lobby"] .shell {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 100dvh !important;
+    background: linear-gradient(180deg, #07101755, transparent 48%, #07101766) !important;
+  }
+
+  body[data-route="lobby"] .topbar {
+    width: min(100%, 1230px) !important;
+    max-width: 1230px !important;
+    min-height: 82px !important;
+    margin-inline: auto !important;
+    padding: 14px clamp(24px, 3vw, 36px) !important;
+  }
+  body[data-route="lobby"] .bn-header-identity {
+    max-width: min(60vw, 550px);
+    gap: 14px;
+  }
+  body[data-route="lobby"] .bn-header-avatar {
+    width: 58px;
+    height: 58px;
+    flex-basis: 58px;
+    font-size: 31px;
+  }
+  body[data-route="lobby"] .bn-header-player strong { font-size: 30px; }
+  body[data-route="lobby"] .bn-header-player small { font-size: 12px; }
+  body[data-route="lobby"] .bn-connection-status { font-size: 12px; }
+  body[data-route="lobby"] .bn-account-menu summary {
+    width: 46px;
+    height: 46px;
+  }
+
+  body[data-route="lobby"] .main {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0;
+    min-height: 0 !important;
+    width: 100% !important;
+    padding: 14px clamp(24px, 4vw, 56px) 106px !important;
+  }
+  body[data-route="lobby"] .tp-content {
+    width: 100% !important;
+    max-width: 1160px !important;
+    margin: 0 auto !important;
+    flex: 0 1 1160px;
+  }
+  body[data-route="lobby"] .bn-lobby {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.24fr) minmax(330px, .88fr) !important;
+    grid-template-rows: minmax(145px, auto) minmax(78px, auto) auto;
+    gap: clamp(12px, 1.35vw, 19px) !important;
+    align-items: stretch;
+    align-content: center !important;
+  }
+
+  /* The event is the hero, with news and rank adjacent rather than stacked
+     down a narrow smartphone column. */
+  body[data-route="lobby"] .bn-feature-card {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    display: grid;
+    grid-template-columns: minmax(104px, 25%) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(13px, 2vw, 25px);
+    min-height: 255px;
+    padding: clamp(22px, 2.5vw, 34px);
+    border-radius: 23px;
+  }
+  body[data-route="lobby"] .bn-feature-icon {
+    width: 100%;
+    max-width: 148px;
+    height: 145px;
+    justify-self: center;
+    background-size: contain !important;
+  }
+  body[data-route="lobby"] .bn-feature-card .bn-kicker { font-size: 13px; }
+  body[data-route="lobby"] .bn-feature-card h1 {
+    font-size: clamp(39px, 3.9vw, 59px);
+    line-height: .98;
+    margin: 9px 0 12px;
+    overflow-wrap: normal;
+  }
+  body[data-route="lobby"] .bn-feature-card p {
+    font-size: clamp(13px, 1.15vw, 16px);
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  body[data-route="lobby"] .bn-feature-card small { font-size: 12px; }
+
+  body[data-route="lobby"] .bn-news-grid {
+    grid-column: 2;
+    grid-row: 1;
+    gap: 12px;
+    min-height: 145px;
+  }
+  body[data-route="lobby"] .bn-news-card {
+    min-height: 145px;
+    padding: 17px 15px;
+    justify-content: center;
+    gap: 9px;
+  }
+  body[data-route="lobby"] .bn-news-card .bn-kicker { font-size: 11px; }
+  body[data-route="lobby"] .bn-news-card strong {
+    font-size: clamp(24px, 2.25vw, 34px);
+    line-height: 1;
+    overflow-wrap: normal;
+  }
+  body[data-route="lobby"] .bn-news-card small { font-size: 12px; }
+
+  body[data-route="lobby"] .bn-rank-card {
+    grid-column: 2;
+    grid-row: 2;
+    justify-content: flex-start;
+    min-height: 78px;
+    min-width: 0;
+    padding: 12px 18px;
+    background: #071119dd;
+    border: 2px solid #30414b;
+    border-radius: 16px;
+    gap: 14px;
+  }
+  body[data-route="lobby"] .bn-rank-emblem {
+    flex-basis: 54px;
+    width: 54px;
+    height: 54px;
+    font-size: 32px;
+  }
+  body[data-route="lobby"] .bn-rank-card strong { font-size: 29px; }
+  body[data-route="lobby"] .bn-rank-card small { font-size: 12px; }
+
+  body[data-route="lobby"] .bn-lobby-actions {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(260px, .85fr);
+    align-items: stretch;
+    gap: 15px;
+    margin: 2px 0 0;
+  }
+  body[data-route="lobby"] .bn-primary-button,
+  body[data-route="lobby"] .bn-join-button {
+    min-height: 62px !important;
+    width: 100%;
+    padding: 10px 18px !important;
+  }
+  body[data-route="lobby"] .bn-primary-button { font-size: 40px !important; }
+  body[data-route="lobby"] .bn-join-button { font-size: 27px !important; }
+
+  body[data-route="lobby"] .bottom-nav {
+    width: min(calc(100vw - 48px), 600px) !important;
+    max-width: 600px !important;
+    height: 81px !important;
+    bottom: max(11px, var(--bn-safe-bottom)) !important;
+  }
+  body[data-route="lobby"] .bottom-nav .nav-btn {
+    min-height: 49px !important;
+    height: 49px !important;
+    font-size: 26px !important;
+  }
+  body[data-route="lobby"] .bottom-nav .nav-btn::before {
+    width: 42px;
+    height: 42px;
+    top: -31px;
+  }
+}
+
+/* Short laptop windows retain all actions in document flow instead of
+   clipping the event or letting the fixed dock overlap the main button. */
+@media (min-width: 900px) and (max-height: 540px) {
+  body[data-route="lobby"] .main {
+    align-items: flex-start !important;
+    padding-top: 16px !important;
+  }
+  body[data-route="lobby"] .bn-feature-card { min-height: 208px; padding: 17px; }
+  body[data-route="lobby"] .bn-feature-icon { height: 112px; }
+  body[data-route="lobby"] .bn-news-grid,
+  body[data-route="lobby"] .bn-news-card { min-height: 115px; }
+  body[data-route="lobby"] .bn-news-card { padding: 11px; gap: 5px; }
+  body[data-route="lobby"] .bn-rank-card { min-height: 65px; padding: 8px 12px; }
+  body[data-route="lobby"] .bn-primary-button,
+  body[data-route="lobby"] .bn-join-button { min-height: 51px !important; }
+}
+
+/* At intermediate tablet widths, keep the approved portrait content in a
+   wider flexible column; only true desktop viewports use the two-column grid. */
+@media (min-width: 761px) and (max-width: 899px) {
+  body[data-route="lobby"] .shell { max-width: 760px !important; }
+  body[data-route="lobby"] .bn-lobby {
+    width: min(100%, 700px) !important;
+    max-width: none !important;
+  }
+  body[data-route="lobby"] .bn-feature-card {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+  body[data-route="lobby"] .bn-feature-icon {
+    width: 92px;
+    height: 93px;
+  }
+  body[data-route="lobby"] .bn-feature-card h1 { font-size: 39px; }
+  body[data-route="lobby"] .bottom-nav {
+    width: min(calc(100vw - 36px), 650px) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-route="lobby"] .bn-feature-card,
+  body[data-route="lobby"] .bn-news-card { transition: none !important; }
+}

@@ -11,3 +11,33 @@
 @import './home-flow-v7.css';
 @import './mobile-game-v8.css';
 @import './battle-report-v9.css';
+
+@import './figma-v1.css';
+
+@import './figma-responsive-v2.css';
+
+/* Combat styles override the retired fixed-height TidePoint HUD only on mobile. */
+@import './combat-mobile-repair.css';
+
+/* Responsive desktop layout for the Figma lobby; the portrait layout remains intact. */
+@import './figma-desktop-lobby-v3.css';
+
+/* Approved waiting-room artboard, isolated from the create-room flow. */
+@import './figma-waiting-room-v4.css';
+
+/* Approved Figma placement shell; the original board renderer remains intact. */
+@import './figma-placement-v5.css';
+
+/* Fit the approved placement composition in mobile and desktop viewports. */
+@import './figma-placement-fit-v6.css';
+
+/* Figma post-battle screen: complete report, rewards and correct storm framing. */
+@import './figma-result-v7.css';
+
+/* Approved Figma captain profile: complete panel layout, edit in a modal. */
+@import './figma-profile-v8.css';
+
+/* Approved settings screen: Som, Jogo, Conta and coral logout button. */
+@import './figma-settings-v9.css';
+
+@import './abilities-pilot.css';
