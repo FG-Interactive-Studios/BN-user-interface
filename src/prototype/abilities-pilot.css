@@ -1,0 +1,32 @@
+/* Experimental square-board abilities. Controls appear only when offered by the API. */
+.tp-skill-options{display:grid;gap:10px;margin:16px 0}
+.tp-skill-options .tp-skill-option{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;min-height:65px;padding:12px 16px}
+.tp-skill-options .tp-skill-option small{font-size:12px;opacity:.75}
+.tp-pilot-skill-control{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);display:grid;gap:8px;min-width:0}
+.tp-pilot-skill-control>b{font-size:14px}
+.tp-pilot-skill-control>small{line-height:1.4;color:var(--muted);font-size:12px}
+.tp-skill-commands{display:flex;flex-wrap:wrap;gap:8px}
+.tp-skill-commands>.btn{flex:1 1 90px;min-width:0;padding:10px}
+.tp-radar-result{font-size:12px;line-height:1.4;margin:4px 0;color:var(--cyan);overflow-wrap:anywhere}
+.combat-screen .board-panel-primary .pilot-skill-target{outline:3px solid var(--orange);outline-offset:-3px;box-shadow:inset 0 0 0 2px var(--ink);z-index:1}
+#tp-skill-dialog{max-width:min(440px,calc(100vw - 28px));max-height:90dvh;overflow-y:auto}
+
+/* The small own board becomes a usable tactical selection surface for defensive powers. */
+.combat-screen:has(.tp-pilot-skill-control) .combat-left-rail .board-preview {
+  width:min(100%,260px)!important;max-height:none!important;height:auto!important;
+}
+.tp-skill-option[disabled]{opacity:.5;cursor:not-allowed}
+.tp-skill-option small{line-height:1.5;text-wrap:pretty}
+.tp-pilot-skill-control{max-width:100%}
+.combat-screen .combat-left-rail .pilot-skill-target {
+  outline:3px solid var(--orange);outline-offset:-3px;
+}
+@media(max-width:760px){
+  .combat-screen:has(.tp-pilot-skill-control) .combat-left-rail .board-preview {
+    width:min(100%,300px)!important;
+  }
+}
+
+.tp-active-effects{display:flex;flex-direction:column;gap:6px;min-width:0}
+.tp-active-effect{font-size:12px;line-height:1.4;border:1px solid var(--line);
+  border-radius:8px;background:var(--panel);padding:8px 10px;color:var(--cyan);overflow-wrap:anywhere}
