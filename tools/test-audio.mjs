@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {AudioManager,resolveSounds,sceneEvent} from '../src/prototype/audio-manager.js';
+import {AudioManager,EVENTS,isCustomizableSoundEvent,resolveSounds,sceneEvent} from '../src/prototype/audio-manager.js';
 import {AudioEvents} from '../src/prototype/audio-events.js';
 const packs={sound_default:{lobby:'default-lobby',shot:'default-shot',hit:'default-hit',ability_activation:'default-ability',waiting_radar:'default-radar'},sound_sonar:{shot:'sonar-shot'}};
 assert.deepEqual(resolveSounds(packs,'sound_sonar','shot'),['sonar-shot','default-shot']);
@@ -8,6 +8,26 @@ assert.deepEqual(resolveSounds(packs,'sound_sonar','hit'),['default-hit']);
 assert.deepEqual(resolveSounds(packs,'sound_sonar','ability-radar'),[]);
 assert.deepEqual(resolveSounds(packs,'sound_sonar','ability_radar'),['default-ability']);
 assert.deepEqual(resolveSounds(packs,'unknown','hit'),['default-hit']);
+// Commercial packs must never replace fixed events, even if a manifest
+// or a caller directly supplies an otherwise valid audio file for them.
+const commercial=['match_start','shot','hit','miss','ship_sunk_enemy','ship_sunk_ally','victory','defeat'];
+assert.deepEqual(Object.keys(EVENTS).filter(isCustomizableSoundEvent).sort(),commercial.sort());
+const completeDefault=Object.fromEntries(Object.keys(EVENTS).map(event=>[event,'default-'+event]));
+const completePaid=Object.fromEntries(Object.keys(EVENTS).map(event=>[event,'paid-'+event]));
+completeDefault.ability_radar='default-radar-ability';
+completePaid.ability_radar='paid-radar-ability';
+const full={sound_default:completeDefault,sound_sonar:completePaid};
+for(const event of Object.keys(EVENTS)){
+  const expected=commercial.includes(event)?['paid-'+event,'default-'+event]:['default-'+event];
+  if(event==='ship_sunk_enemy'||event==='ship_sunk_ally')expected.push('default-ship_sunk');
+  assert.deepEqual(resolveSounds(full,'sound_sonar',event),expected,event);
+}
+assert.deepEqual(resolveSounds(full,'sound_sonar','ability_radar'),['default-radar-ability','default-ability_activation']);
+assert.equal(isCustomizableSoundEvent('ability_radar'),false);
+assert.equal(isCustomizableSoundEvent('unknown'),false);
+assert.deepEqual(resolveSounds({sound_default:{},sound_sonar:{match_start:'paid-start',ui_click:'paid-click'}},'sound_sonar','match_start'),['paid-start']);
+assert.deepEqual(resolveSounds({sound_default:{},sound_sonar:{ui_click:'paid-click'}},'sound_sonar','ui_click'),[]);
+assert.deepEqual(resolveSounds({sound_default:{ship_sunk:'default-generic'},sound_sonar:{ship_sunk:'paid-generic'}},'sound_sonar','ship_sunk_ally'),['default-generic']);
 assert.equal(sceneEvent('store'),'lobby');
 assert.equal(sceneEvent('matchmaking','WAITING'),'waiting_radar');
 assert.equal(sceneEvent('match'),'battle_music');

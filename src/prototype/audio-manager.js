@@ -6,9 +6,9 @@ export const EVENTS=Object.freeze({
   lobby:{channel:'music',loop:true}, battle_music:{channel:'music',loop:true},
   positioning_music:{channel:'music',loop:true}, victory_music:{channel:'music',loop:true}, defeat_music:{channel:'music',loop:true},
   waiting_radar:{channel:'effects',loop:true},
-  match_start:{channel:'effects'}, shot:{channel:'effects'}, hit:{channel:'effects'},
-  miss:{channel:'effects'}, ship_sunk:{channel:'effects'}, ship_sunk_enemy:{channel:'effects'}, ship_sunk_ally:{channel:'effects'}, victory:{channel:'effects'},
-  defeat:{channel:'effects'}, ui_click:{channel:'effects'}, ui_transition:{channel:'effects'}, game_found:{channel:'effects'}, your_turn:{channel:'effects'},
+  match_start:{channel:'effects',customizable:true}, shot:{channel:'effects',customizable:true}, hit:{channel:'effects',customizable:true},
+  miss:{channel:'effects',customizable:true}, ship_sunk:{channel:'effects'}, ship_sunk_enemy:{channel:'effects',customizable:true}, ship_sunk_ally:{channel:'effects',customizable:true}, victory:{channel:'effects',customizable:true},
+  defeat:{channel:'effects',customizable:true}, ui_click:{channel:'effects'}, ui_transition:{channel:'effects'}, game_found:{channel:'effects'}, your_turn:{channel:'effects'},
   player_ready:{channel:'effects'}, ship_placement:{channel:'effects'},
   ability_activation:{channel:'effects'}, attack_blocked:{channel:'effects'},
   disconnect:{channel:'effects'}, reconnect:{channel:'effects'}, purchase_success:{channel:'effects'}
@@ -16,13 +16,21 @@ export const EVENTS=Object.freeze({
 export function isSoundEvent(event) {
   return Object.hasOwn(EVENTS,event)||(/^ability_[a-z][a-z0-9-]*$/.test(event));
 }
+/** Only the eight approved combat cues may be overridden by a store pack.
+ * Unknown/future events, generic fallbacks, UI and music are fixed by default.
+ */
+export function isCustomizableSoundEvent(event) {
+  return Object.hasOwn(EVENTS,event)&&EVENTS[event].customizable===true;
+}
 export function resolveSounds(packs,packId,event) {
   if(!isSoundEvent(event))return [];
-  const candidates=[packs[packId]?.[event],packs[DEFAULT_PACK]?.[event]];
+  const selected=Object.hasOwn(packs,packId)&&isCustomizableSoundEvent(event)?packs[packId]:null;
+  const standard=packs[DEFAULT_PACK];
+  const candidates=[selected?.[event],standard?.[event]];
   if(event.startsWith('ability_')&&event!=='ability_activation')
-    candidates.push(packs[packId]?.ability_activation,packs[DEFAULT_PACK]?.ability_activation);
+    candidates.push(standard?.ability_activation);
   if(event==='ship_sunk_enemy'||event==='ship_sunk_ally')
-    candidates.push(packs[packId]?.ship_sunk,packs[DEFAULT_PACK]?.ship_sunk);
+    candidates.push(standard?.ship_sunk);
   return [...new Set(candidates.filter(Boolean))];
 }
 export function sceneEvent(route,roomStatus,{battle,userId}={}) {

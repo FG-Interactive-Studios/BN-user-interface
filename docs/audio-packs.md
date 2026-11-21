@@ -47,7 +47,26 @@ IDs do manifesto devem ser iguais ao item SOUND da API (existentes: sound_defaul
 {"id":"sound_sonar","version":1,"sounds":{"shot":"sfx/shot.ogg","hit":"sfx/hit.ogg"}}
 ```
 
-Som ausente/falha no pacote equipado cai para o padrão; efeitos específicos de poderes podem cair para ability_activation. Para adicionar pacote, versionar arquivos + manifesto e cadastrar/ativar o item SOUND no backend depois da validação. Seleção usa apenas item equipado e possuído retornado pelo GET /api/store e pelas operações de compra/equipar. A loja mantém os adicionais indisponíveis nesta etapa. A política de quais slots comerciais serão permitidos ainda depende de GD; o motor não precisa ser modificado para adicionar pacotes. Áudio é cosmético e pessoal, sem vantagem competitiva. Não use URLs externas ou arquivos de usuário não validados em manifesto.
+### Política comercial aprovada pelo líder de desenvolvimento (21/11/2026)
+
+Somente os oito eventos abaixo têm `customizable: true` no catálogo:
+
+| Evento | Personalização |
+| --- | --- |
+| match_start | Início efetivo do combate |
+| shot | Disparo |
+| hit | Acerto |
+| miss | Tiro na água |
+| ship_sunk_enemy | Afundamento inimigo |
+| ship_sunk_ally | Afundamento aliado |
+| victory | Jingle de vitória |
+| defeat | Jingle de derrota |
+
+Todas as músicas (incluindo combate e resultado), radar de espera, partida encontrada, interface, avisos, poderes e demais efeitos ficam fixos no pacote padrão. O fallback genérico `ship_sunk` também pertence ao padrão; ofereça os dois afundamentos específicos no pacote comercial. Eventos novos são fixos por padrão até aprovação explícita. A política vale tanto para a leitura do manifesto quanto para o resolvedor de reprodução; arquivos de slots fixos em outros pacotes são ignorados. Não se usa o manifesto para escolher quais slots são comercializáveis.
+
+Os slots `shot` e `match_start` ainda não têm OGGs próprios no pacote oficial. São personalizáveis, mas permanecem silenciosos no padrão até receberem arquivos do GD. Pacotes parciais são permitidos; som ausente/falha cai para o padrão. Efeitos específicos de poderes podem cair para `ability_activation`, ambos exclusivos do padrão.
+
+Para adicionar pacote, versionar arquivos + manifesto e cadastrar/ativar o item SOUND no backend depois da validação. Seleção usa apenas item equipado e possuído retornado pelo GET /api/store e pelas operações de compra/equipar. Sonar Retrô e Mar Profundo continuam indisponíveis: nenhum áudio comercial foi produzido ou cadastrado nesta etapa. Áudio é cosmético e pessoal, sem vantagem competitiva; as indicações críticas continuam visíveis independentemente da configuração sonora. Não use URLs externas ou arquivos de usuário não validados em manifesto.
 
 ## Validação
 
