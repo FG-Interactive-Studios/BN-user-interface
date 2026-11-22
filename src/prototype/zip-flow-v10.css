@@ -1,0 +1,464 @@
+/* ZIP "Fluxo de Batalha Naval": visual layer for placement and combat.
+ * Uses the existing server-driven board renderer, without hardcoding fleet/geometry.
+ * Scope all overrides to the two revised routes so other screens stay intact. */
+
+body[data-route="placement"] .bn-zip-placement,
+body[data-route="match"] .bn-zip-battle {
+  --zip-teal: #55dacc;
+  --zip-yellow: #ffc329;
+  --zip-slate: #0c2027;
+  --zip-paper: #f3f9f7;
+  background:
+    linear-gradient(180deg, rgba(4,15,21,.77), rgba(4,17,23,.64) 42%, rgba(3,12,20,.84)),
+    url('../assets/figma/storm.jpg') center / cover no-repeat,
+    #06151a !important;
+  color: var(--zip-paper);
+}
+body[data-route="placement"] .bn-zip-placement::before,
+body[data-route="placement"] .bn-zip-placement::after,
+body[data-route="match"] .bn-zip-battle::before,
+body[data-route="match"] .bn-zip-battle::after { display:none!important; }
+
+/* ---------- Deployment: annotated fleet cards, instructions and tactical water grid ---------- */
+body[data-route="placement"] .bn-zip-placement .bn-placement-page {
+  width:min(100%,1160px)!important;
+  gap:clamp(6px,1.2dvh,12px)!important;
+}
+.bn-zip-placement .bn-placement-kicker {
+  display:block;
+  color:var(--zip-teal);
+  font:800 clamp(9px,1.6vw,13px)/1.2 'Barlow Condensed',sans-serif;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  margin-bottom:3px;
+}
+.bn-zip-placement .bn-placement-header h1 {
+  font-family:'Barlow Condensed',sans-serif!important;
+  font-weight:800!important;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+  background:rgba(4,17,23,.85)!important;
+}
+.bn-zip-placement .bn-placement-phase {
+  border:1px solid rgba(85,218,204,.63)!important;
+  background:rgba(6,24,30,.9)!important;
+  border-radius:8px!important;
+  font-family:'Barlow Condensed',sans-serif!important;
+}
+.bn-zip-placement .bn-placement-phase .bn-placement-clock,
+.bn-zip-placement .bn-placement-phase strong { color:var(--zip-teal)!important; }
+.bn-zip-placement .bn-placement-instruction {
+  border-left:3px solid var(--zip-teal);
+  border-radius:0 5px 5px 0;
+  background:rgba(7,33,39,.75);
+  padding:7px 10px;
+  color:#d6e5e6!important;
+  font-family:'Barlow',sans-serif!important;
+}
+.bn-zip-placement .bn-placement-board-caption {
+  font:700 clamp(10px,1vw,12px)/1.2 'Barlow Condensed',sans-serif;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:var(--zip-teal);
+  text-align:center;
+  margin:0 0 4px;
+}
+.bn-zip-placement .bn-placement-ship {
+  border:1px solid rgba(101,162,170,.45)!important;
+  background:rgba(7,25,31,.91)!important;
+  border-radius:7px!important;
+  box-shadow:0 6px 14px rgba(0,0,0,.18);
+}
+.bn-zip-placement .bn-placement-ship.is-selected {
+  border-color:var(--zip-teal)!important;
+  background:rgba(12,48,51,.95)!important;
+  box-shadow:0 0 0 1px rgba(85,218,204,.22),0 0 18px rgba(85,218,204,.2)!important;
+}
+.bn-zip-placement .bn-placement-segments i {
+  background:#638a95;
+  border-radius:2px;
+}
+.bn-zip-placement .bn-placement-ship.is-selected .bn-placement-segments i { background:var(--zip-teal); }
+.bn-zip-placement .bn-placement-ship-status.selected { color:var(--zip-teal); }
+.bn-zip-placement .bn-placement-tool-icon {
+  border:1px solid rgba(85,218,204,.65)!important;
+  background:rgba(5,20,27,.9)!important;
+  color:var(--zip-teal)!important;
+}
+.bn-zip-placement .bn-placement-tool:hover:not(:disabled) .bn-placement-tool-icon {
+  background:rgba(12,56,59,.95)!important;
+}
+.bn-zip-placement .bn-placement-confirm {
+  background:var(--zip-yellow)!important;
+  color:#0d2025!important;
+  font-family:'Barlow Condensed',sans-serif!important;
+  font-weight:800!important;
+  text-transform:uppercase!important;
+  border:1px solid #fff4ca!important;
+  border-radius:8px!important;
+}
+.bn-zip-placement .bn-placement-confirm:disabled {opacity:.58;}
+.bn-zip-placement .bn-placement-progress { color:#c5d7db; }
+.bn-zip-placement .bn-placement-fleet-label {
+  font:800 12px/1.1 'Barlow Condensed',sans-serif;
+  letter-spacing:.1em;
+  color:#a5c4c9;
+  text-align:center;
+  text-transform:uppercase;
+}
+.bn-zip-placement .board-main .cell {
+  background:linear-gradient(155deg,#153e4a,#0b2a35 70%)!important;
+  border:1px solid rgba(93,150,159,.27)!important;
+  border-radius:2px;
+}
+.bn-zip-placement .board-main .cell.ship {
+  background:linear-gradient(135deg,#8496a0,#516973)!important;
+  border-color:#90a2aa!important;
+}
+.bn-zip-placement .board-main .coord { color:#b1d2d5!important; }
+.bn-zip-placement .board-main .cell.target,
+.bn-zip-placement .board-main .cell:focus-visible {
+  outline:2px solid var(--zip-teal)!important;
+  outline-offset:-2px!important;
+}
+
+/* ---------- Battle layout from ZIP: turn, score, attack, defense, power menu, fire ---------- */
+html:has(body[data-route="match"]),
+body[data-route="match"],
+body[data-route="match"] #app {
+  width:100%;
+  height:100dvh!important;
+  min-height:0!important;
+  max-height:100dvh!important;
+  overflow:hidden!important;
+}
+body[data-route="match"] .bn-zip-battle {
+  min-height:0!important;
+  height:100dvh!important;
+  width:100%!important;
+  overflow:hidden!important;
+}
+.bn-zip-battle .zip-game-layout {
+  position:relative;
+  z-index:1;
+  width:min(100%,1120px);
+  min-width:0;
+  height:100dvh;
+  margin:0 auto;
+  padding:clamp(7px,1.5dvh,16px) clamp(10px,2vw,22px) calc(clamp(7px,1.5dvh,16px) + env(safe-area-inset-bottom,0px));
+  display:grid;
+  grid-template-rows:auto auto minmax(0,1fr) auto;
+  gap:clamp(5px,1dvh,10px);
+  box-sizing:border-box;
+  font-family:'Barlow',sans-serif;
+}
+.bn-zip-battle .zip-battle-header {
+  display:grid;
+  grid-template-columns:minmax(35px,1fr) minmax(0,2fr) minmax(70px,1fr);
+  align-items:center;
+  gap:8px;
+  min-height:37px;
+}
+.zip-battle-menu {position:relative;z-index:95;justify-self:start;}
+.zip-battle-menu summary {
+  list-style:none;
+  display:grid;place-items:center;
+  width:clamp(34px,4.5dvh,43px);
+  height:clamp(34px,4.5dvh,43px);
+  background:rgba(5,18,24,.93);
+  border:1px solid #c1e2e5;
+  border-radius:50%;
+  font-size:22px;
+  cursor:pointer;
+}
+.zip-battle-menu summary::-webkit-details-marker,
+.zip-abilities-menu summary::-webkit-details-marker {display:none;}
+.zip-battle-menu-panel {
+  position:absolute;top:calc(100% + 7px);left:0;z-index:200;
+  display:grid;gap:12px;width:205px;padding:12px;
+  border:1px solid #3b8d96;border-radius:9px;background:#08232b;
+  box-shadow:0 12px 28px #0009;
+}
+.zip-battle-menu-panel button {min-height:38px;border:1px solid #e5837c;color:#fff;background:#772c2b;border-radius:6px;cursor:pointer;}
+.zip-battle-menu-panel button:disabled {opacity:.45;}
+.bn-zip-battle .zip-turn-indicator {
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  min-width:0;justify-self:center;
+  border-radius:9px;
+  padding:7px 13px;
+  background:rgba(8,32,38,.92);
+  border:1px solid rgba(85,218,204,.45);
+  color:#e3f3f3;
+  white-space:nowrap;
+}
+.zip-turn-indicator.is-your-turn {
+  color:#061f24;
+  background:var(--zip-teal);
+  border-color:var(--zip-teal);
+}
+.zip-turn-indicator strong {
+  font:800 clamp(15px,2.7vw,25px)/1 'Barlow Condensed',sans-serif;
+  text-transform:uppercase;
+}
+.zip-compass {font-size:17px;line-height:1;}
+.zip-turn-indicator.is-your-turn .zip-compass {animation:zip-compass-turn 4s linear infinite;}
+@keyframes zip-compass-turn {to {transform:rotate(360deg);}}
+.zip-match-timers {
+  justify-self:end;
+  padding:6px 9px;
+  min-width:0;
+  color:#fff;
+  border:1px solid var(--zip-yellow);
+  border-radius:10px;
+  background:rgba(5,17,23,.9);
+  font:700 clamp(10px,1.35vw,14px)/1.4 'Barlow Condensed',sans-serif;
+}
+.zip-match-timers .bn-match-clock-strip {
+  display:flex;flex-direction:column;align-items:flex-end;
+  gap:0!important;font:inherit!important;
+}
+.zip-match-timers .bn-match-clock-strip span {white-space:nowrap;}
+.zip-match-timers b {color:var(--zip-yellow);font-variant-numeric:tabular-nums;}
+
+.zip-scoreboard {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:clamp(7px,1.6vw,20px);
+  align-items:center;
+  padding:9px clamp(8px,2vw,20px);
+  background:rgba(4,16,22,.88);
+  border:1px solid rgba(93,154,162,.32);
+  border-radius:9px;
+}
+.zip-score-side {display:grid;gap:3px;min-width:0;}
+.zip-score-side strong {
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font:800 clamp(16px,2.1vw,24px)/1 'Barlow Condensed',sans-serif;
+}
+.zip-score-side small {color:#adc5cb;font-size:clamp(9px,1.25vw,13px);white-space:nowrap;}
+.zip-score-opponent {text-align:right;}
+.zip-score-value {font:800 clamp(18px,2.3vw,26px)/1 'Barlow Condensed',sans-serif;color:var(--zip-yellow);white-space:nowrap;}
+.zip-battle-center {
+  display:grid;
+  grid-template-columns:minmax(0,1.18fr) minmax(0,.72fr);
+  gap:clamp(10px,2vw,26px);
+  min-width:0;min-height:0;
+}
+.zip-enemy-section {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;min-width:0;min-height:0;
+}
+.zip-board-heading {
+  font-size:clamp(11px,1.4vw,15px);
+  color:#c9e3e5;text-align:center;
+}
+.bn-zip-battle .zip-primary-board {
+  width:100%!important;
+  min-width:0!important;min-height:0!important;
+  flex:1 1 auto!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  padding:0!important;margin:0!important;overflow:hidden!important;
+}
+.bn-zip-battle .zip-primary-board .board-main {
+  width:min(100%,calc(100dvh - 230px),680px)!important;
+  height:auto!important;
+  max-height:100%!important;min-height:0!important;
+  aspect-ratio:1!important;
+  padding:5px!important;
+  border:1px solid rgba(112,192,199,.5)!important;
+  border-radius:8px!important;
+  background:#061f28!important;
+  box-shadow:0 10px 24px #0008!important;
+}
+.bn-zip-battle .board-main:before,
+.bn-zip-battle .board-main:after {content:none!important;}
+.bn-zip-battle .board {
+  grid-template-columns:clamp(11px,2vw,20px) repeat(var(--size),minmax(0,1fr))!important;
+  grid-template-rows:clamp(11px,2vw,20px) repeat(var(--size),minmax(0,1fr))!important;
+  gap:2px!important;
+  overflow:hidden!important;
+}
+.bn-zip-battle .board .coord {color:#a3d4db!important;font-size:clamp(8px,1.1vw,11px)!important;text-shadow:none!important;}
+.bn-zip-battle .board .cell {
+  background:linear-gradient(155deg,#16404c,#10303c 65%,#0d2732)!important;
+  border:1px solid rgba(76,135,146,.22)!important;
+  border-radius:2px!important;
+  box-shadow:inset 0 1px 4px rgba(2,13,20,.4)!important;
+  isolation:isolate;
+}
+.bn-zip-battle .board .cell:not(:disabled):hover {filter:brightness(1.3);}
+.bn-zip-battle .board .cell.ship {
+  background:linear-gradient(135deg,#8b9ca4,#526b76)!important;
+  border-color:#a5b6be!important;
+}
+.bn-zip-battle .board .cell.hit {background:#cc555a!important;border-color:#f68f94!important;}
+.bn-zip-battle .board .cell.hit:before {
+  content:"×"!important;inset:0!important;display:grid;place-items:center;
+  color:white!important;background:#ef696b!important;border-radius:2px!important;
+  font:900 clamp(11px,2vw,23px)/1 'Barlow',sans-serif!important;box-shadow:none!important;
+}
+.bn-zip-battle .board .cell.hit:after {content:none!important;}
+.bn-zip-battle .board .cell.miss:before {
+  content:""!important;inset:38%!important;
+  background:#cbd8e0!important;box-shadow:none!important;border-radius:50%!important;
+}
+.bn-zip-battle .board .cell.miss:after {content:none!important;}
+.bn-zip-battle .board .cell.target {
+  background:#125046!important;
+  border:2px solid var(--zip-teal)!important;
+  box-shadow:inset 0 0 13px #2de0b43f!important;
+}
+.zip-target-indicator {color:#b6ced3;font-size:11px;}
+.zip-target-indicator b {color:var(--zip-teal);}
+
+.zip-lower-section {
+  display:flex;flex-direction:column;
+  gap:12px;
+  align-items:stretch;
+  justify-content:center;
+  min-height:0;
+  min-width:0;
+}
+.zip-own-section {
+  display:flex!important;flex-direction:column!important;align-items:center;
+  min-width:0!important;min-height:0!important;
+  padding:10px;border-radius:9px;background:rgba(5,19,25,.88);
+}
+.zip-own-section h2 {
+  width:100%;text-align:left;margin:0 0 6px;
+  font:800 clamp(17px,1.9vw,22px)/1 'Barlow Condensed',sans-serif;
+}
+.bn-zip-battle .zip-own-board {
+  width:100%!important;max-width:100%!important;
+  min-width:0!important;min-height:0!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  padding:0!important;overflow:hidden!important;margin:0!important;
+}
+.bn-zip-battle .zip-own-board .board-preview {
+  width:min(100%,27dvh,230px)!important;
+  height:auto!important;max-height:100%!important;
+  aspect-ratio:1!important;
+  padding:4px!important;border-radius:6px!important;
+  border:1px solid #507984!important;
+}
+.zip-tactics-section {
+  min-width:0;min-height:0;
+  display:flex;flex-direction:column;justify-content:flex-start;gap:7px;
+}
+.zip-abilities-menu {position:relative;z-index:100;}
+.zip-abilities-menu>summary {
+  list-style:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;gap:6px;
+  width:100%;min-height:42px;
+  padding:8px 11px;border-radius:8px;
+  border:1px solid #4f959b;
+  background:rgba(7,32,37,.93);
+}
+.zip-abilities-menu>summary span:first-child {font:800 21px/1 'Barlow Condensed',sans-serif;}
+.zip-powers-count {font:700 11px 'Barlow',sans-serif;color:var(--zip-teal);}
+.zip-abilities-options {
+  position:absolute;right:0;bottom:calc(100% + 6px);z-index:200;
+  display:grid;gap:9px;
+  width:min(320px,84vw);max-height:min(48dvh,360px);overflow-y:auto;
+  border:1px solid rgba(85,218,204,.6);border-radius:10px;
+  padding:10px;background:#071c24;box-shadow:0 14px 32px rgba(0,0,0,.78);
+}
+.zip-abilities-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+.zip-ability {
+  display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  min-height:70px;padding:9px;
+  border:1px solid rgba(75,148,158,.47);
+  border-radius:7px;background:#0b2b34;color:#f0fbfb;cursor:pointer;text-align:left;
+}
+.zip-ability.is-active {border-color:var(--zip-teal);}
+.zip-ability:disabled {opacity:.4;cursor:default;}
+.zip-ability-emblem {color:var(--zip-teal);}
+.zip-ability-name {font:800 13px/1.1 'Barlow Condensed',sans-serif;}
+.zip-ability small {font-size:10px;color:#b6d2d4;}
+.zip-powers-detail {padding:9px;border:1px solid #385c65;border-radius:6px;background:#16323b;color:#cce4e5;cursor:pointer;}
+.zip-no-powers {grid-column:1/-1;color:#a5c1c7;font-size:12px;}
+.zip-tactical-hint,.zip-active-power {margin:0;font-size:11px;color:#b3cdd1;}
+.zip-active-power b {color:var(--zip-teal);}
+.bn-zip-battle .tp-pilot-skill-control {padding:8px!important;gap:5px!important;font-size:11px!important;background:#09262e!important;}
+.bn-zip-battle .tp-pilot-skill-control>small {font-size:10px!important;}
+.bn-zip-battle .tp-skill-commands>.btn {min-height:30px!important;padding:5px!important;font-size:12px!important;}
+.bn-zip-battle .tp-active-effects {flex-direction:row;flex-wrap:wrap!important;}
+.bn-zip-battle .tp-active-effect {font-size:10px;padding:5px;}
+.bn-zip-battle .tp-radar-result {font-size:10px;margin:0;}
+
+.bn-zip-battle .zip-fire-button {
+  display:grid;place-content:center;gap:1px;
+  min-height:clamp(50px,7.4dvh,75px);
+  width:100%;padding:5px 12px;
+  border:2px solid #fff1cf;border-radius:10px;
+  background:var(--zip-yellow);color:#082026;cursor:pointer;text-align:center;
+  transition:background .15s ease;
+}
+.bn-zip-battle .zip-fire-button strong {font:800 clamp(23px,3.2vw,36px)/1 'Barlow Condensed',sans-serif;text-transform:uppercase;}
+.bn-zip-battle .zip-fire-button small {font:700 10px 'Barlow',sans-serif;}
+.bn-zip-battle .zip-fire-button:hover:not(:disabled) {background:#ffdb68;}
+.bn-zip-battle .zip-fire-button:disabled {opacity:.6;cursor:not-allowed;}
+.bn-zip-battle button:focus-visible,.bn-zip-battle summary:focus-visible {outline:3px solid var(--zip-yellow);outline-offset:2px;}
+
+/* Portrait: large targeting board above a small defense map and contextual powers. */
+@media (max-width:849px) {
+  .bn-zip-battle .zip-game-layout {padding:7px 8px calc(7px + env(safe-area-inset-bottom,0px));gap:5px;}
+  .bn-zip-battle .zip-battle-header {grid-template-columns:40px minmax(0,1fr) minmax(90px,auto);gap:4px;}
+  .bn-zip-battle .zip-turn-indicator {padding:7px 8px;}
+  .bn-zip-battle .zip-turn-indicator strong {font-size:clamp(14px,4.5vw,21px);}
+  .bn-zip-battle .zip-scoreboard {padding:6px 8px;gap:6px;min-height:56px;}
+  .bn-zip-battle .zip-score-side strong {font-size:clamp(14px,4vw,20px);}
+  .bn-zip-battle .zip-score-side small {font-size:clamp(8px,2.2vw,10px);white-space:normal;}
+  .bn-zip-battle .zip-score-value {font-size:18px;}
+  .bn-zip-battle .zip-battle-center {display:flex!important;flex-direction:column!important;align-items:stretch;gap:5px!important;}
+  .bn-zip-battle .zip-enemy-section {flex:1 1 auto;justify-content:center;gap:4px;}
+  .bn-zip-battle .zip-board-heading {font-size:clamp(10px,2.6vw,13px);}
+  .bn-zip-battle .zip-primary-board .board-main {
+    width:min(100%, calc(100dvh - 370px))!important;
+    max-width:100%!important;
+    max-height:100%!important;
+  }
+  .bn-zip-battle .zip-lower-section {
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:8px;height:clamp(125px,23dvh,185px);min-height:0;align-items:stretch;
+    flex:0 0 auto;
+  }
+  .bn-zip-battle .zip-own-section {padding:6px;min-height:0;}
+  .bn-zip-battle .zip-own-section h2 {font-size:clamp(14px,4vw,19px);margin-bottom:2px;}
+  .bn-zip-battle .zip-own-board {flex:1 1 auto;}
+  .bn-zip-battle .zip-own-board .board-preview {
+    width:min(100%,calc(23dvh - 30px),155px)!important;
+    max-height:100%!important;
+    grid-template-columns:10px repeat(var(--size),minmax(0,1fr))!important;
+    grid-template-rows:10px repeat(var(--size),minmax(0,1fr))!important;
+    gap:1px!important;padding:2px!important;
+  }
+  .bn-zip-battle .zip-own-board .board-preview .coord {font-size:7px!important;}
+  .bn-zip-battle .zip-tactics-section {gap:4px;overflow:visible;}
+  .bn-zip-battle .zip-abilities-menu>summary {min-height:35px;padding:5px;}
+  .bn-zip-battle .zip-abilities-menu>summary span:first-child {font-size:17px;}
+  .bn-zip-battle .zip-powers-count {font-size:9px;}
+  .bn-zip-battle .zip-fire-button {min-height:clamp(43px,7.5dvh,60px);}
+  .bn-zip-battle .zip-fire-button strong {font-size:25px;}
+  .bn-zip-battle .zip-fire-button small {font-size:9px;}
+  .bn-zip-battle .tp-pilot-skill-control {max-height:105px;overflow-y:auto;}
+}
+@media (max-width:849px) and (max-height:650px) {
+  .bn-zip-battle .zip-game-layout {gap:3px;padding-top:4px;padding-bottom:4px;}
+  .bn-zip-battle .zip-match-timers {padding:2px 6px;}
+  .bn-zip-battle .zip-scoreboard {min-height:48px;padding:4px 6px;}
+  .bn-zip-battle .zip-lower-section {height:clamp(110px,22dvh,142px);}
+  .bn-zip-battle .zip-primary-board .board-main {width:min(100%,calc(100dvh - 330px))!important;}
+  .bn-zip-battle .zip-own-board .board-preview {width:min(100%,calc(22dvh - 27px),120px)!important;}
+  .bn-zip-battle .zip-fire-button {min-height:42px;}
+}
+@media (max-width:349px) {
+  .bn-zip-battle .zip-match-timers {font-size:9px;}
+  .bn-zip-battle .zip-score-side small {font-size:8px;}
+  .bn-zip-battle .zip-compass {display:none;}
+  .bn-zip-battle .zip-tactical-hint {display:none;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .bn-zip-battle .zip-compass {animation:none!important;}
+  .bn-zip-battle *,.bn-zip-placement * {transition:none!important;}
+}
