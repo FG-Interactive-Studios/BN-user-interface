@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "id": "captain_space",
+  "type": "CAPTAIN",
+  "name": "Capitão futurista",
+  "status": "draft",
+  "source": "https://drive.google.com/drive/folders/1uzgO2mnk8Ckrm9Z9M_w7Gmgs42RmsJxg",
+  "preview": null,
+  "expressions": {
+    "neutral": null,
+    "hit": null,
+    "damage": null
+  },
+  "notes": "Seis PNGs de dois personagens; validar expressão e separar variantes antes de publicar."
+}

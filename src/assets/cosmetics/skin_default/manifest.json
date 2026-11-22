@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "id": "skin_default",
+  "type": "FLEET",
+  "name": "Frota Original",
+  "status": "draft",
+  "source": "https://drive.google.com/drive/folders/1wr8Yq4ZvaWD5cSHmP36D8RS47PKbv9ew",
+  "preview": null,
+  "ships": {
+    "SEARCH": {
+      "intact": null,
+      "sunk": null
+    },
+    "DESTROYER": {
+      "intact": null,
+      "sunk": null
+    },
+    "CARRIER": {
+      "intact": null,
+      "sunk": null
+    }
+  },
+  "notes": "Três classes oficiais de 1, 2 e 5 casas. Confirmar qual arte corresponde à embarcação de busca; CSS padrão ainda em uso."
+}

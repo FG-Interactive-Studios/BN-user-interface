@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "id": "skin_space",
+  "type": "FLEET",
+  "name": "Futurista",
+  "status": "draft",
+  "source": "https://drive.google.com/drive/folders/1lScZ54WE7LyyVS5090D-xQ9X_2kf3KeK",
+  "preview": null,
+  "ships": {
+    "SEARCH": {
+      "intact": null,
+      "sunk": null
+    },
+    "DESTROYER": {
+      "intact": null,
+      "sunk": null
+    },
+    "CARRIER": {
+      "intact": null,
+      "sunk": null
+    }
+  },
+  "notes": "Três sprites intactos e três destruídos, banner; identificar classes oficiais 1, 2 e 5 sem presumir pelo nome."
+}

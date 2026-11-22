@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "id": "skin_magnate",
+  "type": "FLEET",
+  "name": "Magnata",
+  "status": "draft",
+  "source": "https://drive.google.com/drive/folders/1sKEbWGu7EqJLBJq2ozUkAgkKHyLmKHjD",
+  "preview": null,
+  "ships": {
+    "SEARCH": {
+      "intact": null,
+      "sunk": null
+    },
+    "DESTROYER": {
+      "intact": null,
+      "sunk": null
+    },
+    "CARRIER": {
+      "intact": null,
+      "sunk": null
+    }
+  },
+  "notes": "Duas imagens compostas JPEG; sprites individuais não identificados."
+}

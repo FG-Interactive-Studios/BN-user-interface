@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "id": "skin_corsair",
+  "type": "FLEET",
+  "name": "Corsário",
+  "status": "draft",
+  "source": "https://drive.google.com/drive/folders/18c9nseV-2D7SDFY-aFh0-ycs8q8F0-ia",
+  "preview": null,
+  "ships": {
+    "SEARCH": {
+      "intact": null,
+      "sunk": null
+    },
+    "DESTROYER": {
+      "intact": null,
+      "sunk": null
+    },
+    "CARRIER": {
+      "intact": null,
+      "sunk": null
+    }
+  },
+  "notes": "Três classes oficiais. Pasta do Corsário confirmada em GD #27; identificar a correspondência de Nau, Caravela e Galeão por tamanho."
+}
