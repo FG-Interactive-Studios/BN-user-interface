@@ -41,3 +41,6 @@
 @import './figma-settings-v9.css';
 
 @import './abilities-pilot.css';
+
+/* GDD v1.2: compact timing and own-board markers, does not resize boards. */
+@import './gdd-clock-hud.css';

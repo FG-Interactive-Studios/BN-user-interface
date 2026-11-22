@@ -48,9 +48,9 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
           <button type="button" class="bn-placement-exit" data-action="leave-lobby" aria-label="Sair da sala" title="Sair da sala">×</button>
           <h1 id="bn-placement-title">Sua frota</h1>
         </div>
-        <span class="bn-placement-phase" aria-label="Preparação sem cronômetro fornecido pela partida">
+        <span class="bn-placement-phase" aria-label="Prazo de preparação definido pelo servidor">
           <span class="bn-placement-clock" aria-hidden="true">◷</span>
-          Preparação
+          Preparação <strong data-deadline-at="${esc(preparation.placementDeadlineAt||'')}">--:--</strong>
         </span>
       </header>
       <p class="bn-placement-instruction">${hint}</p>

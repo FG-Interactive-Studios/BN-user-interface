@@ -1,0 +1,15 @@
+.bn-placement-phase strong { font-variant-numeric:tabular-nums; white-space:nowrap; color:inherit; margin-inline-start:.3em; }
+.bn-match-clock-strip { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:clamp(5px,1.2vw,14px); font-size:clamp(10px,1.45dvh,13px); line-height:1.2; }
+.bn-match-clock-strip b { font-variant-numeric:tabular-nums; }
+.bn-clock-warning { color:#ff9a58 !important; }
+.bn-gdd-point { display:grid; place-items:center; position:absolute; inset:0; pointer-events:none; color:#f4cf70; font-size:clamp(8px,1.15vw,14px); text-shadow:0 0 5px #222c38; }
+.board-preview .bn-gdd-point { font-size:clamp(6px,.8vw,10px); }
+.board .cell.ability-point { position:relative; box-shadow:inset 0 0 0 1px rgba(245,200,75,.7); }
+.board .cell .bn-gdd-point { z-index:1; }
+.bn-gdd-paused { position:fixed; z-index:15; left:50%; top:50%; transform:translate(-50%,-50%); width:min(85vw,350px); padding:20px; border-radius:12px; background:rgba(11,27,41,.97); border:1px solid rgba(245,200,75,.45); color:#fff; text-align:center; box-shadow:0 0 0 100vmax rgba(4,15,22,.58); display:grid; gap:8px; }
+.bn-gdd-paused small { color:#c4cdd4; }
+.tp-skill-credit { font-variant-numeric:tabular-nums; }
+@media (max-height:640px) {
+  .bn-match-clock-strip { font-size:10px; gap:6px; }
+  .bn-gdd-paused { padding:12px; gap:4px; }
+}
