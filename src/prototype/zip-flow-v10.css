@@ -471,7 +471,7 @@ body[data-route="match"] .bn-zip-battle {
 /* Reserve reliable room for the square 10x10 board and the fixed bottom controls.
  * The portrait header gained a phase kicker; without this, a 375x667 viewport
  * compresses the board's height by ~6px while keeping its full width. */
-@media (max-width:849px) {
+@media (min-width:350px) and (max-width:849px) {
   body[data-route="placement"] .bn-placement-screen.bn-zip-placement .bn-placement-workspace .bn-placement-board-wrap .setup-board-frame {
     width:min(calc(100vw - 38px), calc(100dvh - 344px), 420px)!important;
     aspect-ratio:1!important;
