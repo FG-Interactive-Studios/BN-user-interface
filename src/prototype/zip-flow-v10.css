@@ -462,3 +462,8 @@ body[data-route="match"] .bn-zip-battle {
   .bn-zip-battle .zip-compass {animation:none!important;}
   .bn-zip-battle *,.bn-zip-placement * {transition:none!important;}
 }
+
+/* Keep the new fleet caption from consuming scarce height on narrow phones. */
+@media (max-width:849px) {
+  .bn-zip-placement .bn-placement-fleet-label {display:none;}
+}
