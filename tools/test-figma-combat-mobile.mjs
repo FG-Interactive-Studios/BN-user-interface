@@ -153,7 +153,7 @@ try {
    const target=page.locator('.zip-primary-board .board-main [data-coord="0,1"]');
    await target.click();
    assert.ok(await fire.isEnabled(),'Selecting target did not enable attack');
-   assert.match(await page.locator('.zip-target-indicator').innerText(),/B1/);
+   assert.match(await page.locator('.zip-target-indicator').innerText(),/A2/);
    const menu=page.locator('.zip-battle-menu summary');
    await menu.click();
    assert.ok(await page.locator('[data-action="forfeit"]').isVisible(),'Forfeit option must remain reachable');
