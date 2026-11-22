@@ -1,7 +1,7 @@
 /** Renders only the cells and polygons described by the selected server mode. */
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 export { esc };
-export const shipName = (type) => ({CARRIER:'Porta-aviões',BATTLESHIP:'Encouraçado',CRUISER:'Cruzador',SUBMARINE:'Submarino',DESTROYER:'Contratorpedeiro'})[type] || String(type).replace(/_/g, ' ');
+export const shipName = (type) => ({SEARCH:'Embarcação de busca',CARRIER:'Porta-aviões',BATTLESHIP:'Encouraçado',CRUISER:'Cruzador',SUBMARINE:'Submarino',DESTROYER:'Contratorpedeiro'})[type] || String(type).replace(/_/g, ' ');
 export const coordLabel = ({ row, col }) => `${String.fromCharCode(65 + (row % 26))}${col + 1}`;
 export const keyOf = ({row,col}) => `${row},${col}`;
 
