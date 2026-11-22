@@ -59,10 +59,10 @@ export function renderZipBattle({
       <div class="zip-battle-center">
         <section class="zip-enemy-section" aria-label="Tabuleiro de ataque">
           <div class="zip-board-heading">Tabuleiro do oponente · ${canAct ? 'toque para mirar' : 'aguarde seu turno'}</div>
-          <div class="zip-primary-board tp-board combat-board-wrap">
+          <div class="zip-primary-board">
             ${renderBoard(mode, {
               hits: enemy.hits, misses: enemy.misses, selected,
-              interactive: canAct && !activeAbility
+              interactive: canAct && (!activeAbility || activeAbility.targetScope !== 'OWN')
             })}
           </div>
           <div class="zip-target-indicator" aria-live="polite">Alvo: <b>${selected ? coordLabel(selected) : '—'}</b></div>
@@ -71,7 +71,7 @@ export function renderZipBattle({
         <section class="zip-lower-section" aria-label="Defesa e poderes">
           <div class="zip-own-section combat-left-rail">
             <h2>Sua frota</h2>
-            <div class="zip-own-board tp-board tp-board-small">
+            <div class="zip-own-board">
               ${renderBoard(mode, {
                 ships: battle.yourShips, hits: own.hits, misses: own.misses,
                 markers: battle.yourAbilityPointCells || [], small: true,
