@@ -46,3 +46,8 @@ Os manifestos draft registram origens verificadas e slots vazios, sem chutar cor
 5. QA: validar aquisição/recusa de item não entregue, re-login, equipar/desquipar, dois jogadores, orientação, skins de terceiros sem vazamento, fallback e responsividade.
 
 Validação técnica: `node tools/validate-asset-packs.mjs`, `node tools/test-asset-packs.mjs`, build e CI. A validação de conteúdo não altera a disponibilidade dos produtos no servidor.
+
+
+## Registro automático na loja
+
+A API [PR #22](https://github.com/FG-Interactive-Studios/BN-API-Central/pull/22) mantém uma definição versionada de produtos no próprio backend. A migration V9 e o runner registram os itens e coleções ao iniciar a API, sem aceitar preço ou disponibilidade vindos de manifestos deste repositório. As frotas e capitães ainda estão `draft`; seus cards aparecem em **Em breve**, sem compra ou equipamento até a homologação. A loja reconhece as categorias `SKIN`, `SOUND`, `CAPTAIN` e `BUNDLE`, mas apenas SKIN e SOUND estão operacionais. Os arquivos de asset propriamente ditos seguem pendentes de integração. O pacote padrão e os seis produtos já cadastrados na V7 permanecem intactos.
