@@ -18,7 +18,7 @@ import { compactEnemyContacts } from './mobile-presenters.js';
 const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20l-3-6H5l-3 6zM8 12V8h4v4M12 6V4"/></svg>`;
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">Batalha Naval</div><div class="brand-sub">Duelo 1v1 em alto-mar</div></div></div>`;
 const state = {
-  profile: null, modes: [], lobby: null, preparation: null, battle: null,
+  profile: null, modes: [], lobby: null, queue: null, preparation: null, battle: null,
   modeId: 'classic', selected: null, draft: null, placementShip: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
@@ -96,7 +96,12 @@ function routeForLobby(status) {return status==='WAITING'?'matchmaking':status==
 function synchronizeRoute() {
   // Keep the departure dialog open until acknowledged, including after a room closes.
   if (state.roomExitNotice) { if (!state.lobby && currentRoute()!=='lobby') go('lobby'); return; }
-  if (!state.lobby) { if (['placement','match','result'].includes(currentRoute())) go('lobby'); return; }
+  if (!state.lobby) {
+    if(state.queue?.status==='SEARCHING') {
+      if(['lobby','placement','match','result'].includes(currentRoute()))go('matchmaking');
+    } else if(['placement','match','result'].includes(currentRoute()))go('lobby');
+    return;
+  }
   const route=routeForLobby(state.lobby.status);
   if (currentRoute()!==route && ['matchmaking','placement','match','result','lobby'].includes(currentRoute())) go(route);
 }
@@ -109,7 +114,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -117,7 +122,7 @@ async function sessionInit() {
   void loadStore({quiet:true});
   await reconcile();
   await api.connectRealtime((message)=>{
-    if (['LOBBY_UPDATED','LOBBY_CLOSED','LOBBY_LEFT','PREPARATION_UPDATED','BATTLE_UPDATED'].includes(message.type)) {
+    if (['LOBBY_UPDATED','LOBBY_CLOSED','LOBBY_LEFT','MATCH_FOUND','MATCH_SEARCHING','PREPARATION_UPDATED','BATTLE_UPDATED'].includes(message.type)) {
       // REST always recovers an authoritative personalized snapshot, including after reconnection.
       void reconcile();
     }
@@ -132,13 +137,15 @@ async function sessionInit() {
   // snapshot. REST is a safety net, not a substitute for websocket presence.
   // 60s when online; 20s while recovering from a websocket outage.
   if (!refreshTimer) refreshTimer=setInterval(()=>{
-    if (!api.isAuthenticated() || !state.lobby) return;
+    if (!api.isAuthenticated()) return;
     const now=Date.now();
-    if (!state.socketOnline || now-lastFallbackReconcileAt >= 60000) {
+    // Search must progress even when the player's socket is unavailable.
+    if (state.queue?.status==='SEARCHING' ||
+       (state.lobby && (!state.socketOnline || now-lastFallbackReconcileAt >= 60000))) {
       lastFallbackReconcileAt=now;
       void reconcile();
     }
-  }, 20000);
+  }, 5000);
 }
 async function reconcile() {
   if (!api.isAuthenticated() || loading) return;
@@ -147,12 +154,21 @@ async function reconcile() {
     let room;
     try { room=await api.get('/matchmaking/lobbies/me'); }
     catch(e) { if (e instanceof api.ApiError && e.status===404) room=null; else throw e; }
+    let queue=null;
+    if(!room) {
+      try {
+        const search=await api.get('/matchmaking/queue/me');
+        if(search?.status==='MATCHED'&&search.room)room=search.room;
+        else if(search?.status==='SEARCHING')queue=search;
+      } catch(e) { if (!(e instanceof api.ApiError && e.status===404))throw e; }
+    }
     if (!api.isAuthenticated()) return;
     if (room && state.lobby?.code===room.code && room.revision < state.lobby.revision) return;
     const previousRoom=state.lobby;
     const previous=previousRoom?.status;
-    let changed=JSON.stringify(previousRoom)!==JSON.stringify(room);
-    if (!state.leavingRoom && !state.roomExitNotice) {
+    let changed=JSON.stringify(previousRoom)!==JSON.stringify(room)
+      || JSON.stringify(state.queue)!==JSON.stringify(queue);
+    if (!state.leavingRoom && !state.roomExitNotice && !(previousRoom?.publicMatch && queue)) {
       const departure = roomDeparture(previousRoom, room, state.profile?.id);
       if (departure) {
         state.roomExitNotice={type:departure};
@@ -160,6 +176,7 @@ async function reconcile() {
       }
     }
     state.lobby=room;
+    state.queue=queue;
     if (!room) {
       state.skillMode=null;state.skillTargets=[];state.skillDialog=false;
       if (state.preparation || state.battle || state.draft) changed=true;
