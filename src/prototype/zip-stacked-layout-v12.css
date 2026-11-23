@@ -303,3 +303,74 @@ body[data-route="match"] .bn-zip-battle .zip-battle-context:not(:empty) {
   body[data-route="match"] .bn-zip-battle .zip-board-heading {min-height:11px;font-size:9px!important;}
   body[data-route="match"] .bn-zip-battle .zip-target-indicator {min-height:10px;}
 }
+
+/* The supplied ZIP is a portrait composition. On desktop, adapt the SAME
+ * two authoritative boards side-by-side so the game does not float as a
+ * tiny phone-sized column in a 1366px window. Mobile remains stacked. */
+@media (min-width:850px) {
+  body[data-route="match"] .bn-zip-battle {
+    --zip-stack-board-side:min(54dvh,32vw,420px);
+    --zip-stack-gap:clamp(10px,1.3vw,18px);
+  }
+  body[data-route="match"] .bn-zip-battle .zip-game-layout {
+    width:min(100%,1140px)!important;
+    max-width:1140px!important;
+    padding:clamp(9px,1.6dvh,17px) clamp(12px,2vw,25px) 10px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-battle-center {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(118px,160px) minmax(0,1fr)!important;
+    grid-template-rows:minmax(0,1fr)!important;
+    align-items:center!important;
+    justify-items:center!important;
+    gap:var(--zip-stack-gap)!important;
+    overflow:visible!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-enemy-section,
+  body[data-route="match"] .bn-zip-battle .zip-own-section {
+    min-height:0!important;
+    width:100%!important;
+    justify-content:center!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-primary-board .board-main,
+  body[data-route="match"] .bn-zip-battle .zip-own-board .board-preview {
+    width:var(--zip-stack-board-side)!important;
+    height:var(--zip-stack-board-side)!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-compass-divider {
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:clamp(10px,1.5dvh,17px)!important;
+    width:min(100%,150px)!important;
+    min-width:0!important;
+    min-height:200px!important;
+    height:auto!important;
+    padding:15px 6px!important;
+    border-radius:12px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-compass-widget {
+    width:55px!important;height:55px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-compass-north {font-size:10px!important;top:4px;}
+  body[data-route="match"] .bn-zip-battle .zip-compass-south {font-size:10px!important;bottom:4px;}
+  body[data-route="match"] .bn-zip-battle .zip-compass-needle {
+    top:13px!important;left:23px!important;
+    border-left-width:4px!important;
+    border-right-width:4px!important;
+    border-bottom-width:25px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-round-clocks .bn-match-clock-strip {
+    align-items:center!important;text-align:center!important;font-size:12px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-board-heading {
+    font-size:clamp(13px,1.4vw,17px)!important;min-height:19px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-target-indicator {
+    font-size:12px!important;min-height:17px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-battle-footer {
+    max-width:min(100%,660px)!important;margin-inline:auto!important;
+  }
+}

@@ -174,8 +174,14 @@ try {
    }
    assert.ok(metrics.head.bottom<=metrics.score.top+3,'Score overlays header: '+explain);
    assert.ok(metrics.score.bottom<=metrics.board.top+3,'Target board overlaps score: '+explain);
-   assert.ok(metrics.board.bottom<=metrics.compass.top+4,'Compass overlaps attack board: '+explain);
-   assert.ok(metrics.compass.bottom<=metrics.defense.top+4,'Defense overlaps compass: '+explain);
+   if(viewport.width<=849) {
+     assert.ok(metrics.board.bottom<=metrics.compass.top+4,'Compass overlaps attack board: '+explain);
+     assert.ok(metrics.compass.bottom<=metrics.defense.top+4,'Defense overlaps compass: '+explain);
+   } else {
+     assert.ok(metrics.board.right<=metrics.compass.left+4,'Desktop: enemy board must precede compass: '+explain);
+     assert.ok(metrics.compass.right<=metrics.ownBoard.left+4,'Desktop: compass must precede own board: '+explain);
+     assert.ok(metrics.board.width>=300,'Desktop boards must use the available space: '+explain);
+   }
    assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);
    assert.ok(metrics.powers.right<=metrics.fire.left+5,'Powers and fire must sit side-by-side: '+explain);
    assert.ok(Math.abs(metrics.powers.top-metrics.fire.top)<=5,'Powers and fire are not aligned: '+explain);
