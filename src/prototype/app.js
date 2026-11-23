@@ -47,6 +47,7 @@ let refreshTimer;
 let clockHudTimer;
 let lastFallbackReconcileAt=0;
 let loading=false;
+let supportsMatchmakingState=true; // Old API builds still use legacy lookups.
 let renderedRoute='';
 function updateNotice() {
   const node=root?.querySelector?.('#tp-notice-root');
@@ -151,16 +152,33 @@ async function reconcile() {
   if (!api.isAuthenticated() || loading) return;
   loading=true;
   try {
-    let room;
-    try { room=await api.get('/matchmaking/lobbies/me'); }
-    catch(e) { if (e instanceof api.ApiError && e.status===404) room=null; else throw e; }
-    let queue=null;
-    if(!room) {
+    let room=null, queue=null;
+    if (supportsMatchmakingState) {
       try {
-        const search=await api.get('/matchmaking/queue/me');
-        if(search?.status==='MATCHED'&&search.room)room=search.room;
-        else if(search?.status==='SEARCHING')queue=search;
-      } catch(e) { if (!(e instanceof api.ApiError && e.status===404))throw e; }
+        // IDLE is HTTP 200, not two expected 404s on every reconciliation.
+        // This single snapshot also covers private rooms and public matches.
+        const snapshot=await api.get('/matchmaking/state');
+        if (snapshot?.status==='MATCHED') room=snapshot.room;
+        else if (snapshot?.status==='SEARCHING') queue=snapshot;
+        else if (snapshot?.status!=='IDLE')
+          throw new Error('Estado de matchmaking desconhecido.');
+      } catch(e) {
+        if (e instanceof api.ApiError && e.status===404)
+          supportsMatchmakingState=false; // Compatibility with earlier backend versions.
+        else throw e;
+      }
+    }
+    if (!supportsMatchmakingState) {
+      // Compatibility path used only when the connected API predates /state.
+      try { room=await api.get('/matchmaking/lobbies/me'); }
+      catch(e) { if (!(e instanceof api.ApiError && e.status===404))throw e; }
+      if (!room) {
+        try {
+          const search=await api.get('/matchmaking/queue/me');
+          if(search?.status==='MATCHED'&&search.room)room=search.room;
+          else if(search?.status==='SEARCHING')queue=search;
+        } catch(e) { if (!(e instanceof api.ApiError && e.status===404))throw e; }
+      }
     }
     if (!api.isAuthenticated()) return;
     if (room && state.lobby?.code===room.code && room.revision < state.lobby.revision) return;

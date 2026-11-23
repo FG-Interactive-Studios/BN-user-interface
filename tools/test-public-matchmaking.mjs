@@ -16,6 +16,7 @@ const queue=new Map();
 let room=null;
 let roomCounter=0;
 const errors=[];
+const lookups={unified:0,legacy:0};
 const clone=value=>JSON.parse(JSON.stringify(value));
 const missing=(route)=>route.fulfill({status:404,contentType:'application/json',body:'{}'});
 const respond=(route,data,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
@@ -31,6 +32,12 @@ const mock=(page,profile)=>{
   if(path==='/api/users/me')return respond(route,profile);
   if(path==='/api/game-modes')return respond(route,[mode]);
   if(path==='/api/realtime/ticket')return route.fulfill({status:503,body:'{}'});
+  if(path==='/api/matchmaking/state'&&method==='GET'){
+    lookups.unified++;
+    return respond(route,queueFor(profile.id)||{status:'IDLE',modeId:null,room:null});
+  }
+  if((path==='/api/matchmaking/lobbies/me'||path==='/api/matchmaking/queue/me')&&method==='GET')
+    lookups.legacy++;
   if(path==='/api/matchmaking/lobbies/me'&&method==='GET')
     return roomFor(profile.id)?respond(route,roomFor(profile.id)):missing(route);
   if(path==='/api/matchmaking/queue/me'&&method==='GET')
@@ -137,6 +144,8 @@ try {
  assert.equal(room.status,'PREPARING');
  await b.locator('body[data-route="placement"]').waitFor({timeout:10000});
  await a.locator('body[data-route="placement"]').waitFor({timeout:18000});
+ assert.ok(lookups.unified>=2,'Snapshot must serve both players');
+ assert.equal(lookups.legacy,0,'No expected 404 lookups of empty room/queue');
  assert.deepEqual(errors,[]);
  console.log('PASS public matchmaking: queue, cancellation, optional private code, two-player match, ready -> placement, mobile + desktop');
 }finally {
