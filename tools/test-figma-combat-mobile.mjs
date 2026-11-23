@@ -132,6 +132,8 @@ try {
        viewportWidth:innerWidth,viewportHeight:innerHeight,
        head:rect('.zip-battle-header'),
        score:rect('.zip-scoreboard'),
+       compass:rect('.zip-compass-divider'),
+       actions:rect('.zip-battle-action-bar'),
        enemy:rect('.zip-enemy-section'),
        board:rect('.zip-primary-board .board-main'),
        defense:rect('.zip-own-section'),
@@ -145,23 +147,27 @@ try {
    const explain=status+' '+viewport.width+'x'+viewport.height+' '+JSON.stringify(metrics);
    assert.ok(metrics.rootWidth<=viewport.width+2,'Battle document horizontal overflow: '+explain);
    assert.ok(metrics.pageHeight<=viewport.height+2,'Battle document should fit screen: '+explain);
-   assert.ok(metrics.board.width>=viewport.width*.58,'Targeting board too small: '+explain);
+   assert.ok(metrics.board.width>=Math.min(130,viewport.width*.4),'Targeting board too small: '+explain);
    assert.ok(Math.abs(metrics.board.height-metrics.board.width)<=3,'Targeting board distorted: '+explain);
-   for(const key of ['head','score','enemy','board','defense','powers','fire','ownBoard']) {
+   for(const key of ['head','score','enemy','board','compass','defense','powers','fire','ownBoard']) {
      const bounds=metrics[key];
      assert.ok(bounds.left>=-2&&bounds.right<=viewport.width+2,'Offscreen horizontal '+key+': '+explain);
      assert.ok(bounds.top>=-2&&bounds.bottom<=viewport.height+2,'Offscreen vertical '+key+': '+explain);
    }
    assert.ok(metrics.head.bottom<=metrics.score.top+3,'Score overlays header: '+explain);
    assert.ok(metrics.score.bottom<=metrics.board.top+3,'Target board overlaps score: '+explain);
-   assert.ok(metrics.board.bottom<=metrics.defense.top+4,'Defense overlaps attack: '+explain);
+   assert.ok(metrics.board.bottom<=metrics.compass.top+4,'Compass overlaps attack board: '+explain);
+   assert.ok(metrics.compass.bottom<=metrics.defense.top+4,'Defense overlaps compass: '+explain);
    assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);
-   assert.ok(metrics.powers.bottom<=metrics.fire.top+4,'Powers overlap fire control: '+explain);
+   assert.ok(metrics.powers.right<=metrics.fire.left+5,'Powers and fire must sit side-by-side: '+explain);
+   assert.ok(Math.abs(metrics.powers.top-metrics.fire.top)<=5,'Powers and fire are not aligned: '+explain);
+   assert.ok(Math.abs(metrics.ownBoard.width-metrics.board.width)<=4,'Both game boards must have equal scale: '+explain);
+   assert.ok(Math.abs(metrics.ownBoard.height-metrics.ownBoard.width)<=3,'Defense board distorted: '+explain);
    assert.equal(await page.locator('.zip-primary-board .board-main .cell').count(),64);
    assert.equal(await page.locator('.zip-own-board .board-preview .cell').count(),64);
    assert.ok(Math.abs(metrics.cell.width-metrics.cell.height)<=2,'Target cell distorted: '+explain);
    assert.ok(Math.abs(metrics.previewCell.width-metrics.previewCell.height)<=2,'Own cell distorted: '+explain);
-   assert.ok(metrics.ownBoard.width>=90,'Own-board preview collapsed: '+explain);
+   assert.ok(metrics.ownBoard.width>=Math.min(130,viewport.width*.4),'Defense board collapsed: '+explain);
    await page.screenshot({path:'artifacts/figma-combat/'+route+'-initial-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    const fire=page.locator('[data-action="fire"]');
    assert.ok(await fire.isDisabled(),'Fire must be disabled before target selection');
