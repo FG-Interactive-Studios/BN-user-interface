@@ -15,6 +15,7 @@ for(const origin of ['https://attacker.example','http://example.com:5173',undefi
 }
 const app=readFileSync(new URL('../src/prototype/app.js',import.meta.url),'utf8');
 assert.ok(app.includes('now-lastFallbackReconcileAt >= 60000'));
-assert.ok(app.includes('}, 20000);'));
+assert.ok(app.includes('}, 5000);'),'The shared fallback timer polls public search every five seconds');
+assert.ok(app.includes("state.queue?.status==='SEARCHING'"),'Public queue needs REST fallback without WebSocket');
 assert.ok(!app.includes('}, 7000);'));
 console.log('Proxy /ws local + fallback REST menos frequente: OK');
