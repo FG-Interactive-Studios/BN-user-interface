@@ -30,6 +30,43 @@ API_HEALTH_URL = "http://127.0.0.1:8080/api/health"
 DEFAULT_ROOT = Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "share") / "BatalhaNavalLauncherPython"
 
 
+@dataclass(frozen=True)
+class LocalAdminHint:
+    """Development-only initial credential hint; not a verified account login."""
+    email: str = "admin@admin.com"
+    password: str = "admin"
+
+
+def local_admin_hint(api_path: Path, env: dict[str, str]) -> LocalAdminHint | None:
+    """Only advertise known initial credentials for the API we start with 'local'.
+
+    The account is created by the API only if no administrator exists.
+    We do not log, persist, or remotely probe these credentials; a login probe
+    would revoke an existing admin session because the API is single-session.
+    """
+    if env.get("SPRING_PROFILES_ACTIVE", "").strip() != "local":
+        return None
+    disabled = {"false", "0", "off", "no"}
+    if env.get("ADMIN_BOOTSTRAP_ENABLED", "true").strip().lower() in disabled:
+        return None
+    if env.get("ADMIN_BOOTSTRAP_LOCAL_DEFAULT_ENABLED", "true").strip().lower() in disabled:
+        return None
+    runner = api_path / "src/main/java/com/FGInteractive/BatalhaNaval/auth/service/InitialAdminBootstrapRunner.java"
+    service = api_path / "src/main/java/com/FGInteractive/BatalhaNaval/auth/service/InitialAdminBootstrapService.java"
+    try:
+        # PRs and older API checkouts may not implement the local-only bootstrap.
+        runner_text = runner.read_text(encoding="utf-8")
+        service_text = service.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    if ('Profiles.of("local")' not in runner_text
+            or "service.createLocalIfMissing()" not in runner_text
+            or 'final String email = "admin@admin.com"' not in service_text
+            or 'encoder.encode("admin")' not in service_text):
+        return None
+    return LocalAdminHint()
+
+
 class LauncherError(RuntimeError):
     """Expected, user-visible failure."""
 
@@ -165,6 +202,7 @@ class Engine:
         self.cancel = threading.Event()
         self.processes: dict[str, subprocess.Popen] = {}
         self.reused_api = False
+        self.local_admin: LocalAdminHint | None = None
         self.lock = threading.RLock()
         self.root.mkdir(parents=True, exist_ok=True)
         self.log_path = self.root / "launcher.log"
@@ -472,6 +510,7 @@ class Engine:
     def launch(self, front_path: Path, api_path: Path, *, docker: bool,
                reuse_api: bool) -> None:
         self.check_cancel()
+        self.local_admin = None
         npm = self.node_check()
         if port_busy(5173):
             raise LauncherError("Porta 5173 ocupada: encerre o frontend anterior antes de testar outra PR.")
@@ -505,6 +544,8 @@ class Engine:
             self.processes["api"] = proc
             self.pipe_logs(proc, "API")
             self.wait(api_healthy, 240, "API", proc)
+            # The only supported path: a locally launched, selected API build.
+            self.local_admin = local_admin_hint(api_path, env)
         if not (front_path / "package-lock.json").is_file():
             raise LauncherError("Frontend sem package-lock.json. Não executarei instalação não reproduzível.")
         if not (front_path / "node_modules").is_dir():
@@ -535,6 +576,7 @@ class Engine:
 
     def stop(self) -> None:
         self.cancel.set()
+        self.local_admin = None
         for key in ("front", "api"):
             process = self.processes.pop(key, None)
             if process is not None:
