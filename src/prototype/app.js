@@ -5,6 +5,7 @@ import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
 import {walletMarkup} from './figma-wallet.js';
+import {RADAR_SWEEP_SECONDS, sonarContactMarkup} from './radar-blips.js';
 import shipEmblem from '../assets/figma/ship-icon.png';
 import cannonIcon from '../assets/figma/cannon.png';
 import { renderFigmaResult } from './figma-result.js';
@@ -267,13 +268,13 @@ function authForm(isRegister=false) {
 
 /** Figma-approved green sonar; matchmaking still uses the API state. */
 function radarMarkup() {
-  return `<div class="radar bn-search-radar" aria-hidden="true">
+  return `<div class="radar bn-search-radar" style="--radar-period:${RADAR_SWEEP_SECONDS}s" aria-hidden="true">
     <span class="bn-radar-grid"></span><span class="bn-radar-axis is-horizontal"></span>
     <span class="bn-radar-axis is-vertical"></span>
     <span class="bn-radar-ring ring-one"></span><span class="bn-radar-ring ring-two"></span>
     <span class="bn-radar-ring ring-three"></span><span class="bn-radar-ring ring-four"></span>
-    <span class="bn-radar-sweep"></span><span class="bn-radar-contact one"></span>
-    <span class="bn-radar-contact two"></span><span class="bn-radar-center"></span>
+    <span class="bn-radar-sweep"></span>${sonarContactMarkup()}
+    <span class="bn-radar-center"></span>
   </div>`;
 }
 function updateSearchElapsed(){
