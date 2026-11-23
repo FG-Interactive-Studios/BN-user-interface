@@ -70,3 +70,6 @@
 
 /* Public queue and private invite choice. */
 @import './public-matchmaking-v1.css';
+
+/* Admin settings share the logged-in game's SPA/session. */
+@import './admin-panel.css';
