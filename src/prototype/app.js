@@ -4,6 +4,9 @@ import {AudioEvents} from './audio-events.js';
 import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
+import {walletMarkup} from './figma-wallet.js';
+import shipEmblem from '../assets/figma/ship-icon.png';
+import cannonIcon from '../assets/figma/cannon.png';
 import { renderFigmaResult } from './figma-result.js';
 import { renderFigmaProfile } from './figma-profile.js';
 import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
@@ -19,7 +22,7 @@ import { compactEnemyContacts } from './mobile-presenters.js';
 const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20l-3-6H5l-3 6zM8 12V8h4v4M12 6V4"/></svg>`;
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">Batalha Naval</div><div class="brand-sub">Duelo 1v1 em alto-mar</div></div></div>`;
 const state = {
-  profile: null, modes: [], lobby: null, queue: null, preparation: null, battle: null,
+  profile: null, modes: [], lobby: null, queue: null, queueStartedAt: null, preparation: null, battle: null,
   modeId: 'classic', selected: null, draft: null, placementShip: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
@@ -79,12 +82,14 @@ function nav(active='play') {
 }
 function header() {
   const nickname=esc(state.profile?.nickname || 'Capitão');
+  const showWallet=['lobby','store'].includes(currentRoute());
   return `<header class="topbar bn-topbar">
     <button type="button" class="bn-header-identity" data-go="profile" aria-label="Abrir meu perfil">
-      <span class="bn-header-avatar" aria-hidden="true">⚓</span>
+      <span class="bn-header-avatar" aria-hidden="true"><img src="${shipEmblem}" alt="" width="42" height="42"></span>
       <span class="bn-header-player"><strong>${nickname}</strong><small>Conta de jogador</small></span>
     </button>
     <div class="bn-header-actions">
+      ${showWallet?walletMarkup(state.store,{compact:true}):''}
       <span class="bn-connection-status" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span>
       <details class="tp-account-menu bn-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary>
         <div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-go="settings">Configurações</button>${state.profile?.admin===true?'<button type="button" data-go="admin">Área administrativa</button>':''}<button type="button" data-action="logout">Sair</button></div>
@@ -118,7 +123,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -197,6 +202,9 @@ async function reconcile() {
       }
     }
     state.lobby=room;
+    if(queue?.status==='SEARCHING'){
+      if(!state.queueStartedAt)state.queueStartedAt=Date.now();
+    }else state.queueStartedAt=null;
     state.queue=queue;
     if (!room) {
       state.skillMode=null;state.skillTargets=[];state.skillDialog=false;
@@ -266,7 +274,7 @@ function lobbyScreen() {
   if (state.lobby) return waitingScreen();
   return mainContent(`<div class="bn-lobby">
     <section class="bn-feature-card" aria-labelledby="bn-feature-title">
-      <span class="bn-feature-icon" aria-hidden="true"></span>
+      <span class="bn-feature-icon" aria-hidden="true"><img src="${cannonIcon}" alt="" width="116" height="116" /></span>
       <div class="bn-feature-copy"><span class="bn-kicker">EVENTO</span><h1 id="bn-feature-title">Tempestade de Aço</h1>
         <p>Novos desafios e recompensas chegarão em breve.</p><small>Em desenvolvimento</small></div>
     </section>
@@ -274,7 +282,7 @@ function lobbyScreen() {
       <article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas embarcações</strong><small>Personalizações em breve</small></article>
       <article class="bn-news-card"><span class="bn-kicker">NOVIDADE</span><strong>Novas temporadas</strong><small>Progressão em breve</small></article>
     </section>
-    <div class="bn-rank-card"><span class="bn-rank-emblem" aria-hidden="true">⚓</span><div><strong>Patentes em breve</strong><small>Batalhas privadas 1v1</small></div></div>
+    <div class="bn-rank-card"><span class="bn-rank-emblem" aria-hidden="true"><img src="${shipEmblem}" alt="" width="50" height="50" /></span><div><strong>Patentes em breve</strong><small>Batalhas privadas 1v1</small></div></div>
     <div class="bn-lobby-actions">
       <button type="button" class="btn btn-primary bn-primary-button" data-go="matchmaking" ${state.modes.length?'':'disabled'}>Jogar</button>
       <button type="button" class="bn-pill-button bn-join-button" data-action="open-join-modal">Entrar com código</button>
@@ -524,7 +532,7 @@ async function loadStore({quiet=false}={}){
   } finally {
     if(generation===storeLoadGeneration){
       state.storeLoading=false;
-      if(currentRoute()==='store') render();
+      if(['store','lobby'].includes(currentRoute())) render();
     }
   }
 }
@@ -754,6 +762,7 @@ async function runAction(action,itemId=null) {
     case 'find-public-match':await guard(async()=>{
       const search=await api.post('/matchmaking/queue',{modeId:state.modeId});
       state.queue=search.status==='SEARCHING'?search:null;
+      state.queueStartedAt=search.status==='SEARCHING'?Date.now():null;
       state.lobby=search.status==='MATCHED'?search.room:null;
       if(state.lobby?.players?.length===2)audio.play('game_found');
       go('matchmaking');
@@ -765,7 +774,7 @@ async function runAction(action,itemId=null) {
         if(error instanceof api.ApiError && error.status===409){await reconcile();return;}
         throw error;
       }
-      state.queue=null;go('lobby');
+      state.queue=null;state.queueStartedAt=null;go('lobby');
     });break;
     case 'create-lobby':await guard(async()=>{
       state.lobby=await api.post('/matchmaking/lobbies',{modeId:state.modeId});
@@ -981,6 +990,6 @@ function bindEvents() {
 export function startTidepoint(element) {
   root=element; bindEvents();render();
   if(clockHudTimer)clearInterval(clockHudTimer);
-  clockHudTimer=setInterval(()=>updateClockNodes(root),250);
+  clockHudTimer=setInterval(()=>{updateClockNodes(root);updateSearchElapsed();},250);
   // Tokens are memory-only by design; a reload requires a new login.
 }
