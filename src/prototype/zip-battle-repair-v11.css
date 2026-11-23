@@ -386,3 +386,58 @@ body[data-route="placement"] .bn-zip-placement .bn-placement-phase {
     padding:4px 6px 5px!important;
   }
 }
+
+/*
+ * Original Figma ZIP tile art — optimized WebP transcodes of supplied PNGs.
+ * This deliberately uses real assets instead of simulated CSS glyphs.
+ * ZIP originals: water-tile, cell-placed, cell-selected, cell-hit, cell-miss.
+ * Source PNGs remain in the user's ZIP; exact derivatives are served from
+ * public/assets/bn-zip for both game modes. Do not leak hidden ships.
+ */
+body[data-route="match"] .bn-zip-battle .board .cell,
+body[data-route="placement"] .bn-zip-placement .board .cell:not(.inactive):not(.ship) {
+  background:#0b2836 url('/assets/bn-zip/water-tile.webp') center / cover no-repeat!important;
+}
+body[data-route="match"] .bn-zip-battle .board .cell.ship:not(.hit),
+body[data-route="placement"] .bn-zip-placement .board .cell.ship:not(.hit) {
+  background:#637381 url('/assets/bn-zip/cell-placed.webp') center / cover no-repeat!important;
+  border-color:#90b7c8!important;
+  box-shadow:inset 1px 1px 2px #ffffff4a, inset -1px -1px 2px #0818248c!important;
+}
+body[data-route="match"] .bn-zip-battle .board .cell.hit::before,
+body[data-route="placement"] .bn-zip-placement .board .cell.hit::before {
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;height:100%!important;
+  border-radius:0!important;
+  background: url('/assets/bn-zip/cell-hit.webp') center / contain no-repeat!important;
+  box-shadow:none!important;
+  pointer-events:none!important;
+  z-index:3!important;
+}
+body[data-route="match"] .bn-zip-battle .board .cell.miss::before,
+body[data-route="placement"] .bn-zip-placement .board .cell.miss::before {
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;height:100%!important;
+  border-radius:0!important;
+  background: url('/assets/bn-zip/cell-miss.webp') center / contain no-repeat!important;
+  box-shadow:none!important;
+  pointer-events:none!important;
+  z-index:3!important;
+}
+body[data-route="match"] .bn-zip-battle .board .cell.target::after,
+body[data-route="match"] .bn-zip-battle .board .cell.pilot-skill-target::after,
+body[data-route="placement"] .bn-zip-placement .board .cell.target::after {
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  background:url('/assets/bn-zip/cell-selected.webp') center / contain no-repeat!important;
+  pointer-events:none!important;
+  z-index:4!important;
+}
+body[data-route="match"] .bn-zip-battle .board .cell .target-reticle {
+  display:none!important;
+}

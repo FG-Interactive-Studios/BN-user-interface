@@ -20,6 +20,7 @@ jobs:
       - run: node tools/test-lobby.mjs
       - run: node tools/test-store.mjs
       - run: node tools/test-figma-assets.mjs
+      - run: node tools/test-zip-cell-assets.mjs
 
       - run: node tools/test-mobile-typography.mjs
 
