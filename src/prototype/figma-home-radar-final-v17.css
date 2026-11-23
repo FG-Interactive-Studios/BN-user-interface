@@ -346,3 +346,46 @@ body[data-route="matchmaking"] .bn-queue-screen .bn-search-radar .bn-radar-conta
     animation:none!important;
   }
 }
+
+/* Matchmaking entry shares the SAME header identity, icon and menu design as
+   the lobby. Only the currency row is omitted for this step. */
+body[data-route="matchmaking"] .bn-topbar {gap:12px;}
+body[data-route="matchmaking"] .bn-header-identity {
+  min-width:0;
+  flex-shrink:1;
+}
+body[data-route="matchmaking"] .bn-header-avatar {
+  display:grid;place-items:center;overflow:hidden;
+  background:radial-gradient(circle at 50% 40%,#174956,#07151c 82%);
+}
+body[data-route="matchmaking"] .bn-header-avatar img {
+  max-width:72%;max-height:72%;width:72%;height:72%;object-fit:contain;
+  filter:drop-shadow(0 0 7px #fbbf246b);
+}
+@media(max-width:760px) {
+  /* Reuse the exact top row of the lobby's two-row grid, minus its wallet row. */
+  body[data-route="matchmaking"] .bn-topbar {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"profile menu";
+    align-content:start;align-items:center;
+    row-gap:0;
+    width:100%!important;
+    height:auto!important;min-height:64px!important;
+    padding:8px 14px!important;
+  }
+  body[data-route="matchmaking"] .bn-header-identity {
+    grid-area:profile;max-width:100%;
+  }
+  body[data-route="matchmaking"] .bn-header-actions {display:contents!important;}
+  body[data-route="matchmaking"] .bn-account-menu {
+    grid-area:menu;justify-self:end;
+  }
+  body[data-route="matchmaking"] .bn-connection-status {display:none!important;}
+}
+@media(max-width:390px) {
+  body[data-route="matchmaking"] .bn-topbar {padding-inline:9px!important;}
+  body[data-route="matchmaking"] .bn-header-player strong {
+    font-size:clamp(14px,4vw,19px);
+  }
+}

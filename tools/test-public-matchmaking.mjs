@@ -136,6 +136,44 @@ try {
  await b.screenshot({path:'artifacts/public-matchmaking/store-desktop.png',fullPage:true});
  await b.locator('[data-go="lobby"]').click();
  await b.locator('.bn-lobby').waitFor();
+ // The matchmaking choice must reuse the lobby header's top row, minus coins.
+ const readHeader=async page=>page.locator('.bn-topbar').evaluate(el=>{
+   const box=el.getBoundingClientRect();
+   const relative=selector=>{
+     const r=el.querySelector(selector).getBoundingClientRect();
+     return {x:r.left-box.left,y:r.top-box.top,width:r.width,height:r.height};
+   };
+   const avatar=el.querySelector('.bn-header-avatar');
+   return {avatar:relative('.bn-header-avatar'),menu:relative('.bn-account-menu summary'),
+     identity:relative('.bn-header-identity'),
+     avatarBackground:getComputedStyle(avatar).backgroundImage,
+     avatarImage:getComputedStyle(avatar.querySelector('img')).filter,
+     wallet:el.querySelectorAll('.bn-wallet-pills').length,
+     overflow:document.documentElement.scrollWidth-innerWidth};
+ });
+ const close=(a,b,label)=>assert.ok(Math.abs(a-b)<=2,`${label}: ${a} vs ${b}`);
+ for(const width of [375,320]){
+   await a.setViewportSize({width,height:667});
+   const lobbyHeader=await readHeader(a);
+   assert.equal(lobbyHeader.wallet,1,'Lobby must keep both balances');
+   await a.locator('[data-go="matchmaking"]').click();
+   await a.locator('.bn-match-choice').waitFor();
+   const choiceHeader=await readHeader(a);
+   assert.equal(choiceHeader.wallet,0,'Matchmaking choice must not show currencies');
+   assert.equal(choiceHeader.avatarBackground,lobbyHeader.avatarBackground,
+     'Matchmaking must use the same avatar styling as lobby');
+   assert.equal(choiceHeader.avatarImage,lobbyHeader.avatarImage,
+     'Matchmaking must use the same avatar art/filter as lobby');
+   for(const part of ['avatar','menu','identity']){
+     for(const field of ['x','y','width','height'])
+       close(choiceHeader[part][field],lobbyHeader[part][field],`${width}px ${part}.${field}`);
+   }
+   assert.ok(choiceHeader.overflow<=2,'Header must not introduce horizontal scroll');
+   if(width===375)await a.screenshot({path:'artifacts/public-matchmaking/choice-header-mobile.png',fullPage:true});
+   await a.locator('.bn-match-back').click();
+   await a.locator('.bn-lobby').waitFor();
+ }
+ await a.setViewportSize({width:375,height:667});
  await a.locator('[data-go="matchmaking"]').click();
  await a.locator('.bn-match-choice').waitFor();
  assert.ok(await a.locator('[data-action="find-public-match"]').isVisible());
