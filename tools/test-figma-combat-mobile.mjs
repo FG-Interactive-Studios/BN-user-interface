@@ -157,8 +157,10 @@ try {
        turn:rect('.zip-turn-panel'),
        actions:rect('.zip-battle-action-bar'),
        enemy:rect('.zip-enemy-section'),
+       enemyHeading:rect('.zip-enemy-section .zip-board-heading'),
        board:rect('.zip-primary-board .board-main'),
        defense:rect('.zip-own-section'),
+       defenseHeading:rect('.zip-own-section .zip-board-heading'),
        powers:rect('.zip-tactics-section'),
        fire:rect('.zip-fire-button'),
        ownBoard:rect('.zip-own-board .board-preview'),
@@ -181,8 +183,12 @@ try {
    assert.ok(metrics.head.bottom<=metrics.score.top+3,'Score overlays header: '+explain);
    assert.ok(metrics.score.bottom<=metrics.board.top+3,'Target board overlaps score: '+explain);
    if(viewport.width<=849) {
+     assert.ok(metrics.enemyHeading.top>=metrics.score.bottom-2,'Enemy heading covered by scoreboard: '+explain);
+     assert.ok(metrics.enemyHeading.bottom<=metrics.board.top+3,'Enemy heading overlaps attack board: '+explain);
      assert.ok(metrics.board.bottom<=metrics.turn.top+4,'Turn panel overlaps attack board: '+explain);
      assert.ok(metrics.turn.bottom<=metrics.defense.top+4,'Defense overlaps turn panel: '+explain);
+     assert.ok(metrics.defenseHeading.bottom<=metrics.ownBoard.top+3,'Own heading overlaps defense: '+explain);
+     assert.ok(metrics.board.width>=metrics.ownBoard.width*1.25,'Mobile defense board must be notably smaller: '+explain);
    } else {
      assert.ok(metrics.ownBoard.right<=metrics.turn.left+4,'Desktop: own fleet must be LEFT of turn panel: '+explain);
      assert.ok(metrics.turn.right<=metrics.board.left+4,'Desktop: enemy grid must be RIGHT of turn panel: '+explain);
@@ -191,13 +197,13 @@ try {
    assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);
    assert.ok(metrics.powers.right<=metrics.fire.left+5,'Powers and fire must sit side-by-side: '+explain);
    assert.ok(Math.abs(metrics.powers.top-metrics.fire.top)<=5,'Powers and fire are not aligned: '+explain);
-   assert.ok(Math.abs(metrics.ownBoard.width-metrics.board.width)<=4,'Both game boards must have equal scale: '+explain);
+   if(viewport.width>=850)assert.ok(Math.abs(metrics.ownBoard.width-metrics.board.width)<=4,'Desktop boards must share scale: '+explain);
    assert.ok(Math.abs(metrics.ownBoard.height-metrics.ownBoard.width)<=3,'Defense board distorted: '+explain);
    assert.equal(await page.locator('.zip-primary-board .board-main .cell').count(),64);
    assert.equal(await page.locator('.zip-own-board .board-preview .cell').count(),64);
    assert.ok(Math.abs(metrics.cell.width-metrics.cell.height)<=2,'Target cell distorted: '+explain);
    assert.ok(Math.abs(metrics.previewCell.width-metrics.previewCell.height)<=2,'Own cell distorted: '+explain);
-   assert.ok(metrics.ownBoard.width>=Math.min(130,viewport.width*.4),'Defense board collapsed: '+explain);
+   assert.ok(metrics.ownBoard.width>=Math.min(85,viewport.width*.27),'Defense board collapsed: '+explain);
    await page.screenshot({path:'artifacts/figma-combat/'+route+'-initial-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    const turnPanel=page.locator('.zip-turn-panel');
    assert.equal(await page.locator('.zip-compass-widget').count(),0,'Decorative compass still present');
@@ -317,6 +323,17 @@ try {
    assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),3,'Direction change lost selected footprint');
    await page.locator('[data-action="cancel-ability"]').click();
    await pick('hull-shield');
+   if(viewport.width<850) {
+     const ownPower=await page.locator('.zip-own-board .board-preview').boundingBox();
+     const enemyPower=await page.locator('.zip-primary-board .board-main').boundingBox();
+     assert.ok(ownPower && enemyPower && ownPower.width>enemyPower.width,
+       'Defensive power must enlarge own board on mobile: '+explain);
+     assert.ok(ownPower.y+ownPower.height<=viewport.height,
+       'Defensive board must be reachable: '+explain);
+     const guide=await page.locator('.zip-power-guide').boundingBox();
+     assert.ok(guide && ownPower.y+ownPower.height<guide.y,
+       'Defensive power controls overlap own board: '+explain);
+   }
    await page.locator('.zip-own-board [data-coord="1,0"]').hover();
    assert.equal(await page.locator('.zip-own-board .pilot-skill-preview').count(),2,'Own hull shield does not preview ship');
    await page.locator('.zip-own-board [data-coord="1,0"]').click();
