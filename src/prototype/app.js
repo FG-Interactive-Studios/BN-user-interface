@@ -399,7 +399,7 @@ function battleScreen(){
   const radarResult=b.yourRadarReports?.at(-1);
   const skillControls=state.skillMode && activeAbility
     ? `<div class="zip-power-guide" role="status"><div class="zip-power-guide-copy"><b>${esc(activeAbility.name)}</b><small>${esc(activeAbility.description)} · ${skillCount===0?'Sem alvo necessário':skillTargetSummary()}</small></div>
-       ${abilityNeedsDirection(activeAbility.id)?`<button type="button" class="zip-power-direction" data-action="cycle-ability-direction" title="Alternar orientação ou direção">${esc(directionText(activeAbility.id,state.skillDirection))}</button>`:''}</div>`
+       ${abilityNeedsDirection(activeAbility.id)?`<button type="button" class="zip-power-direction" data-action="cycle-ability-direction" title="Girar a prévia da habilidade" aria-label="Girar prévia: ${esc(directionText(activeAbility.id,state.skillDirection))}">↻ ${esc(directionText(activeAbility.id,state.skillDirection))}</button>`:''}</div>`
     : '';
   const reconnectDeadline=Object.values(b.reconnectDeadlines||{})[0]||'';
   const pausedOverlay=b.paused
