@@ -12,7 +12,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 
 from core import (API_HEALTH_URL, DEFAULT_ROOT, GAME_URL, REPOSITORIES,
-                  Cancelled, Engine, LauncherError, Version, api_healthy,
+                  Cancelled, Engine, LauncherError, LocalAdminHint, Version, api_healthy,
                   github_versions, main_version)
 
 BG = "#0b1014"
@@ -82,7 +82,7 @@ class LauncherApp:
         shell = tk.Frame(self.root, bg=BG, padx=26, pady=20)
         shell.pack(fill="both", expand=True)
         shell.grid_columnconfigure(0, weight=1)
-        shell.grid_rowconfigure(5, weight=1)
+        shell.grid_rowconfigure(6, weight=1)
 
         header = tk.Frame(shell, bg=BG)
         header.grid(row=0, column=0, sticky="ew", pady=(0, 16))
@@ -174,9 +174,32 @@ class LauncherApp:
         self.btn_browser.pack(side="right")
         self.btn_browser.configure(state="disabled")
 
+        # This card is displayed only after our own local API has started.
+        # It never appears for an external/reused API, and nothing is saved or logged.
+        self.admin_hint: LocalAdminHint | None = None
+        self.admin_panel = tk.Frame(shell, bg="#133534", padx=14, pady=9,
+                                    highlightbackground="#3caa96", highlightthickness=1)
+        self.admin_panel.grid(row=5, column=0, sticky="ew", pady=(0, 9))
+        self.admin_panel.grid_columnconfigure(0, weight=1)
+        tk.Label(self.admin_panel, text="CONTA ADMINISTRATIVA · TESTE LOCAL",
+                 bg="#133534", fg="#91efd2", font=(FONT, 9, "bold")).grid(
+                     row=0, column=0, sticky="w")
+        self.admin_access = tk.Label(self.admin_panel, bg="#133534", fg=TEXT,
+                                     font=("Consolas", 11, "bold"), anchor="w")
+        self.admin_access.grid(row=1, column=0, sticky="w", pady=(5, 2))
+        tk.Label(self.admin_panel,
+                 text="Senha inicial; se já havia outro administrador ou a senha mudou, estes dados podem não funcionar.",
+                 bg="#133534", fg="#b1cbd0", font=(FONT, 9),
+                 anchor="w", justify="left", wraplength=650).grid(
+                     row=2, column=0, sticky="w")
+        self.admin_copy = self.make_button(self.admin_panel, "Copiar acesso",
+                                           self.copy_admin_access, width=17)
+        self.admin_copy.grid(row=0, column=1, rowspan=3, padx=(15, 0), sticky="e")
+        self.admin_panel.grid_remove()
+
         log_panel = tk.Frame(shell, bg=PANEL, highlightbackground=LINE, highlightthickness=1,
                              padx=12, pady=10)
-        log_panel.grid(row=5, column=0, sticky="nsew")
+        log_panel.grid(row=6, column=0, sticky="nsew")
         log_panel.grid_columnconfigure(0, weight=1)
         log_panel.grid_rowconfigure(1, weight=1)
         tk.Label(log_panel, text="LOGS DE EXECUÇÃO", bg=PANEL, fg=MUTED,
@@ -189,7 +212,7 @@ class LauncherApp:
         scroll.grid(row=1, column=1, sticky="ns")
         self.log_widget.configure(yscrollcommand=scroll.set)
         tk.Label(shell, text="Sem reset de branches, sem apagar volumes. Execute PRs somente de autores em quem confia.",
-                 bg=BG, fg=MUTED, font=(FONT, 9)).grid(row=6, column=0, sticky="w", pady=(9, 0))
+                 bg=BG, fg=MUTED, font=(FONT, 9)).grid(row=7, column=0, sticky="w", pady=(9, 0))
 
     def make_button(self, parent, label, callback, primary=False, width=15):
         return tk.Button(parent, text=label, command=callback, width=width,
@@ -198,6 +221,23 @@ class LauncherApp:
                          activeforeground=BG if primary else TEXT,
                          font=(FONT, 10, "bold"), relief="flat", bd=0,
                          padx=13, pady=9, cursor="hand2")
+
+    def show_local_admin(self, hint: LocalAdminHint | None) -> None:
+        self.admin_hint = hint
+        if hint is None:
+            self.admin_panel.grid_remove()
+            return
+        self.admin_access.configure(text=f"E-mail: {hint.email}    Senha inicial: {hint.password}")
+        self.admin_panel.grid()
+
+    def copy_admin_access(self) -> None:
+        if self.admin_hint is None:
+            return
+        hint = self.admin_hint
+        self.root.clipboard_clear()
+        self.root.clipboard_append(f"E-mail: {hint.email}\\nSenha inicial: {hint.password}")
+        self.root.update_idletasks()
+        self.set_status("Credenciais iniciais copiadas para a área de transferência.", GREEN)
 
     def browse(self) -> None:
         folder = filedialog.askdirectory(title="Escolha a pasta de downloads")
@@ -273,6 +313,7 @@ class LauncherApp:
         except OSError as exc:
             messagebox.showerror("Erro de pasta", str(exc))
             return
+        self.show_local_admin(None)
         self.set_busy(True)
         self.set_status("Preparando o download…", YELLOW)
         self.add_log("─" * 65)
@@ -345,6 +386,7 @@ class LauncherApp:
                     self.set_busy(False)
                     self.btn_browser.configure(state="normal")
                     self.set_status("API e jogo prontos — http://127.0.0.1:5173", GREEN)
+                    self.show_local_admin(self.engine.local_admin if self.engine else None)
                     if self.browser_var.get():
                         webbrowser.open(GAME_URL)
                 elif event == "downloaded":
@@ -353,6 +395,7 @@ class LauncherApp:
                     self.add_log("Frontend: " + details[0])
                     self.add_log("Backend: " + details[1])
                 elif event == "error":
+                    self.show_local_admin(None)
                     if self.engine is not None:
                         self.engine.stop()
                     self.running = False
@@ -362,6 +405,7 @@ class LauncherApp:
                     self.add_log("ERRO: " + details[0])
                     messagebox.showerror("Falha no inicializador", details[0][:1100], parent=self.root)
                 elif event in ("cancelled", "stopped"):
+                    self.show_local_admin(None)
                     self.running = False
                     self.set_busy(False)
                     self.btn_browser.configure(state="disabled")
