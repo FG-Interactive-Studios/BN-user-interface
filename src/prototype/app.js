@@ -347,7 +347,7 @@ function skillTargetSummary(){
     if(state.skillTargets.length===1)return 'Primeira casa: '+coordLabel(state.skillTargets[0])+' · Escolha a segunda.';
     return 'Alvos: '+state.skillTargets.map(coordLabel).join(' e ')+' · Confirme o poder.';
   }
-  if(!state.skillArea.length)return 'Toque numa casa para escolher a área.';
+  if(!state.skillArea.length)return state.skillAnchor && abilityNeedsDirection(state.skillMode) ? 'Use ↻ Girar para ajustar a área.' : 'Toque numa casa para escolher a área.';
   return state.skillArea.length===1?'1 casa afetada':state.skillArea.length+' casas afetadas';
 }
 function paintAbilityPreview(target){
@@ -705,7 +705,8 @@ async function runAction(action,itemId=null) {
       if(state.skillAnchor){
         const anchor=state.skillAnchor;
         clearSkillTargeting();
-        if(!chooseAbilityTarget(anchor).valid)clearSkillTargeting();
+        const plan=chooseAbilityTarget(anchor);
+        if(!plan.valid)state.skillAnchor=anchor; // Keep the anchor while user rotates past invalid orientations.
       }
       render();break;
     }
@@ -741,7 +742,12 @@ function selectCell(row,col,side='ENEMY'){
     if(state.skillMode){
       if(skillScope(state.skillMode)!==side)return;
       const plan=chooseAbilityTarget({row,col});
-      if(!plan.valid){notice(plan.reason,true);return;}
+      if(!plan.valid){
+        if(state.skillMode==='air-strike'||state.skillMode==='line-barrage'){
+          clearSkillTargeting();state.skillAnchor={row,col};render();
+        }
+        notice(plan.reason,true);return;
+      }
       render();return;
     }
     if(side!=='ENEMY')return;
