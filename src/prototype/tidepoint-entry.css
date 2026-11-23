@@ -62,3 +62,8 @@
 
 /* Smaller mobile boards, reversed desktop fleet, and unobstructed power targeting. */
 @import './zip-tactical-preview-v15.css';
+
+/* Mobile: compact own fleet and safe spacing through short viewports. */
+@import './zip-mobile-fit-v16.css';
+/* Result: show the player and opponent from separate server histories. */
+@import './figma-result-compare-v8.css';
