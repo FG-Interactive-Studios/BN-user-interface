@@ -302,6 +302,12 @@ try {
    assert.notDeepEqual(afterRotation,beforeRotation,'Rotating the area attack must move the shown footprint');
    assert.equal(afterRotation.length,4,'Rotated air strike must retain 4 affected cells');
    assert.ok(await page.locator('[data-action="activate-ability"]').isEnabled(),'Rotated area remains one anchor');
+   await page.locator('.zip-primary-board [data-coord="7,7"]').click();
+   assert.ok(await page.locator('[data-action="activate-ability"]').isDisabled(),'Off-board orientation should not activate');
+   await page.locator('[data-action="cycle-ability-direction"]').click();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),4,
+     'Rotating an edge anchor should recover a valid area without a second click');
+   assert.ok(await page.locator('[data-action="activate-ability"]').isEnabled());
    await page.locator('[data-action="cancel-ability"]').click();
    await pick('line-barrage');
    await page.locator('.zip-primary-board [data-coord="3,3"]').click();
