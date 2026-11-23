@@ -98,6 +98,11 @@ try {
      assert.ok(layout.fleet.bottom<=layout.tools.top+4,'Tools overlap ship cards: '+explain);
      assert.equal(await page.locator('.bn-placement-screen .board-main .cell').count(),64);
      assert.equal(await page.locator('.bn-placement-ship').count(),3);
+     assert.equal(await page.locator('.bn-placement-ship[data-item-id="CARRIER"] img[src*="ship-carrier.webp"]').count(),1,'ZIP carrier artwork absent');
+     assert.equal(await page.locator('.bn-placement-ship[data-item-id="DESTROYER"] img[src*="ship-destroyer-gd.webp"]').count(),1,'GD destroyer artwork absent');
+     assert.equal(await page.locator('.bn-placement-ship[data-item-id="SEARCH"] img').count(),0,'SEARCH must not inherit unrelated submarine art');
+     const backdrop=await page.locator('.bn-zip-placement').evaluate(el=>getComputedStyle(el).backgroundImage);
+     assert.ok(backdrop.includes('/assets/bn-zip/bg.webp'),'ZIP background is not active on preparation: '+backdrop);
      assert.equal(await page.locator('.bn-placement-ship.is-selected').count(),1);
      assert.ok(await page.locator('[data-action="random-placement"]').isEnabled());
      for(const selector of ['[data-action="random-placement"]','[data-action="confirm-placement"]','[data-action="leave-lobby"]']){
@@ -146,6 +151,8 @@ try {
    });
    const explain=status+' '+viewport.width+'x'+viewport.height+' '+JSON.stringify(metrics);
    assert.ok(metrics.rootWidth<=viewport.width+2,'Battle document horizontal overflow: '+explain);
+   const battleBackdrop=await page.locator('.bn-zip-battle').evaluate(el=>getComputedStyle(el).backgroundImage);
+   assert.ok(battleBackdrop.includes('/assets/bn-zip/bg.webp'),'ZIP background is not active during battle: '+battleBackdrop);
    assert.ok(metrics.pageHeight<=viewport.height+2,'Battle document should fit screen: '+explain);
    assert.ok(metrics.board.width>=Math.min(130,viewport.width*.4),'Targeting board too small: '+explain);
    assert.ok(Math.abs(metrics.board.height-metrics.board.width)<=3,'Targeting board distorted: '+explain);
