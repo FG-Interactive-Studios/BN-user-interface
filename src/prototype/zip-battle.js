@@ -73,7 +73,7 @@ export function renderZipBattle({
         </section>
 
         <section class="zip-lower-section" aria-label="Defesa e poderes">
-          <div class="zip-own-section combat-left-rail">
+          <div class="zip-own-section">
             <h2>Sua frota</h2>
             <div class="zip-own-board">
               ${renderBoard(mode, {
