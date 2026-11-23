@@ -35,7 +35,7 @@ export function renderZipBattle({
     }).join('')
     : '<p class="zip-no-powers">Este modo não possui habilidades disponíveis.</p>';
 
-  return `<div class="screen combat-screen bn-zip-battle" data-turn="${turnState}">
+  return `<div class="screen combat-screen bn-zip-battle" data-turn="${turnState}" data-skill-scope="${activeAbility?.targetScope||'NONE'}">
     <main class="zip-game-layout" aria-label="Batalha naval em andamento">
       <header class="zip-battle-header">
         <details class="zip-battle-menu">
