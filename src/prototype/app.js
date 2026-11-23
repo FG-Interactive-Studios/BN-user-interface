@@ -272,9 +272,29 @@ function lobbyScreen() {
 
 function waitingScreen() {
   const room=state.lobby;
+  if (!room && state.queue?.status==='SEARCHING') {
+    const mode=state.modes.find(mode=>mode.id===state.queue.modeId);
+    return mainContent(`<section class="bn-queue-search" aria-label="Buscando adversário">
+      <span class="bn-kicker">PAREAMENTO ONLINE</span>
+      <h1>Buscando adversário</h1>
+      <p>Procurando outro capitão no modo <strong>${esc(mode?.name||state.queue.modeId)}</strong>.</p>
+      ${radarMarkup()}
+      <p class="bn-queue-status" role="status" aria-live="polite">Busca em andamento · você entrará na sala automaticamente quando encontrar alguém.</p>
+      <button type="button" class="bn-room-leave-button" data-action="cancel-public-search">Cancelar busca</button>
+    </section>`,{noNav:true,noHeader:true,variant:'bn-waiting-screen bn-queue-screen'});
+  }
   if (!room) {
     const options=state.modes.map(mode=>`<option value="${esc(mode.id)}" ${state.modeId===mode.id?'selected':''}>${esc(mode.name)} · ${mode.geometry?.cells?.length||0} casas</option>`).join('');
-    return mainContent(`<div class="matchmaking-wrap tp-create-room-wrap"><section class="panel mm-card tp-create-room-card tp-room-setup"><div class="eyebrow">Canal de combate</div><h2 class="form-title">Criar sala privada</h2><p class="form-sub tp-setup-description">Escolha o tabuleiro e convide outro capitão.</p><div class="tp-create-mode"><label class="eyebrow" for="mode-picker">Modo de jogo</label><select class="tp-mode-select" id="mode-picker" ${options?'':'disabled'}>${options||'<option>Sem modos habilitados</option>'}</select></div><div class="tp-actions tp-create-actions"><button type="button" class="btn btn-ghost" data-go="lobby">← Voltar</button><button type="button" class="btn btn-orange" data-action="create-lobby" ${options?'':'disabled'}>Criar sala</button></div></section></div>`,{noNav:true});
+    return mainContent(`<div class="matchmaking-wrap tp-create-room-wrap"><section class="panel mm-card tp-create-room-card tp-room-setup bn-match-choice">
+      <div class="eyebrow">Canal de combate</div><h2 class="form-title">Encontrar uma batalha</h2>
+      <p class="form-sub tp-setup-description">Escolha o modo e encontre outro jogador automaticamente, sem código.</p>
+      <div class="tp-create-mode"><label class="eyebrow" for="mode-picker">Modo de jogo</label>
+        <select class="tp-mode-select" id="mode-picker" ${options?'':'disabled'}>${options||'<option>Sem modos habilitados</option>'}</select></div>
+      <button type="button" class="btn btn-orange bn-search-button" data-action="find-public-match" ${options?'':'disabled'}>Buscar partida</button>
+      <div class="bn-match-separator"><span>ou jogue com amigos</span></div>
+      <button type="button" class="btn btn-ghost bn-private-button" data-action="create-lobby" ${options?'':'disabled'}>Criar sala com código</button>
+      <button type="button" class="bn-match-back" data-go="lobby">← Voltar ao lobby</button>
+    </section></div>`,{noNav:true});
   }
   // The backend only exposes name, avatar ID, connection and readiness.
   // The approved art also depicts level, wins and a countdown, none of which
@@ -303,14 +323,18 @@ function waitingScreen() {
       <button type="button" class="bn-room-close" data-action="leave-lobby" aria-label="Sair da sala" title="Sair da sala">×</button>
       <h1 id="bn-waiting-heading">Sala de espera</h1>
     </div>
-    <p class="bn-room-description">A batalha começa quando os dois capitães estiverem prontos.</p>
-    <button type="button" data-action="copy-code" class="bn-room-invite" aria-label="Copiar código da sala ${esc(room.code)}">
-      <span>Código da sala</span><strong>${esc(room.code)}</strong><span aria-hidden="true">⧉</span>
-    </button>
+    <p class="bn-room-description">${room.publicMatch
+      ? 'Adversário encontrado! Os dois capitães precisam marcar Pronto para posicionar a frota.'
+      : 'A batalha começa quando os dois capitães estiverem prontos.'}</p>
+    ${room.publicMatch
+      ? '<div class="bn-queue-found" role="status">Pareamento público · adversário encontrado</div>'
+      : `<button type="button" data-action="copy-code" class="bn-room-invite" aria-label="Copiar código da sala ${esc(room.code)}">
+          <span>Código da sala</span><strong>${esc(room.code)}</strong><span aria-hidden="true">⧉</span>
+        </button>`}
     <div class="bn-room-duel" aria-label="Capitães da sala">
-      ${playerCard(host,'Anfitrião')}
+      ${playerCard(host,room.publicMatch?'Jogador 1':'Anfitrião')}
       <div class="bn-room-versus" aria-hidden="true">VS</div>
-      ${playerCard(guest,'Convidado')}
+      ${playerCard(guest,room.publicMatch?'Jogador 2':'Convidado')}
     </div>
     <p class="bn-room-confirmation" role="status" aria-live="polite">
       <span>${other ? 'Confirmações' : 'Aguardando adversário'}</span>
