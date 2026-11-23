@@ -1,0 +1,90 @@
+/* Admin shares the same authenticated TidePoint shell and navigation. */
+body[data-route="admin"] .bn-admin-page {
+  max-width:960px;
+  width:min(100%,960px);
+  min-height:0;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  gap:clamp(12px,2.4vw,24px);
+  padding:clamp(12px,2vw,22px) 0;
+  color:#ebf8ff;
+}
+body[data-route="admin"] .bn-admin-page .bn-page-heading {text-align:left;}
+body[data-route="admin"] .bn-admin-eyebrow {
+  color:#75dcd6;
+  font:800 12px/1.2 'Barlow Condensed',sans-serif;
+  letter-spacing:.12em;
+}
+body[data-route="admin"] .bn-admin-page h1 {
+  font:900 clamp(25px,5vw,40px)/1.1 'Barlow Condensed',sans-serif;
+  color:#f8d777;
+  margin:4px 0;
+}
+body[data-route="admin"] .bn-admin-page p {
+  color:#c9dbe6;
+  font:500 clamp(12px,2.5vw,15px)/1.45 'Barlow',sans-serif;
+  margin:0;
+}
+body[data-route="admin"] .bn-admin-surface {
+  border:1px solid rgba(101,192,211,.5);
+  border-radius:15px;
+  padding:clamp(10px,2vw,20px);
+  background:rgba(5,19,28,.92);
+  display:grid;
+  gap:12px;
+  box-shadow:0 7px 32px #0005;
+}
+body[data-route="admin"] .bn-admin-section-header {
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+}
+body[data-route="admin"] .bn-admin-section-header h2{
+  color:#ebf8ff;
+  font:800 clamp(19px,3vw,26px)/1.2 'Barlow Condensed',sans-serif;
+  margin:0;
+}
+body[data-route="admin"] .bn-admin-refresh,
+body[data-route="admin"] .bn-admin-return {
+  border:1px solid rgba(130,210,218,.8);
+  border-radius:9px;
+  padding:9px 13px;
+  color:#ebfcff;
+  background:#103944;
+  font:700 14px 'Barlow',sans-serif;
+  cursor:pointer;
+}
+body[data-route="admin"] .bn-admin-return{align-self:flex-start;}
+body[data-route="admin"] .bn-admin-list{display:grid;gap:10px;}
+body[data-route="admin"] .bn-admin-mode{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:clamp(10px,2vw,24px);
+  border:1px solid rgba(108,178,195,.27);
+  background:rgba(26,49,62,.7);
+  border-radius:10px;
+  padding:clamp(10px,2vw,16px);
+}
+body[data-route="admin"] .bn-admin-mode-details{min-width:0;display:grid;gap:4px;}
+body[data-route="admin"] .bn-admin-mode-details h2{
+  font:800 clamp(16px,3vw,21px)/1.2 'Barlow Condensed',sans-serif;
+  margin:0;
+}
+body[data-route="admin"] .bn-admin-mode-details small{
+  color:#a8c3cc;font:500 11px/1.4 'Barlow',sans-serif;
+}
+body[data-route="admin"] .bn-admin-toggle{
+  flex:none;min-width:108px;min-height:43px;
+  border:1px solid #8db2ba;border-radius:9px;
+  background:#243c48;color:#f4faff;
+  padding:9px;
+  cursor:pointer;font:800 13px 'Barlow',sans-serif;
+}
+body[data-route="admin"] .bn-admin-toggle.is-enabled{
+  border-color:#83e1cf;background:#126657;color:#eefff9;
+}
+body[data-route="admin"] .bn-admin-toggle:disabled {opacity:.5;cursor:wait;}
+body[data-route="admin"] .bn-admin-feedback:empty {display:none;}
+body[data-route="admin"] .bn-admin-feedback {color:#b4e6e9;}
+@media(max-width:520px){
+  body[data-route="admin"] .bn-admin-mode {align-items:stretch;flex-direction:column;}
+  body[data-route="admin"] .bn-admin-toggle {width:100%;}
+}
