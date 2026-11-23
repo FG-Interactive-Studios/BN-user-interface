@@ -20,9 +20,10 @@ const shots=[
  {row:2,col:1,hit:true,sunkShip:'DESTROYER'},
  {row:3,col:0,hit:false}
 ];
+const enemyShots=[{row:4,col:4,hit:true},{row:5,col:5,hit:false},{row:5,col:6,hit:true,sunkShip:'DESTROYER'},{row:6,col:6,hit:false}];
 const makeBattle=winnerId=>({matchId:'abc-123',lobbyCode:'ABC123',status:'FINISHED',
- revision:40,mode,winnerId,turnPlayerId:null,finishReason:'ALL_SHIPS_SUNK',
- shotsFired:shots,shotsReceived:[],yourShips:[],reconnectDeadlines:{}});
+ revision:40,mode,winnerId,turnPlayerId:null,finishReason:winnerId==null?'TIME_LIMIT_DRAW':'TIME_LIMIT',
+ shotsFired:shots,shotsReceived:enemyShots,yourShips:[],reconnectDeadlines:{}});
 const server=await createServer({server:{host:'127.0.0.1',port:4183,strictPort:true},logLevel:'error'});
 await server.listen();
 const browser=await chromium.launch({headless:true});
@@ -75,8 +76,12 @@ try{
   assert.equal(await page.locator('#bn-result-title').innerText(),title);
   assert.equal(await page.locator('.bn-report-summary').count(),1);
   assert.equal(await page.locator('.bn-report-rewards').count(),1);
-  assert.equal(await page.locator('.bn-report-stats .bn-report-stat').count(),4);
-  assert.deepEqual(await page.locator('.bn-report-stat strong').allInnerTexts(),['4','3','57%','1']);
+  assert.equal(await page.locator('.bn-report-player').count(),2,'Both players must be present');
+  assert.equal(await page.locator('.bn-report-player.is-you .bn-report-player-name').innerText(),'Você');
+  assert.equal(await page.locator('.bn-report-player.is-rival .bn-report-player-name').innerText(),'MarinheiroX');
+  assert.deepEqual(await page.locator('.bn-report-player.is-you .bn-report-player-numbers b').allInnerTexts(),['4','3','57%','1']);
+  assert.deepEqual(await page.locator('.bn-report-player.is-rival .bn-report-player-numbers b').allInnerTexts(),['2','2','50%','1']);
+  assert.match(await page.locator('.bn-report-verdict').innerText(),/tempo terminou/i);
   assert.match(await page.locator('.bn-report-meta').innerText(),/Duração indisponível.*Clássico/);
   assert.equal(await page.locator('.bn-report-reward-item strong').first().innerText(),'—');
   assert.equal(await page.locator('.bn-report-reward-item strong').last().innerText(),'—');
