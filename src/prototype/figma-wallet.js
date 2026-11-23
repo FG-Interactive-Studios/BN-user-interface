@@ -1,6 +1,6 @@
 import {esc} from './board.js';
-import freeCoin from '../assets/figma/gold-coin.png';
-import paidCoin from '../assets/figma/blue-coin.png';
+const freeCoin=new URL('../assets/figma/gold-coin.png',import.meta.url).href;
+const paidCoin=new URL('../assets/figma/blue-coin.png',import.meta.url).href;
 
 const formatter = new Intl.NumberFormat('pt-BR', {maximumFractionDigits: 0});
 
