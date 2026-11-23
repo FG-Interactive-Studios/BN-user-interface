@@ -9,6 +9,7 @@ import { renderFigmaProfile } from './figma-profile.js';
 import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
 import { renderFigmaPlacement } from './figma-placement.js';
 import { renderZipBattle } from './zip-battle.js';
+import {planAbility, ABILITY_DIRECTIONS, abilityNeedsDirection, directionText} from './ability-targeting.js';
 import { shipArt } from './ship-art.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
@@ -21,7 +22,7 @@ const state = {
   modeId: 'classic', selected: null, draft: null, placementShip: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
-  skillMode: null, skillTargets: [], skillDialog: false,
+  skillMode: null, skillTargets: [], skillArea: [], skillAnchor: null, skillDirection: 'RIGHT', skillDialog: false,
   store: null, storeLoading: false, storeFilter: 'ALL', profileEditorOpen: false, profileSecurityOpen: false,
   preferences: loadPreferences(),
 };
@@ -330,6 +331,43 @@ function placementScreen(){
 function skillMeta(id) { return (state.battle?.yourAbilities||[]).find(a=>a.id===id); }
 function skillLimit(id){return Number(skillMeta(id)?.targetCount)||0;}
 function skillScope(id){return skillMeta(id)?.targetScope||'ENEMY';}
+function clearSkillTargeting(){
+  state.skillTargets=[];state.skillArea=[];state.skillAnchor=null;
+}
+function chooseAbilityTarget(anchor){
+  const plan=planAbility({ability:skillMeta(state.skillMode),anchor,mode:state.battle?.mode||activeMode(),battle:state.battle,direction:state.skillDirection});
+  if(!plan.valid)return plan;
+  state.skillAnchor=anchor;state.skillTargets=plan.targets;state.skillArea=plan.affected;
+  return plan;
+}
+function skillTargetSummary(){
+  if(!state.skillArea.length)return 'Toque numa casa para escolher a área.';
+  return state.skillArea.length===1?'1 casa afetada':state.skillArea.length+' casas afetadas';
+}
+function paintAbilityPreview(target){
+  const screen=root.querySelector('.bn-zip-battle');
+  if(!screen||!state.skillMode)return;
+  const board=target?.closest('.zip-own-board,.zip-primary-board');
+  const scope=board?.classList.contains('zip-own-board')?'OWN':'ENEMY';
+  const raw=target?.dataset.coord?.split(',').map(Number);
+  const plan=raw?.length===2&&skillScope(state.skillMode)===scope
+    ? planAbility({ability:skillMeta(state.skillMode),anchor:{row:raw[0],col:raw[1]},mode:state.battle?.mode||activeMode(),battle:state.battle,direction:state.skillDirection})
+    : null;
+  screen.querySelectorAll('.pilot-skill-preview,.pilot-skill-preview-origin,.pilot-skill-preview-destination').forEach(node=>{
+    node.classList.remove('pilot-skill-preview','pilot-skill-preview-origin','pilot-skill-preview-destination');
+  });
+  const readout=screen.querySelector('.zip-target-indicator b');
+  if(readout)readout.textContent=plan?.valid
+    ? plan.affected.length+' casas'
+    : plan?.reason||skillTargetSummary();
+  if(!plan?.valid||!board)return;
+  const affected=new Set(plan.affected.map(keyOf)),origin=new Set(plan.origin.map(keyOf)),destination=new Set(plan.destination.map(keyOf));
+  board.querySelectorAll('[data-cell]').forEach(node=>{
+    if(affected.has(node.dataset.cell))node.classList.add('pilot-skill-preview');
+    if(origin.has(node.dataset.cell))node.classList.add('pilot-skill-preview-origin');
+    if(destination.has(node.dataset.cell))node.classList.add('pilot-skill-preview-destination');
+  });
+}
 function skillDialogMarkup(){
   const abilities=state.battle?.yourAbilities||[];
   if(!abilities.length)return '';
@@ -352,7 +390,9 @@ function battleScreen(){
   const skillCount=skillLimit(state.skillMode);
   const radarResult=b.yourRadarReports?.at(-1);
   const skillControls=state.skillMode && activeAbility
-    ? `<div class='tp-pilot-skill-control' role='group' aria-label='Ativação de habilidade'><b>${esc(activeAbility.name)} · ${state.skillTargets.length}/${skillCount}</b><small>${esc(activeAbility.description)} ${skillCount?`· Selecione ${skillCount} casa(s) ${skillScope(state.skillMode)==='OWN'?'no seu mapa':'no mapa inimigo'}.`:'· Nenhum alvo necessário.'}</small><div class='tp-skill-commands'><button type='button' class='btn btn-orange' data-action='activate-ability' ${state.skillTargets.length===skillCount&&canAct&&!activeAbility.locked?'':'disabled'}>Ativar poder</button><button type='button' class='btn btn-ghost' data-action='cancel-ability'>Cancelar</button></div></div>` : '';
+    ? `<div class="zip-power-guide" role="status"><div class="zip-power-guide-copy"><b>${esc(activeAbility.name)}</b><small>${esc(activeAbility.description)} · ${skillCount===0?'Sem alvo necessário':skillTargetSummary()}</small></div>
+       ${abilityNeedsDirection(activeAbility.id)?`<button type="button" class="zip-power-direction" data-action="cycle-ability-direction" title="Alternar orientação ou direção">${esc(directionText(activeAbility.id,state.skillDirection))}</button>`:''}</div>`
+    : '';
   const reconnectDeadline=Object.values(b.reconnectDeadlines||{})[0]||'';
   const pausedOverlay=b.paused
     ? `<div class="bn-gdd-paused" role="status" aria-live="polite"><b>Aguardando reconexão...</b><small>A partida e o turno estão pausados.</small><small>Limite para reconectar: <strong data-deadline-at="${esc(reconnectDeadline)}">—</strong></small></div>`
@@ -365,7 +405,7 @@ function battleScreen(){
     : '';
   return renderZipBattle({
     battle:b, mode, opponent, own, enemy, myTurn, finished, canAct, selected,
-    skillTargets:state.skillTargets,
+    skillTargets:state.skillTargets, skillArea:state.skillArea,
     available, sunk, activeAbility, skillControls, activeEffects, radarInfo,
     clockStrip, pausedOverlay,
   }) + skillDialogMarkup();
@@ -444,14 +484,10 @@ function render(){ if (!root) return;
     route=resolvedRoute(route,true,state.lobby?.status);
     history.replaceState(null,'',`${location.pathname}${location.search}#${route}`);
   }
-  if(route!=='match'||state.battle?.status==='FINISHED'){state.skillMode=null;state.skillTargets=[];state.skillDialog=false;}
+  if(route!=='match'||state.battle?.status==='FINISHED'){state.skillMode=null;clearSkillTargeting();state.skillDialog=false;}
   const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen};
   root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
   if(route==='match'){
-    const chosen=new Set(state.skillTargets.map(keyOf));
-    root.querySelectorAll('.combat-screen [data-coord]').forEach(node=>{
-      if(chosen.has(node.dataset.coord))node.classList.add('pilot-skill-target');
-    });
     const dialog=root.querySelector('#tp-skill-dialog');
     if(state.skillDialog&&dialog&&!dialog.open)dialog.showModal();
   }
@@ -650,9 +686,21 @@ async function runAction(action,itemId=null) {
     case 'pick-ability':{
       const available=state.battle?.yourAbilities?.find(a=>a.id===itemId&&a.usesRemaining>0&&!a.locked);
       if(!available||state.battle?.turnPlayerId!==state.profile?.id||state.battle?.paused)break;
-      state.skillMode=available.id;state.skillTargets=[];state.skillDialog=false;state.selected=null;render();break;
+      state.skillMode=available.id;clearSkillTargeting();state.skillDirection='RIGHT';state.skillDialog=false;state.selected=null;render();break;
     }
-    case 'cancel-ability':state.skillMode=null;state.skillTargets=[];render();break;
+    case 'cancel-ability':state.skillMode=null;clearSkillTargeting();render();break;
+    case 'cycle-ability-direction':{
+      if(!abilityNeedsDirection(state.skillMode))break;
+      const directions=state.skillMode==='line-barrage'?['RIGHT','DOWN']:ABILITY_DIRECTIONS;
+      const index=directions.indexOf(state.skillDirection);
+      state.skillDirection=directions[(index+1)%directions.length];
+      if(state.skillAnchor){
+        const anchor=state.skillAnchor;
+        clearSkillTargeting();
+        if(!chooseAbilityTarget(anchor).valid)clearSkillTargeting();
+      }
+      render();break;
+    }
     case 'activate-ability':await guard(async()=>{
       if(!state.skillMode||state.skillTargets.length!==skillLimit(state.skillMode)
           ||skillMeta(state.skillMode)?.locked||state.battle?.turnPlayerId!==state.profile?.id||state.battle?.paused)return;
@@ -662,7 +710,7 @@ async function runAction(action,itemId=null) {
         abilityId:state.skillMode,targets:state.skillTargets,
       });
       syncAudio(currentRoute());
-      state.skillMode=null;state.skillTargets=[];state.selected=null;
+      state.skillMode=null;clearSkillTargeting();state.selected=null;
       notice(`${chosenName} ativada com sucesso.`);
       const last=state.battle.yourRadarReports?.at(-1);
       if(last&&state.battle.yourRadarReports.length>oldReports)
@@ -684,11 +732,8 @@ function selectCell(row,col,side='ENEMY'){
     if(state.battle?.turnPlayerId!==state.profile?.id||state.battle?.status!=='PLAYING'||state.battle?.paused) return;
     if(state.skillMode){
       if(skillScope(state.skillMode)!==side)return;
-      if(side==='ENEMY'&&state.battle.shotsFired.some(s=>s.row===row&&s.col===col&&!s.blocked))return;
-      const selected={row,col};
-      if(state.skillTargets.some(cell=>keyOf(cell)===keyOf(selected)))return;
-      const max=skillLimit(state.skillMode);
-      state.skillTargets=[...state.skillTargets.slice(0,Math.max(0,max-1)),selected];
+      const plan=chooseAbilityTarget({row,col});
+      if(!plan.valid){notice(plan.reason,true);return;}
       render();return;
     }
     if(side!=='ENEMY')return;
@@ -749,13 +794,30 @@ function bindEvents() {
   });
   root.addEventListener('click',event=>{
     const target=event.target.closest('[data-coord]');
-    if(target){const [row,col]=target.dataset.coord.split(',').map(Number);selectCell(row,col,target.closest('.combat-left-rail')?'OWN':'ENEMY');return;}
+    if(target){const [row,col]=target.dataset.coord.split(',').map(Number);selectCell(row,col,target.closest('.zip-own-board,.combat-left-rail')?'OWN':'ENEMY');return;}
     const action=event.target.closest('[data-action]');if(action){if(!action.disabled&&!['fire','activate-ability','toggle-setting'].includes(action.dataset.action))audio.play('ui_click');void runAction(action.dataset.action,action.dataset.abilityId||action.dataset.itemId);return;}
     const link=event.target.closest('[data-go]');if(link){audio.play('ui_click');go(link.dataset.go);}
   });
+  root.addEventListener('pointerover',event=>{
+    if(state.skillMode&&currentRoute()==='match'){
+      const cell=event.target.closest('[data-coord]');
+      if(cell)paintAbilityPreview(cell);
+    }
+  });
+  root.addEventListener('pointerout',event=>{
+    if(!state.skillMode||currentRoute()!=='match')return;
+    const cell=event.target.closest('[data-coord]');
+    if(cell&&cell!==event.relatedTarget?.closest?.('[data-coord]'))paintAbilityPreview(null);
+  });
+  root.addEventListener('focusin',event=>{
+    if(state.skillMode&&currentRoute()==='match'&&event.target.matches('[data-coord]'))paintAbilityPreview(event.target);
+  });
+  root.addEventListener('focusout',event=>{
+    if(state.skillMode&&currentRoute()==='match'&&event.target.matches('[data-coord]'))paintAbilityPreview(null);
+  });
   root.addEventListener('keydown',event=>{
     if((event.key==='Enter'||event.key===' ')&&event.target.matches('g[data-coord]')) {
-      event.preventDefault();const [r,c]=event.target.dataset.coord.split(',').map(Number);selectCell(r,c,event.target.closest('.combat-left-rail')?'OWN':'ENEMY');
+      event.preventDefault();const [r,c]=event.target.dataset.coord.split(',').map(Number);selectCell(r,c,event.target.closest('.zip-own-board,.combat-left-rail')?'OWN':'ENEMY');
     }
   });
   root.addEventListener('change',event=>{
