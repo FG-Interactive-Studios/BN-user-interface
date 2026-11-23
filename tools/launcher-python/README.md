@@ -12,10 +12,18 @@ Uma interface gráfica para Windows que busca **automaticamente as PRs abertas**
 4. Selecione a versão da interface e da API — `main` ou uma PR aberta. Clique em **Atualizar PRs** sempre que quiser consultar as novidades.
 5. Escolha a pasta de downloads (padrão: `%LOCALAPPDATA%\BatalhaNavalLauncherPython\workspace`). Ela será criada automaticamente.
 6. Escolha se deseja inicializar o Docker Desktop (quando necessário) e o PostgreSQL via Docker Compose. Clique em **Baixar e iniciar**.
-7. O launcher instala as dependências do frontend com `npm ci` e inicia a API (`SPRING_PROFILES_ACTIVE=local` e `mvnw.cmd spring-boot:run`) e o Vite. Abra `http://127.0.0.1:5173/` e faça cadastro/login normalmente.
+7. O launcher instala as dependências do frontend com `npm ci` e inicia a API (`SPRING_PROFILES_ACTIVE=local` e `mvnw.cmd spring-boot:run`) e o Vite. Ao iniciar uma API própria com suporte ao bootstrap local, o inicializador mostra um cartão **Conta administrativa · teste local** com e-mail `admin@admin.com`, senha inicial `admin` e botão **Copiar acesso**. Abra `http://127.0.0.1:5173/` para entrar.
 8. Para alternar entre PRs, use **Encerrar**, selecione a próxima e inicie novamente.
 
 **Você não precisa clonar os repositórios nem informar a pasta do backend.** O launcher baixa os dois automaticamente e guarda cada commit em seu próprio diretório. **Baixar versões** permite preparar os arquivos sem ligar os serviços.
+
+### Conta administrativa para testes locais
+
+A conta inicial é criada **pela API**, somente com o perfil Spring `local` e somente se o banco ainda não tiver administrador. O inicializador apenas apresenta o e-mail e a senha **iniciais** previstos pelo bootstrap, sem validar nem alterar a senha e sem provocar um segundo login.
+
+O cartão é mostrado **depois de API e frontend prontos**, somente quando o inicializador iniciou sua **própria API local** e reconheceu o bootstrap. Ele não aparece quando se reutiliza outra API ativa, quando o backend escolhido é uma versão anterior ou quando o bootstrap local foi desabilitado pelas variáveis `ADMIN_BOOTSTRAP_ENABLED` / `ADMIN_BOOTSTRAP_LOCAL_DEFAULT_ENABLED`.
+
+Se o banco já tinha outro administrador, a conta padrão pode não ter sido criada; se a senha foi alterada, use a senha atual. O botão **Copiar acesso** copia as credenciais iniciais para a área de transferência. O inicializador não grava a senha em `settings.json` nem em `launcher.log`. **Nunca reutilize essas credenciais fracas em produção ou em um servidor público.**
 
 ## O que o launcher faz internamente
 
