@@ -9,6 +9,7 @@ import { renderFigmaProfile } from './figma-profile.js';
 import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
 import { renderFigmaPlacement } from './figma-placement.js';
 import { renderZipBattle } from './zip-battle.js';
+import {renderAdminPanel} from './admin-panel.js';
 import {planAbility, ABILITY_DIRECTIONS, abilityNeedsDirection, directionText} from './ability-targeting.js';
 import { shipArt } from './ship-art.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
@@ -23,6 +24,7 @@ const state = {
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
   skillMode: null, skillTargets: [], skillArea: [], skillAnchor: null, skillDirection: 'RIGHT', skillDialog: false,
+  adminModes: null, adminLoading: false, adminError: '',
   store: null, storeLoading: false, storeFilter: 'ALL', profileEditorOpen: false, profileSecurityOpen: false,
   preferences: loadPreferences(),
 };
@@ -65,6 +67,7 @@ function currentRoute() { return decodeURIComponent(location.hash.slice(1).split
 function go(route) {
   route = resolvedRoute(route, api.isAuthenticated(), state.lobby?.status);
   if (route!=='profile') {state.profileEditorOpen=false;state.profileSecurityOpen=false;}
+  if(route==='admin'&&state.profile?.admin!==true)return notice('Área restrita a administradores.',true);
   if (currentRoute()===route) render(); else location.hash=route;
 }
 function nav(active='play') {
@@ -84,7 +87,7 @@ function header() {
     <div class="bn-header-actions">
       <span class="bn-connection-status" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span>
       <details class="tp-account-menu bn-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary>
-        <div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-go="settings">Configurações</button><button type="button" data-action="logout">Sair</button><a href="/admin">Administração</a></div>
+        <div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-go="settings">Configurações</button>${state.profile?.admin===true?'<button type="button" data-go="admin">Área administrativa</button>':''}<button type="button" data-action="logout">Sair</button></div>
       </details>
     </div>
   </header>`;
@@ -115,7 +118,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -245,7 +248,7 @@ function authForm(isRegister=false) {
       <form class="tp-form bn-auth-form" data-form="${isRegister?'register':'login'}">
         ${fields}
         <div class="bn-field"><label for="email">${isRegister?'E-mail':'E-mail'}</label><input id="email" name="email" type="email" autocomplete="email" placeholder="${isRegister?'Digite seu e-mail':'Seu e-mail'}" required maxlength="254" /></div>
-        <div class="bn-field"><label for="password">Senha</label><input id="password" name="password" type="password" autocomplete="${isRegister?'new-password':'current-password'}" placeholder="Digite sua senha" minlength="8" maxlength="72" required /></div>
+        <div class="bn-field"><label for="password">Senha</label><input id="password" name="password" type="password" autocomplete="${isRegister?'new-password':'current-password'}" placeholder="Digite sua senha" ${isRegister?'minlength="8"':''} maxlength="72" required /></div>
         ${isRegister?'<div class="bn-field"><label for="repeat">Confirmar senha</label><input id="repeat" name="repeat" type="password" autocomplete="new-password" placeholder="Confirme sua senha" minlength="8" maxlength="72" required /></div>':'<p class="bn-auth-help">Recuperação de senha em breve</p>'}
         <button type="submit" class="btn btn-primary bn-primary-button">${isRegister?'Criar conta':'Entrar'}</button>
       </form>
@@ -531,6 +534,32 @@ function profileScreen(){
 function settingsScreen(){
   return renderFigmaSettings(state.profile,state.preferences);
 }
+function adminScreen(){
+  if(state.profile?.admin!==true)
+    return mainContent(panel('Acesso restrito','Somente administradores podem acessar esta área.'),{noNav:true});
+  return mainContent(renderAdminPanel({modes:state.adminModes,loading:state.adminLoading,error:state.adminError}),{noNav:true});
+}
+async function loadAdminModes(){
+  if(!api.isAuthenticated()||state.profile?.admin!==true||state.adminLoading)return;
+  state.adminLoading=true;state.adminError='';
+  if(currentRoute()==='admin')render();
+  const userId=state.profile?.id;
+  try{
+    const modes=await api.get('/admin/game-modes');
+    if(!api.isAuthenticated()||state.profile?.id!==userId)return;
+    state.adminModes=modes;
+  }catch(error){
+    if(state.profile?.id!==userId)return;
+    state.adminError=error instanceof api.ApiError&&error.status===403
+      ? 'Acesso negado pela API. Sua conta não possui autorização administrativa.'
+      : error?.message||'Não foi possível consultar os modos.';
+  }finally{
+    if(state.profile?.id===userId){
+      state.adminLoading=false;
+      if(currentRoute()==='admin')render();
+    }
+  }
+}
 
 function roomExitDialog() {
   if (!state.roomExitNotice) return "";
@@ -552,7 +581,11 @@ function render(){ if (!root) return;
     history.replaceState(null,'',`${location.pathname}${location.search}#${route}`);
   }
   if(route!=='match'||state.battle?.status==='FINISHED'){state.skillMode=null;clearSkillTargeting();state.skillDialog=false;}
-  const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen};
+  if(route==='admin'&&state.profile?.admin!==true&&api.isAuthenticated()){
+    history.replaceState(null,'',`${location.pathname}${location.search}#lobby`);
+    route='lobby';
+  }
+  const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen,admin:adminScreen};
   root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
   if(route==='match'){
     const dialog=root.querySelector('#tp-skill-dialog');
@@ -616,6 +649,24 @@ async function handleForm(form) {
 
 async function runAction(action,itemId=null) {
   switch(action) {
+    case 'admin-refresh':
+      if(currentRoute()==='admin'&&state.profile?.admin===true){
+        state.adminModes=null;await loadAdminModes();
+      }
+      break;
+    case 'admin-toggle-mode':
+      if(currentRoute()!=='admin'||state.profile?.admin!==true||state.adminLoading)break;
+      {
+        const entry=state.adminModes?.find(m=>m.mode?.id===itemId);
+        if(!entry)break;
+        if(entry.enabled&&!confirm('Desabilitar '+entry.mode.name+' para novas salas? Partidas existentes continuarão.'))break;
+        await guard(async()=>{
+          const updated=await api.put('/admin/game-modes/'+encodeURIComponent(itemId)+'/availability',{enabled:!entry.enabled});
+          state.adminModes=(state.adminModes||[]).map(m=>m.mode?.id===itemId?updated:m);
+          notice('Disponibilidade de '+entry.mode.name+' atualizada.');
+        });
+      }
+      break;
     case 'toggle-setting': {
       if(currentRoute()!=='settings'||!settingKeys.includes(itemId))break;
       state.preferences=savePreferences({...state.preferences,[itemId]:!state.preferences[itemId]});
@@ -924,6 +975,7 @@ function bindEvents() {
     if(currentRoute()!=='profile'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
     render();
     if(currentRoute()==='store' && !state.store && !state.storeLoading) void loadStore();
+    if(currentRoute()==='admin'&&state.profile?.admin===true&&state.adminModes===null&&!state.adminLoading)void loadAdminModes();
   });
 }
 export function startTidepoint(element) {
