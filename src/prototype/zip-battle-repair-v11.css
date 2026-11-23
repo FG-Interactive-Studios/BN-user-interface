@@ -226,7 +226,7 @@ body[data-route="placement"] .bn-zip-placement .board-main .cell.ship {
  * No independent width/height clamps; avoid flex-shrunk non-square tracks. */
 @media (max-width:849px) {
   body[data-route="match"] .bn-zip-battle {
-    --zip-board-max:min(calc(100vw - 28px),calc(100dvh - 346px),520px);
+    --zip-board-max:min(calc(100vw - 28px),calc(100dvh - 360px),520px);
   }
   body[data-route="match"] .bn-zip-battle .zip-game-layout {
     grid-template-rows:auto auto minmax(0,1fr) auto!important;
@@ -255,7 +255,7 @@ body[data-route="placement"] .bn-zip-placement .board-main .cell.ship {
     display:grid!important;
     grid-template-columns:minmax(0,1fr) minmax(0,1.02fr)!important;
     gap:7px!important;
-    height:clamp(112px,20dvh,178px)!important;
+    height:clamp(156px,23dvh,190px)!important;
     flex:0 0 auto!important;
     min-width:0!important;
     overflow:visible!important;
@@ -270,7 +270,7 @@ body[data-route="placement"] .bn-zip-placement .board-main .cell.ship {
     font-size:clamp(13px,4vw,18px)!important;margin:0 0 2px!important;
   }
   body[data-route="match"] .bn-zip-battle .zip-own-board .board-preview {
-    width:min(100%,calc(20dvh - 34px),148px)!important;
+    width:min(100%,calc(22dvh - 18px),150px)!important;
     height:auto!important;
     grid-template-columns:9px repeat(var(--size),minmax(0,1fr))!important;
     grid-template-rows:9px repeat(var(--size),minmax(0,1fr))!important;
@@ -325,7 +325,7 @@ body[data-route="placement"] .bn-zip-placement .board-main .cell.ship {
 }
 @media (max-width:849px) and (max-height:630px) {
   body[data-route="match"] .bn-zip-battle {--zip-board-max:min(calc(100vw - 28px),calc(100dvh - 330px),520px);}
-  body[data-route="match"] .bn-zip-battle .zip-lower-section {height:110px!important;}
+  body[data-route="match"] .bn-zip-battle .zip-lower-section {height:clamp(125px,23dvh,140px)!important;}
   body[data-route="match"] .bn-zip-battle .zip-tactical-hint {display:none;}
   body[data-route="match"] .bn-zip-battle .zip-scoreboard {min-height:43px!important;padding:4px 6px!important;}
   body[data-route="match"] .bn-zip-battle .zip-battle-header {min-height:33px!important;}
