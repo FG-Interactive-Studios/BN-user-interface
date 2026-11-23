@@ -73,3 +73,6 @@
 
 /* Admin settings share the logged-in game's SPA/session. */
 @import './admin-panel.css';
+
+/* Approved lobby assets, API-backed dual wallet and green radar. */
+@import './figma-home-radar-final-v17.css';
