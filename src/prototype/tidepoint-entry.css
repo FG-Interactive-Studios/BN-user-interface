@@ -50,4 +50,6 @@
 
 /* Layout/mobile QA corrections and restored TidePoint board treatment. */
 @import './zip-battle-repair-v11.css';
-\n/* Two-board ZIP composition, without copying its mock game logic. */\n@import './zip-stacked-layout-v12.css';\n
+
+/* Two-board ZIP composition, without copying its mock game logic. */
+@import './zip-stacked-layout-v12.css';
