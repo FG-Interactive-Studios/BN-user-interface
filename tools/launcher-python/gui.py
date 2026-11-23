@@ -235,7 +235,7 @@ class LauncherApp:
             return
         hint = self.admin_hint
         self.root.clipboard_clear()
-        self.root.clipboard_append(f"E-mail: {hint.email}\\nSenha inicial: {hint.password}")
+        self.root.clipboard_append(f"E-mail: {hint.email}\nSenha inicial: {hint.password}")
         self.root.update_idletasks()
         self.set_status("Credenciais iniciais copiadas para a área de transferência.", GREEN)
 
