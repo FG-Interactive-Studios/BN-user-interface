@@ -9,12 +9,14 @@ const cell=(row,col)=>({row,col});
 const unique=xs=>[...new Map(xs.map(p=>[keyOf(p),p])).values()];
 const invalid=reason=>({valid:false,reason,targets:[],affected:[],origin:[],destination:[]});
 const accepted=(targets,affected,origin=[],destination=[])=>({valid:true,reason:'',targets,affected:unique(affected),origin,destination});
-export const abilityNeedsDirection=id=>id==='line-barrage'||id==='retreat';
+export const abilityNeedsDirection=id=>id==='line-barrage'||id==='air-strike'||id==='retreat';
 export const directionText=(id,direction)=>id==='line-barrage'
   ? (direction==='DOWN'||direction==='UP'?'Vertical ↕':'Horizontal ↔')
-  : ({RIGHT:'Direita →',DOWN:'Baixo ↓',LEFT:'Esquerda ←',UP:'Cima ↑'}[direction]||'Direita →');
+  : id==='air-strike'
+    ? ({RIGHT:'Sudeste ↘',DOWN:'Sudoeste ↙',LEFT:'Noroeste ↖',UP:'Nordeste ↗'}[direction]||'Sudeste ↘')
+    : ({RIGHT:'Direita →',DOWN:'Baixo ↓',LEFT:'Esquerda ←',UP:'Cima ↑'}[direction]||'Direita →');
 
-export function planAbility({ability,anchor,mode,battle,direction='RIGHT'}){
+export function planAbility({ability,anchor,mode,battle,direction='RIGHT',selectedTargets=[]}){
   if(!ability||!mode?.geometry?.cells?.length||!battle)return invalid('Dados da batalha indisponíveis.');
   const valid=new Set(mode.geometry.cells.map(keyOf));
   const inside=p=>valid.has(keyOf(p));
@@ -37,13 +39,23 @@ export function planAbility({ability,anchor,mode,battle,direction='RIGHT'}){
       return accepted([anchor],area);
     }
     case 'air-strike':{
-      const area=[anchor,cell(anchor.row,anchor.col+1),cell(anchor.row+1,anchor.col),cell(anchor.row+1,anchor.col+1)];
-      return area.every(inside)?accepted([anchor],area):invalid('A área de 2×2 deve caber inteira no mapa.');
+      // Backend always expects the TOP-LEFT of the 2x2 area.
+      // Rotation changes which quadrant surrounds the clicked anchor, not server mechanics.
+      const shifts={RIGHT:[0,0],DOWN:[0,-1],LEFT:[-1,-1],UP:[-1,0]};
+      const [dr,dc]=shifts[direction]||shifts.RIGHT;
+      const topLeft=cell(anchor.row+dr,anchor.col+dc);
+      const area=[topLeft,cell(topLeft.row,topLeft.col+1),
+        cell(topLeft.row+1,topLeft.col),cell(topLeft.row+1,topLeft.col+1)];
+      return area.every(inside)?accepted([topLeft],area):invalid('Gire o ataque para manter a área de 2×2 dentro do tabuleiro.');
     }
     case 'double-shot':{
-      const order=[direction,...ABILITY_DIRECTIONS.filter(d=>d!==direction)];
-      const next=order.map(d=>move(anchor,d)).find(free);
-      return next?accepted([anchor,next],[anchor,next]):invalid('Não há outra casa vizinha disponível.');
+      // Unlike line/area powers, the API allows TWO distinct arbitrary enemy cells.
+      // The second click is a real player choice, never fabricated by the frontend.
+      const first=selectedTargets.length===1?selectedTargets[0]:null;
+      if(!first)return accepted([anchor],[anchor]);
+      if(!free(first))return invalid('A primeira casa já foi atingida. Selecione outra.');
+      if(keyOf(first)===keyOf(anchor))return invalid('A segunda casa precisa ser diferente da primeira.');
+      return accepted([first,anchor],[first,anchor]);
     }
     case 'line-barrage':{
       const order=direction==='DOWN'||direction==='UP'?['DOWN','UP']:['RIGHT','LEFT'];
