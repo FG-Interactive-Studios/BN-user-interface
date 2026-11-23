@@ -4,7 +4,7 @@
 
 | Asset original | Intenção comprovada no ZIP | Estado da PR #15 após esta revisão | Prioridade |
 |---|---|---|---|
-| `bg.png` | Fundo principal da área de jogo via CSS | **Pendente**: o visual atual usa `storm.jpg`; precisa reproduzir composição final | P0 |
+| `bg.png` | Fundo principal da área de jogo via CSS | **Integrado** como `bg.webp` no posicionamento e combate | P0 |
 | `water-tile.png` | Fundo de cada célula do tabuleiro | **Integrado** como `water-tile.webp`, ambas as telas, substituindo gradiente genérico | P0 |
 | `cell-placed.png` | Células ocupadas por frota própria | **Integrado** como `cell-placed.webp`; não revela navios inimigos | P0 |
 | `cell-selected.png` | Retícula de alvo selecionado | **Integrado** como `cell-selected.webp`; funciona com tiro normal e marcação de poder | P0 |
@@ -12,7 +12,7 @@
 | `cell-miss.png` | Sobreposição de tiro na água | **Integrado** como `cell-miss.webp` | P0 |
 | `ship-sub.png` | Arte do submarino 1 casa usada nos cards do ZIP | **Pendente GD**: API chama a classe de 1 casa de `SEARCH`; confirmar com GD se pode ser esta representação | P1 |
 | `ship-battleship.png` | Arte do encouraçado 2 casas nos cards do ZIP | **Pendente GD**: API chama a classe de 2 casas de `DESTROYER`; confirmar associação visual | P1 |
-| `ship-carrier.png` | Arte do porta-aviões 5 casas nos cards do ZIP | **Pendente de integração**: mesmo tamanho e nome de classe, mas sprite ainda não renderizado nos cards | P1 |
+| `ship-carrier.png` | Arte do porta-aviões 5 casas nos cards do ZIP | **Integrado** como `ship-carrier.webp` no posicionamento e página da frota | P1 |
 | `Capitan/neutral.png` | Arquivo disponível no ZIP, **não referenciado por `App.tsx`** | **Pendente de definição**: precisa de ponto de uso aprovado para não inventar painel novo | P2 |
 
 ## Status técnico real
@@ -26,8 +26,8 @@
 ## Critérios antes de liberar o merge
 - [x] Usar imagens originais de textura/estado de célula, sem reconstruir ícones por CSS
 - [x] Incluir verificação automatizada de assinatura WebP e existência dos cinco arquivos no CI
-- [ ] Integrar `bg.png` como fundo do fluxo, com recorte semelhante à referência
-- [ ] Confirmar com GD o mapeamento das artes de uma e duas casas e incorporar as três imagens nos cards
+- [x] Integrar `bg.png` como fundo do fluxo, com recorte semelhante à referência
+- [ ] Confirmar com GD o mapeamento das artes de uma e duas casas; o porta-aviões já está no card
 - [ ] Reproduzir composição dos **dois tabuleiros** e bússola conforme ZIP, mantendo controles responsivos e backend autoritativo
 - [ ] Validar lado a lado screenshots no celular 320×568, 375×667, 390×844, 412×915 e desktop, incluindo textura, retículas e recortes dos navios
 - [ ] Confirmar com GD se e onde o capitão deve aparecer

@@ -9,6 +9,7 @@ import { renderFigmaProfile } from './figma-profile.js';
 import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
 import { renderFigmaPlacement } from './figma-placement.js';
 import { renderZipBattle } from './zip-battle.js';
+import { shipArt } from './ship-art.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
 import { compactEnemyContacts } from './mobile-presenters.js';
@@ -379,7 +380,7 @@ function fleetScreen(){
   const mode=activeMode()||state.modes[0];
   const ships=mode?.fleet||[];
   const catalogue=ships.length
-    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">⚓</span>
+    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">${shipArt(def.id)?`<img src="${shipArt(def.id)}" class="bn-fleet-thumb" alt="" loading="lazy" />`:'⚓'}</span>
        <div><strong>${esc(shipName(def.id))}</strong><small>${def.length} casas</small></div>
        <span class="bn-ship-status">Disponível</span></article>`).join('')
     : '<p class="bn-available-note">Nenhum modo de jogo habilitado no momento.</p>';

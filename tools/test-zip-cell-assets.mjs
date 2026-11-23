@@ -2,8 +2,8 @@ import {readFileSync,existsSync} from 'node:fs';
 import assert from 'node:assert/strict';
 
 const root=new URL('../public/assets/bn-zip/', import.meta.url);
-const names=['water-tile','cell-placed','cell-selected','cell-hit','cell-miss'];
-const css=readFileSync(new URL('../src/prototype/zip-battle-repair-v11.css',import.meta.url),'utf8');
+const names=['water-tile','cell-placed','cell-selected','cell-hit','cell-miss','bg','ship-carrier'];
+const css=['zip-battle-repair-v11.css','zip-approved-art-v13.css'].map(f=>readFileSync(new URL('../src/prototype/'+f,import.meta.url),'utf8')).join('\n');
 for (const basename of names) {
   const filename=basename+'.webp';
   const path=new URL(filename,root);
@@ -14,4 +14,6 @@ for (const basename of names) {
   assert.ok(data.length>40,`Empty ZIP reference artwork: ${filename}`);
   assert.ok(css.includes('/assets/bn-zip/'+filename),`Artwork not applied by CSS: ${filename}`);
 }
-console.log('ZIP cell-art assets OK: 5 verified WebP files referenced by the game');
+const map=readFileSync(new URL('../src/prototype/ship-art.js',import.meta.url),'utf8');
+assert.ok(map.includes('CARRIER:')&&!map.includes('DESTROYER:')&&!map.includes('SEARCH:'),'GD mapping not authorized');
+console.log('ZIP art assets OK: 7 verified WebP files, only carrier mapped');

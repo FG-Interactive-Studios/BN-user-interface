@@ -53,3 +53,6 @@
 
 /* Two-board ZIP composition, without copying its mock game logic. */
 @import './zip-stacked-layout-v12.css';
+
+/* ZIP background and carrier art, without changing GD class definitions. */
+@import './zip-approved-art-v13.css';

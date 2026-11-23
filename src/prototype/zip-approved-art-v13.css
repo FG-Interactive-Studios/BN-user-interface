@@ -1,0 +1,23 @@
+/* Original ZIP background and carrier, optimized WebP derivative files. */
+body[data-route="match"] .bn-zip-battle,
+body[data-route="placement"] .bn-zip-placement {
+  background:linear-gradient(180deg,rgba(4,16,24,.62),rgba(4,16,24,.3) 38%,rgba(2,14,20,.66)),
+    url('/assets/bn-zip/bg.webp') center top / cover no-repeat,#07151c!important;
+}
+body[data-route="placement"] .bn-placement-art-preview {
+  display:flex;align-items:center;justify-content:center;
+  flex:0 0 auto;width:100%;height:clamp(25px,4dvh,42px);
+}
+body[data-route="placement"] .bn-placement-art-preview img {
+  display:block;width:auto;height:100%;max-width:90%;object-fit:contain;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.55));
+}
+body[data-route="placement"] .bn-placement-art-preview+.bn-placement-ship-name {
+  font-size:clamp(10px,1.3vw,14px)!important;
+}
+.bn-fleet-page .bn-fleet-thumb {
+  width:30px;height:48px;max-width:100%;object-fit:contain;display:block;
+}
+@media (max-width:849px){
+  body[data-route="placement"] .bn-placement-art-preview {height:clamp(23px,3.5dvh,34px);}
+}
