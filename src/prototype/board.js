@@ -55,7 +55,7 @@ export function renderBoard(mode, { ships=[], hits=[], misses=[], markers=[], hi
         const hit=hitSet.has(key),miss=missSet.has(key);
         const cls=['cell',own.has(key)?'ship':'',hit?'hit':'',miss?'miss':'',markerSet.has(key)?'ability-point':'',highlightSet.has(key)?'pilot-skill-target':'',selectedKey===key?'target':''].filter(Boolean).join(' ');
         const allowed=interactive && !hit && !miss;
-        html += `<button type="button" class="${cls}" ${allowed?`data-coord="${key}"`: 'disabled'} aria-label="${coordLabel(cell)}${markerSet.has(key)?', ponto de habilidade':''}${hit?', acerto':miss?', água':''}" title="${coordLabel(cell)}">${markerSet.has(key)?'<span class="bn-gdd-point" aria-hidden="true">✦</span>':''}${selectedKey===key?'<span class="target-reticle" aria-hidden="true"><i></i></span>':''}</button>`;
+        html += `<button type="button" class="${cls}" data-cell="${key}" ${allowed?`data-coord="${key}"`: 'disabled'} aria-label="${coordLabel(cell)}${markerSet.has(key)?', ponto de habilidade':''}${hit?', acerto':miss?', água':''}" title="${coordLabel(cell)}">${markerSet.has(key)?'<span class="bn-gdd-point" aria-hidden="true">✦</span>':''}${selectedKey===key?'<span class="target-reticle" aria-hidden="true"><i></i></span>':''}</button>`;
       }
     }
     return html+'</div>';
@@ -75,6 +75,6 @@ export function renderBoard(mode, { ships=[], hits=[], misses=[], markers=[], hi
     const cx=tile.vertices.reduce((sum,p)=>sum+p.x,0)/tile.vertices.length;
     const cy=tile.vertices.reduce((sum,p)=>sum+p.y,0)/tile.vertices.length;
     const enabled=interactive&&!hit&&!miss;
-    return `<g class="${cls}" ${enabled?`data-coord="${k}" tabindex="0" role="button"`:'role="img"'} aria-label="${coordLabel(tile.cell)}"><polygon points="${points}"/><title>${coordLabel(tile.cell)}</title>${hit||miss||target?`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="0.55" pointer-events="none">${hit?'×':miss?'•':'◎'}</text>`:''}</g>`;
+    return `<g class="${cls}" data-cell="${k}" ${enabled?`data-coord="${k}" tabindex="0" role="button"`:'role="img"'} aria-label="${coordLabel(tile.cell)}"><polygon points="${points}"/><title>${coordLabel(tile.cell)}</title>${hit||miss||target?`<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="0.55" pointer-events="none">${hit?'×':miss?'•':'◎'}</text>`:''}</g>`;
   }).join('')}</svg>`;
 }
