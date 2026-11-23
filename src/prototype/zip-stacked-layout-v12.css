@@ -1,0 +1,376 @@
+/* ZIP battle layout v12. Match visual composition, not the sample's simulated mechanics.
+ * Two COMPLETE 8x8 boards, compass/timer between, ability and fire controls in one row.
+ * The backend remains authoritative for player/ship/time/power state.
+ */
+body[data-route="match"] .bn-zip-battle {
+  --zip-stack-board-side:min(31dvh,34vw,390px);
+  --zip-stack-gap:clamp(3px,.75dvh,8px);
+}
+body[data-route="match"] .bn-zip-battle .zip-game-layout {
+  width:min(100%,600px)!important;
+  max-width:600px!important;
+  grid-template-rows:auto auto minmax(0,1fr) auto!important;
+  min-height:0!important;
+  gap:var(--zip-stack-gap)!important;
+  padding:clamp(5px,.85dvh,9px) 10px calc(6px + env(safe-area-inset-bottom,0px))!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-battle-header {
+  min-height:37px!important;
+  grid-template-columns:45px minmax(0,1fr) minmax(80px,auto)!important;
+  gap:7px!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-battle-headline {
+  display:grid;gap:1px;min-width:0;text-align:center;
+  font-family:'Barlow Condensed',sans-serif;
+}
+body[data-route="match"] .bn-zip-battle .zip-battle-headline span {
+  color:#60d7cb;font:800 clamp(9px,1.4vw,12px)/1 'Barlow Condensed',sans-serif;
+  letter-spacing:.16em;
+}
+body[data-route="match"] .bn-zip-battle .zip-battle-headline strong {
+  color:#e6f7fa;font:800 clamp(18px,3.5vw,28px)/1 'Barlow Condensed',sans-serif;
+  text-transform:uppercase;white-space:nowrap;
+}
+body[data-route="match"] .bn-zip-battle .zip-battle-identity {
+  font:700 clamp(10px,1.5vw,12px)/1.2 'Barlow',sans-serif;
+  color:#abd2d8;text-align:right;
+}
+body[data-route="match"] .bn-zip-battle .zip-scoreboard {
+  min-height:0!important;padding:5px clamp(7px,1.4vw,12px)!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-battle-center {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr) auto minmax(0,1fr)!important;
+  align-items:stretch!important;
+  justify-items:center!important;
+  justify-content:stretch!important;
+  gap:var(--zip-stack-gap)!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  min-width:0!important;
+  overflow:hidden!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-enemy-section,
+body[data-route="match"] .bn-zip-battle .zip-own-section {
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  align-items:center!important;
+  gap:3px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-height:0!important;
+  padding:0!important;
+  border:0!important;
+  background:none!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-own-section h2 {display:none!important;}
+body[data-route="match"] .bn-zip-battle .zip-primary-board,
+body[data-route="match"] .bn-zip-battle .zip-own-board {
+  display:flex!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:visible!important;
+  padding:0!important;margin:0!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-primary-board .board-main,
+body[data-route="match"] .bn-zip-battle .zip-own-board .board-preview {
+  box-sizing:border-box!important;
+  display:grid!important;
+  flex:none!important;
+  width:var(--zip-stack-board-side)!important;
+  height:var(--zip-stack-board-side)!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:100%!important;
+  max-height:none!important;
+  aspect-ratio:1/1!important;
+  border:1px solid rgba(112,192,199,.55)!important;
+  border-radius:7px!important;
+  padding:3px!important;
+  gap:1px!important;
+  margin:0 auto!important;
+  grid-template-columns:clamp(10px,1.5vw,14px) repeat(var(--size),minmax(0,1fr))!important;
+  grid-template-rows:clamp(10px,1.5vw,14px) repeat(var(--size),minmax(0,1fr))!important;
+  box-shadow:0 5px 18px #0008,inset 0 0 12px #002235!important;
+  background:#08232c!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-own-board .board-preview .coord {font-size:clamp(7px,1.1vw,10px)!important;}
+body[data-route="match"] .bn-zip-battle .zip-board-heading {
+  min-height:13px;
+  color:#81ded9!important;
+  font:800 clamp(10px,1.5vw,12px)/1 'Barlow Condensed',sans-serif!important;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+}
+body[data-route="match"] .bn-zip-battle .zip-target-indicator {
+  min-height:12px!important;
+  font-size:10px!important;
+  line-height:1.1;
+}
+body[data-route="match"] .bn-zip-battle .zip-compass-divider {
+  width:min(100%,380px);
+  min-height:43px;
+  display:grid;
+  grid-template-columns:50px minmax(0,1fr) minmax(100px,auto);
+  align-items:center;
+  gap:7px;
+  padding:3px 8px;
+  border:1px solid rgba(86,165,175,.38);
+  border-radius:8px;
+  background:rgba(4,24,31,.88);
+  box-sizing:border-box;
+}
+body[data-route="match"] .bn-zip-battle .zip-compass-widget {
+  width:35px;height:35px;
+  border-radius:50%;
+  display:block;
+  position:relative;
+  background:radial-gradient(circle,#0c3943 15%,#072028);
+  border:2px solid rgba(85,218,204,.74);
+  box-shadow:0 0 11px #00151b;
+  transition:transform .45s ease,border-color .45s ease;
+}
+body[data-route="match"] .bn-zip-battle .zip-compass-widget.is-rival-turn {
+  transform:rotate(180deg);
+  border-color:#d8716c;
+}
+body[data-route="match"] .bn-zip-battle .zip-compass-north,
+body[data-route="match"] .bn-zip-battle .zip-compass-south {
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  color:#cde9eb;
+  font:800 7px/1 'Barlow',sans-serif;
+}
+body[data-route="match"] .bn-zip-battle .zip-compass-north {top:2px;color:#fb9795;}
+body[data-route="match"] .bn-zip-battle .zip-compass-south {bottom:2px;}
+body[data-route="match"] .bn-zip-battle .zip-compass-needle {
+  display:block;
+  position:absolute;top:8px;left:13px;
+  width:0;height:0;
+  border-left:3px solid transparent;
+  border-right:3px solid transparent;
+  border-bottom:16px solid #81dad2;
+  transform:rotate(180deg);
+  transform-origin:50% 8px;
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-status {display:grid;text-align:center;gap:1px;}
+body[data-route="match"] .bn-zip-battle .zip-turn-status small {
+  font:700 9px 'Barlow Condensed',sans-serif;color:#a5c1c4;letter-spacing:.1em;
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-status strong {
+  font:800 clamp(13px,2.3vw,18px) 'Barlow Condensed',sans-serif;color:#f1faf9;
+}
+body[data-route="match"] .bn-zip-battle .zip-round-clocks .bn-match-clock-strip {
+  display:flex!important;flex-direction:column!important;align-items:flex-end!important;
+  font-size:clamp(9px,1.5vw,11px)!important;
+  line-height:1.25!important;gap:2px!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-round-clocks b {
+  color:#70e4dc;font-variant-numeric:tabular-nums;
+}
+body[data-route="match"] .bn-zip-battle .zip-battle-footer {
+  position:relative;z-index:45;
+  width:100%!important;
+  min-height:48px;
+}
+body[data-route="match"] .bn-zip-battle .zip-battle-action-bar {
+  display:grid!important;
+  grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)!important;
+  align-items:stretch!important;
+  gap:9px!important;
+  width:100%!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-tactics-section {
+  display:block!important;
+  width:100%;min-width:0;min-height:0!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-abilities-menu,
+body[data-route="match"] .bn-zip-battle .zip-abilities-menu>summary {
+  width:100%!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-abilities-menu>summary {
+  min-height:48px!important;height:100%!important;
+  background:rgba(8,28,36,.98)!important;
+  border:1px solid rgba(87,197,203,.7)!important;
+  border-radius:8px!important;
+  padding:7px 9px!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-abilities-menu>summary span:first-child {
+  font:800 clamp(16px,2.7vw,21px)/1 'Barlow Condensed',sans-serif;
+}
+body[data-route="match"] .bn-zip-battle .zip-abilities-menu .zip-abilities-options {
+  left:0!important;right:auto!important;
+  bottom:calc(100% + 6px)!important;top:auto!important;
+  width:min(320px,calc(100vw - 20px))!important;
+  max-height:min(53dvh,450px)!important;
+  z-index:280!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-tactical-hint,
+body[data-route="match"] .bn-zip-battle .zip-active-power {display:none!important;}
+body[data-route="match"] .bn-zip-battle .zip-fire-button {
+  width:100%!important;
+  height:48px!important;
+  min-height:48px!important;
+  padding:4px 5px!important;
+  margin:0!important;
+  border:1px solid #e89791!important;
+  border-radius:8px!important;
+  color:#fff!important;
+  background:linear-gradient(160deg,#d8514b,#a72f32)!important;
+  box-shadow:inset 0 1px #ffd3cb35,0 3px 14px #0009!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-fire-button:disabled {
+  background:linear-gradient(160deg,#813c3b,#662c32)!important;
+  color:#e7d2d1!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-fire-button strong {
+  font:800 clamp(17px,3vw,24px)/1 'Barlow Condensed',sans-serif!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-fire-button small {font-size:9px!important;}
+body[data-route="match"] .bn-zip-battle .zip-battle-context:not(:empty) {
+  display:grid;
+  position:absolute;
+  bottom:calc(100% + 7px);
+  left:0;right:0;
+  max-height:min(33dvh,200px);
+  overflow:auto;
+  gap:4px;
+  padding:5px;
+  background:rgba(5,28,35,.98);
+  border:1px solid #468a92;
+  border-radius:8px;
+  box-shadow:0 7px 19px #0009;
+  z-index:250;
+}
+@media (max-width:849px) {
+  body[data-route="match"] .bn-zip-battle {
+    --zip-stack-board-side:min(calc((100dvh - 260px)/2),calc(100vw - 28px),250px);
+    --zip-stack-gap:clamp(2px,.7dvh,5px);
+  }
+  body[data-route="match"] .bn-zip-battle .zip-game-layout {
+    width:100%!important;padding:5px 7px calc(5px + env(safe-area-inset-bottom,0px))!important;
+    gap:var(--zip-stack-gap)!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-battle-header {
+    min-height:33px!important;
+    grid-template-columns:34px minmax(0,1fr) minmax(55px,auto)!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-battle-headline strong {font-size:clamp(17px,5vw,22px)!important;}
+  body[data-route="match"] .bn-zip-battle .zip-battle-identity {font-size:9px;}
+  body[data-route="match"] .bn-zip-battle .zip-scoreboard {
+    min-height:40px!important;padding:4px 7px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-score-side strong {font-size:clamp(14px,3.8vw,19px);}
+  body[data-route="match"] .bn-zip-battle .zip-score-side small {font-size:clamp(8px,2vw,9px);}
+  body[data-route="match"] .bn-zip-battle .zip-score-value {font-size:16px;}
+  body[data-route="match"] .bn-zip-battle .zip-own-board .board-preview,
+  body[data-route="match"] .bn-zip-battle .zip-primary-board .board-main {
+    width:var(--zip-stack-board-side)!important;
+    height:var(--zip-stack-board-side)!important;
+    grid-template-columns:10px repeat(var(--size),minmax(0,1fr))!important;
+    grid-template-rows:10px repeat(var(--size),minmax(0,1fr))!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-compass-divider {
+    min-height:40px!important;grid-template-columns:43px minmax(0,1fr) minmax(96px,auto);
+    gap:4px;padding:2px 5px;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-battle-action-bar {gap:6px!important;}
+  body[data-route="match"] .bn-zip-battle .zip-abilities-menu>summary {
+    min-height:46px!important;padding:6px 7px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-fire-button {
+    min-height:46px!important;height:46px!important;
+  }
+}
+@media (max-height:600px) and (max-width:849px) {
+  body[data-route="match"] .bn-zip-battle {
+    --zip-stack-board-side:min(calc((100dvh - 254px)/2),calc(100vw - 28px),250px);
+  }
+  body[data-route="match"] .bn-zip-battle .zip-compass-divider {
+    min-height:36px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-board-heading {min-height:11px;font-size:9px!important;}
+  body[data-route="match"] .bn-zip-battle .zip-target-indicator {min-height:10px;}
+}
+
+/* The supplied ZIP is a portrait composition. On desktop, adapt the SAME
+ * two authoritative boards side-by-side so the game does not float as a
+ * tiny phone-sized column in a 1366px window. Mobile remains stacked. */
+@media (min-width:850px) {
+  body[data-route="match"] .bn-zip-battle {
+    --zip-stack-board-side:min(54dvh,32vw,420px);
+    --zip-stack-gap:clamp(10px,1.3vw,18px);
+  }
+  body[data-route="match"] .bn-zip-battle .zip-game-layout {
+    width:min(100%,1140px)!important;
+    max-width:1140px!important;
+    padding:clamp(9px,1.6dvh,17px) clamp(12px,2vw,25px) 10px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-battle-center {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(118px,160px) minmax(0,1fr)!important;
+    grid-template-rows:minmax(0,1fr)!important;
+    align-items:center!important;
+    justify-items:center!important;
+    gap:var(--zip-stack-gap)!important;
+    overflow:visible!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-enemy-section,
+  body[data-route="match"] .bn-zip-battle .zip-own-section {
+    min-height:0!important;
+    width:100%!important;
+    justify-content:center!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-primary-board .board-main,
+  body[data-route="match"] .bn-zip-battle .zip-own-board .board-preview {
+    width:var(--zip-stack-board-side)!important;
+    height:var(--zip-stack-board-side)!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-compass-divider {
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:clamp(10px,1.5dvh,17px)!important;
+    width:min(100%,150px)!important;
+    min-width:0!important;
+    min-height:200px!important;
+    height:auto!important;
+    padding:15px 6px!important;
+    border-radius:12px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-compass-widget {
+    width:55px!important;height:55px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-compass-north {font-size:10px!important;top:4px;}
+  body[data-route="match"] .bn-zip-battle .zip-compass-south {font-size:10px!important;bottom:4px;}
+  body[data-route="match"] .bn-zip-battle .zip-compass-needle {
+    top:13px!important;left:23px!important;
+    border-left-width:4px!important;
+    border-right-width:4px!important;
+    border-bottom-width:25px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-round-clocks .bn-match-clock-strip {
+    align-items:center!important;text-align:center!important;font-size:12px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-board-heading {
+    font-size:clamp(13px,1.4vw,17px)!important;min-height:19px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-target-indicator {
+    font-size:12px!important;min-height:17px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-battle-footer {
+    max-width:min(100%,660px)!important;margin-inline:auto!important;
+  }
+}

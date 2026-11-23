@@ -1,0 +1,185 @@
+/* v14: actionable turn status instead of an ambiguous rotating compass.
+ * Keep the REST/WebSocket turn authority, timers and battle layout untouched.
+ */
+body[data-route="match"] .bn-zip-battle .zip-turn-panel {
+  --turn-accent:#79ebd7;
+  --turn-border:rgba(102,227,208,.77);
+  --turn-shade:rgba(8,64,70,.96);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:clamp(6px,1vw,13px);
+  box-sizing:border-box;
+  min-width:0;
+  width:min(100%,380px);
+  min-height:62px;
+  padding:7px 10px;
+  border:1px solid var(--turn-border);
+  border-left:4px solid var(--turn-accent);
+  border-radius:10px;
+  background:linear-gradient(115deg,var(--turn-shade),rgba(4,23,33,.96));
+  box-shadow:0 5px 19px rgba(0,0,0,.4),inset 0 1px rgba(255,255,255,.06);
+  color:#f1fafd;
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-panel.is-opponent-turn {
+  --turn-accent:#ffb67b;
+  --turn-border:rgba(239,153,97,.72);
+  --turn-shade:rgba(68,38,34,.97);
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-panel.is-paused {
+  --turn-accent:#f8d88a;
+  --turn-border:rgba(227,191,113,.7);
+  --turn-shade:rgba(69,53,29,.95);
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-panel.is-finished {
+  --turn-accent:#b9ccd9;
+  --turn-border:rgba(163,184,196,.58);
+  --turn-shade:rgba(33,47,60,.96);
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-copy {
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+  line-height:1.13;
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-eyebrow {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:var(--turn-accent);
+  font:800 clamp(9px,1.35vw,11px)/1.1 'Barlow Condensed',sans-serif;
+  letter-spacing:.13em;
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-signal {
+  display:block;
+  flex:none;
+  height:7px;width:7px;
+  border-radius:50%;
+  background:var(--turn-accent);
+  box-shadow:0 0 0 3px rgba(255,255,255,.05),0 0 12px var(--turn-accent);
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-panel.is-your-turn .zip-turn-signal {
+  animation:zip-turn-pulse 1.7s ease-in-out infinite;
+}
+@keyframes zip-turn-pulse {
+  50% {opacity:.55;box-shadow:0 0 0 5px rgba(121,235,215,.09),0 0 13px var(--turn-accent);}
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-headline {
+  display:block;
+  color:#f6fcff;
+  font:900 clamp(18px,3.1vw,25px)/1 'Barlow Condensed',sans-serif;
+  letter-spacing:.015em;
+  text-wrap:balance;
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-hint {
+  display:block;
+  color:#c9e0e6;
+  font:500 clamp(9px,1.35vw,11px)/1.15 'Barlow',sans-serif;
+  text-wrap:balance;
+}
+body[data-route="match"] .bn-zip-battle .zip-round-clocks {
+  display:grid;
+  flex:none;
+  align-items:center;
+  justify-items:end;
+  min-width:74px;
+  color:#e6f5f7;
+}
+body[data-route="match"] .bn-zip-battle .zip-round-clocks .bn-match-clock-strip {
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-end!important;
+  gap:3px!important;
+  line-height:1.1!important;
+}
+body[data-route="match"] .bn-zip-battle .bn-clock-turn {
+  display:grid;
+  gap:1px;
+  text-align:right;
+}
+body[data-route="match"] .bn-zip-battle .bn-clock-turn small {
+  font:700 9px/1 'Barlow Condensed',sans-serif;
+  color:#c2dfe4;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+}
+body[data-route="match"] .bn-zip-battle .bn-clock-turn b {
+  color:var(--turn-accent)!important;
+  font:900 clamp(19px,2.8vw,27px)/1 'Barlow Condensed',sans-serif;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 10px rgba(0,0,0,.45);
+}
+body[data-route="match"] .bn-zip-battle .bn-clock-turn b.bn-clock-warning {
+  color:#ff916c!important;
+}
+body[data-route="match"] .bn-zip-battle .bn-clock-match {
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  color:#bdd1d7;
+  font:600 10px/1.1 'Barlow',sans-serif;
+}
+body[data-route="match"] .bn-zip-battle .bn-clock-match small {font:inherit;}
+body[data-route="match"] .bn-zip-battle .bn-clock-match b {
+  color:#eef9fb;
+  font-variant-numeric:tabular-nums;
+  font-weight:800;
+}
+body[data-route="match"] .bn-zip-battle[data-turn="opponent-turn"] .zip-primary-board .board-main,
+body[data-route="match"] .bn-zip-battle[data-turn="paused"] .zip-primary-board .board-main {
+  border-color:rgba(111,149,160,.42)!important;
+  box-shadow:0 5px 14px #0008,inset 0 0 12px #001a25!important;
+}
+body[data-route="match"] .bn-zip-battle[data-turn="opponent-turn"] .zip-fire-button:disabled,
+body[data-route="match"] .bn-zip-battle[data-turn="paused"] .zip-fire-button:disabled {
+  opacity:.72;
+}
+@media (max-width:849px) {
+  body[data-route="match"] .bn-zip-battle .zip-turn-panel {
+    width:min(100%,380px);
+    min-height:64px;
+    padding:7px 9px;
+    gap:6px;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-turn-headline {
+    font-size:clamp(17px,4.6vw,23px);
+  }
+  body[data-route="match"] .bn-zip-battle .zip-turn-hint {
+    font-size:clamp(9px,2.4vw,11px);
+  }
+  body[data-route="match"] .bn-zip-battle .zip-round-clocks {min-width:74px;}
+  body[data-route="match"] .bn-zip-battle .bn-clock-turn b {font-size:clamp(19px,5vw,24px);}
+}
+@media (max-width:349px) {
+  body[data-route="match"] .bn-zip-battle .zip-turn-panel {padding:5px 7px;min-height:58px;gap:5px;}
+  body[data-route="match"] .bn-zip-battle .zip-turn-headline {font-size:17px;}
+  body[data-route="match"] .bn-zip-battle .zip-turn-hint {font-size:9px;}
+  body[data-route="match"] .bn-zip-battle .zip-round-clocks {min-width:68px;}
+  body[data-route="match"] .bn-zip-battle .bn-clock-turn small {font-size:8px;}
+}
+@media (min-width:850px) {
+  body[data-route="match"] .bn-zip-battle .zip-turn-panel {
+    width:min(100%,160px);
+    min-height:204px;
+    padding:14px 9px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:13px;
+    text-align:center;
+    border-left:1px solid var(--turn-border);
+    border-top:4px solid var(--turn-accent);
+  }
+  body[data-route="match"] .bn-zip-battle .zip-turn-copy {align-items:center;gap:6px;}
+  body[data-route="match"] .bn-zip-battle .zip-turn-eyebrow {justify-content:center;}
+  body[data-route="match"] .bn-zip-battle .zip-turn-headline {font-size:clamp(22px,2vw,27px);}
+  body[data-route="match"] .bn-zip-battle .zip-turn-hint {font-size:11px;}
+  body[data-route="match"] .bn-zip-battle .zip-round-clocks {justify-items:center;}
+  body[data-route="match"] .bn-zip-battle .zip-round-clocks .bn-match-clock-strip {align-items:center!important;}
+  body[data-route="match"] .bn-zip-battle .bn-clock-turn {text-align:center;}
+  body[data-route="match"] .bn-zip-battle .bn-clock-turn b {font-size:27px;}
+}
+@media (prefers-reduced-motion:reduce) {
+  body[data-route="match"] .bn-zip-battle .zip-turn-signal {animation:none!important;}
+}

@@ -1,4 +1,5 @@
 import {esc} from './board.js';
+import {buildMatchReport} from './match-report.js';
 
 /**
  * Post-battle artboard from the approved Figma PDF.
@@ -6,8 +7,8 @@ import {esc} from './board.js';
  * Leaves the battle board, lobby and other pages unchanged.
  */
 export function renderFigmaResult({battle,profile,lobby}) {
-  const won=battle.winnerId===profile?.id;
-  const draw=battle.winnerId==null;
+  const report=buildMatchReport(battle,profile?.id);
+  const {won,draw}=report;
   const outcome=draw?'draw':won?'victory':'defeat';
   const title=draw?'Empate!':won?'Vitória!':'Derrota';
   const opponent=lobby?.players?.find(player=>player.id!==profile?.id)?.nickname;
@@ -17,16 +18,20 @@ export function renderFigmaResult({battle,profile,lobby}) {
     : draw ? 'A batalha terminou empatada.'
     : `A batalha contra ${opponentLabel} terminou.`;
 
-  const shots=battle.shotsFired||[];
-  const hits=shots.filter(shot=>shot.hit).length;
-  const errors=shots.length-hits;
-  const accuracy=shots.length?Math.round(hits/shots.length*100):0;
-  const sunk=new Set(shots.filter(s=>s.sunkShip).map(s=>s.sunkShip)).size;
-  // The real API has no round start/end timestamps or reward balance. These
-  // parts of the approved visual must stay present but without fake values.
+  // The server provides two perspectives: shotsFired (you) and shotsReceived (opponent).
   const gameMode=esc(battle.mode?.name||'Modo de jogo');
-  const stat=(amount,label,tone)=>`<div class="bn-report-stat ${tone}"><strong>${amount}</strong><span>${label}</span></div>`;
-
+  const playerRow=(label,stats,isYou)=>`<div class="bn-report-player ${isYou?'is-you':'is-rival'}">
+    <strong class="bn-report-player-name">${esc(label)}</strong>
+    <div class="bn-report-player-numbers">
+      <span><b>${stats.hits}</b><small>Acertos</small></span>
+      <span><b>${stats.misses}</b><small>Erros</small></span>
+      <span><b>${stats.accuracy}%</b><small>Precisão</small></span>
+      <span><b>${stats.sunk}</b><small>Navios</small></span>
+    </div>
+  </div>`;
+  const sharedNote=report.comparable
+    ? '<span class="bn-report-equal-stats"> Os acertos e erros foram iguais, mas a condição de encerramento definiu o vencedor.</span>'
+    : '';
   return `<div class="screen bn-result-stage is-${outcome}">
     <main class="bn-result-viewport" aria-label="Resultado da partida">
       <header class="bn-report-hero">
@@ -38,12 +43,11 @@ export function renderFigmaResult({battle,profile,lobby}) {
       <div class="bn-report-panels">
         <section class="bn-report-panel bn-report-summary" aria-labelledby="bn-result-summary">
           <h2 id="bn-result-summary">Resumo da partida</h2>
-          <div class="bn-report-stats">
-            ${stat(hits,'Acertos','positive')}
-            ${stat(errors,'Erros','negative')}
-            ${stat(accuracy+'%','Precisão','positive')}
-            ${stat(sunk,'Navios destruídos','positive')}
+          <div class="bn-report-stats" aria-label="Comparação dos jogadores">
+            ${playerRow('Você',report.player,true)}
+            ${playerRow(opponent||'Adversário',report.rival,false)}
           </div>
+          <p class="bn-report-verdict" aria-live="polite">${esc(report.reason)}${sharedNote}</p>
           <p class="bn-report-meta">Duração indisponível <span aria-hidden="true">·</span> ${gameMode}</p>
         </section>
 

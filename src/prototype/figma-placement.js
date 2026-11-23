@@ -1,4 +1,5 @@
 import { esc, renderBoard, shipName } from './board.js';
+import { shipArt } from './ship-art.js';
 
 /** Figma "Sua frota" layout; the existing board renderer/CSS remain authoritative. */
 const iconRotate = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 1-2.35-5.65"/><path d="M20 4v6h-6"/></svg>`;
@@ -31,11 +32,13 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
     const state = isChosen ? 'Selecionado' : isPlaced ? 'Posicionado' : 'Pendente';
     const stateClass = isChosen ? 'selected' : isPlaced ? 'positioned' : 'pending';
     const segments = Array.from({ length: def.length }, () => '<i></i>').join('');
+    const artwork = shipArt(def.id);
+    const preview = artwork ? `<span class="bn-placement-art-preview"><img src="${artwork}" alt="" aria-hidden="true" loading="lazy" /></span>` : `<span class="bn-placement-segments" aria-hidden="true">${segments}</span>`;
     return `<button type="button" class="bn-placement-ship ${isChosen?'is-selected':''}"
       data-action="select-placement-ship" data-item-id="${esc(def.id)}"
       aria-pressed="${isChosen}" aria-label="${esc(displayShipName(def.id))}, ${state}"
       ${!canManual?'disabled':''}>
-      <span class="bn-placement-segments" aria-hidden="true">${segments}</span>
+      ${preview}
       <span class="bn-placement-ship-name">${esc(displayShipName(def.id))}</span>
       <span class="bn-placement-ship-status ${stateClass}">${state}</span>
     </button>`;

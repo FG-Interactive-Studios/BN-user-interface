@@ -3,7 +3,7 @@ import { esc, coordLabel, renderBoard } from './board.js';
 /** ZIP reference: visual composition only. The backend still controls all battle rules. */
 export function renderZipBattle({
   battle, mode, opponent, own, enemy, myTurn, finished, canAct,
-  selected, skillTargets=[], available, sunk, activeAbility, skillControls,
+  selected, skillTargets=[], skillArea=[], available, sunk, activeAbility, skillControls,
   activeEffects, radarInfo, clockStrip, pausedOverlay
 }) {
   const ownLost = new Set((battle.shotsReceived || []).filter(shot => shot.sunkShip).map(shot => shot.sunkShip)).size;
@@ -15,6 +15,12 @@ export function renderZipBattle({
   const usefulAbilities = abilities.filter(ability => ability.usesRemaining > 0 && !ability.locked).length;
   const abilityCredits = Number(battle.yourAbilityPointsEarned) || 0;
   const aimingForOwnBoard = activeAbility?.targetScope === 'OWN';
+  const turnState = finished ? 'finished' : battle.paused ? 'paused' : myTurn ? 'your-turn' : 'opponent-turn';
+  const turnTitle = finished ? 'PARTIDA ENCERRADA' : battle.paused ? 'PARTIDA PAUSADA' : myTurn ? 'SEU TURNO' : 'TURNO DO ADVERSÁRIO';
+  const turnHint = finished ? 'Confira o resultado da partida' : battle.paused ? 'Aguardando reconexão' :
+    myTurn ? activeAbility ? activeAbility.id==='double-shot' ? 'Escolha duas casas para o tiro duplo' : 'Escolha uma casa e confirme a habilidade' : 'Escolha um alvo ou use uma habilidade' : 'Aguarde a jogada do oponente';
+  const fireHint = finished ? 'Partida encerrada' : battle.paused ? 'Partida pausada' :
+    myTurn ? selected ? `Alvo ${coordLabel(selected)}` : 'Selecione uma casa' : 'Aguardando oponente';
 
   const powers = abilities.length
     ? abilities.map(ability => {
@@ -29,7 +35,7 @@ export function renderZipBattle({
     }).join('')
     : '<p class="zip-no-powers">Este modo não possui habilidades disponíveis.</p>';
 
-  return `<div class="screen combat-screen bn-zip-battle">
+  return `<div class="screen combat-screen bn-zip-battle" data-turn="${turnState}" data-skill-scope="${activeAbility?.targetScope||'NONE'}">
     <main class="zip-game-layout" aria-label="Batalha naval em andamento">
       <header class="zip-battle-header">
         <details class="zip-battle-menu">
@@ -39,11 +45,8 @@ export function renderZipBattle({
             <button type="button" data-action="forfeit" ${finished ? 'disabled' : ''}>Desistir da partida</button>
           </div>
         </details>
-        <div class="zip-turn-indicator ${myTurn && !finished ? 'is-your-turn' : ''}" role="status" aria-live="polite">
-          <span class="zip-compass" aria-hidden="true">✥</span>
-          <strong>${finished ? 'Batalha concluída' : battle.paused ? 'Partida pausada' : myTurn ? 'Sua vez!' : 'Vez do rival'}</strong>
-        </div>
-        <div class="zip-match-timers" aria-label="Temporizadores oficiais da partida">${clockStrip || '<span>Encerrada</span>'}</div>
+        <div class="zip-battle-headline"><span>COMBATE NAVAL</span><strong>Batalha em curso</strong></div>
+        <div class="zip-battle-identity" aria-label="Estado do confronto">${finished ? 'Concluída' : 'Em andamento'}</div>
       </header>
 
       <section class="zip-scoreboard" aria-label="Placar da partida">
@@ -60,55 +63,68 @@ export function renderZipBattle({
 
       <div class="zip-battle-center">
         <section class="zip-enemy-section" aria-label="Tabuleiro de ataque">
-          <div class="zip-board-heading">Tabuleiro do oponente · ${canAct ? 'toque para mirar' : 'aguarde seu turno'}</div>
+          <div class="zip-board-heading">Tabuleiro do oponente · ${canAct ? 'toque para mirar' : finished ? 'partida encerrada' : battle.paused ? 'partida pausada' : 'aguarde o oponente'}</div>
           <div class="zip-primary-board">
             ${renderBoard(mode, {
               hits: enemy.hits, misses: enemy.misses,
               selected: activeAbility ? null : selected,
-              highlights: activeAbility && !aimingForOwnBoard ? skillTargets : [],
+              highlights: activeAbility && !aimingForOwnBoard ? skillArea : [],
               interactive: canAct && (!activeAbility || activeAbility.targetScope !== 'OWN')
             })}
           </div>
-          <div class="zip-target-indicator" aria-live="polite">${activeAbility ? 'Alvos de '+esc(activeAbility.name)+': ' : 'Alvo: '}<b>${activeAbility ? skillTargets.map(coordLabel).join(', ') || '—' : selected ? coordLabel(selected) : '—'}</b></div>
+          <div class="zip-target-indicator" aria-live="polite">${activeAbility ? 'Área prevista · ' : 'Alvo: '}<b>${activeAbility ? skillArea.length ? skillArea.length===1 ? '1 casa afetada' : skillArea.length+' casas afetadas' : activeAbility.targetCount===0 ? 'Sem seleção necessária' : 'Escolha uma casa' : selected ? coordLabel(selected) : '—'}</b></div>
         </section>
 
-        <section class="zip-lower-section" aria-label="Defesa e poderes">
-          <div class="zip-own-section">
-            <h2>Sua frota</h2>
-            <div class="zip-own-board">
-              ${renderBoard(mode, {
-                ships: battle.yourShips, hits: own.hits, misses: own.misses,
-                markers: battle.yourAbilityPointCells || [], small: true,
-                highlights: activeAbility && aimingForOwnBoard ? skillTargets : [],
-                interactive: canAct && Boolean(activeAbility) && aimingForOwnBoard
-              })}
-            </div>
+        <section class="zip-turn-panel is-${turnState}" aria-label="Situação do turno e cronômetros">
+          <div class="zip-turn-copy" role="status" aria-live="polite" aria-atomic="true">
+            <span class="zip-turn-eyebrow"><i class="zip-turn-signal" aria-hidden="true"></i>TURNO ATUAL</span>
+            <strong class="zip-turn-headline">${turnTitle}</strong>
+            <small class="zip-turn-hint">${turnHint}</small>
           </div>
-          <div class="zip-tactics-section">
-            <details class="zip-abilities-menu">
-              <summary aria-label="Escolher habilidade" title="Habilidades da partida">
-                <span>Poderes</span><span class="zip-powers-count">${usefulAbilities} disponíveis · ${abilityCredits} pts</span><span aria-hidden="true">⌄</span>
-              </summary>
-              <div class="zip-abilities-options">
-                <div class="zip-abilities-grid">${powers}</div>
-                ${abilities.length ? '<button type="button" class="zip-powers-detail" data-action="open-abilities">Informações das habilidades</button>' : ''}
-              </div>
-            </details>
-            ${activeAbility
-              ? `<p class="zip-active-power" aria-live="polite">Selecionado: <b>${esc(activeAbility.name)}</b></p>`
-              : `<p class="zip-tactical-hint">${canAct?'Use um poder ou faça um disparo normal.':'Poderes disponíveis no seu próximo turno.'}</p>`}
-            ${skillControls}
-            ${activeEffects}
-            ${radarInfo}
+          <div class="zip-round-clocks" aria-label="Temporizadores oficiais">${clockStrip || '<span>Encerrada</span>'}</div>
+        </section>
+
+        <section class="zip-own-section" aria-label="Tabuleiro de defesa">
+          <div class="zip-board-heading">SUA FROTA · ${remainingOwn} navios operacionais</div>
+          <div class="zip-own-board">
+            ${renderBoard(mode, {
+              ships: battle.yourShips, hits: own.hits, misses: own.misses,
+              markers: battle.yourAbilityPointCells || [], small: true,
+              highlights: activeAbility && aimingForOwnBoard ? skillArea : [],
+              interactive: canAct && Boolean(activeAbility) && aimingForOwnBoard
+            })}
           </div>
         </section>
       </div>
 
-      <button type="button" class="zip-fire-button" data-action="fire"
-        ${canAct && selected && !activeAbility ? '' : 'disabled'}>
-        <strong>Atirar!</strong>
-        <small>${selected ? `Alvo ${coordLabel(selected)}` : myTurn ? 'Selecione uma casa no mapa inimigo' : 'Aguardando oponente'}</small>
-      </button>
+      <footer class="zip-battle-footer" aria-label="Controles de batalha">
+        <div class="zip-battle-action-bar">
+          <div class="zip-tactics-section">
+            ${activeAbility
+              ? `<button type="button" class="zip-cancel-power" data-action="cancel-ability">Cancelar ${esc(activeAbility.name)}</button>`
+              : `<details class="zip-abilities-menu">
+                  <summary aria-label="Escolher habilidade" title="Habilidades da partida">
+                    <span>Poderes</span><span class="zip-powers-count">${usefulAbilities} disponíveis · ${abilityCredits} pts</span><span aria-hidden="true">⌄</span>
+                  </summary>
+                  <div class="zip-abilities-options">
+                    <div class="zip-abilities-grid">${powers}</div>
+                    ${abilities.length ? '<button type="button" class="zip-powers-detail" data-action="open-abilities">Informações das habilidades</button>' : ''}
+                  </div>
+                </details>`}
+          </div>
+          ${activeAbility
+            ? `<button type="button" class="zip-fire-button zip-activate-power" data-action="activate-ability"
+                ${canAct && skillTargets.length===activeAbility.targetCount && !activeAbility.locked ? '' : 'disabled'}>
+                <strong>ATIVAR PODER</strong><small>${activeAbility.targetCount===0 ? 'Sem alvo necessário' : skillTargets.length===activeAbility.targetCount ? 'Confirmar área escolhida' : activeAbility.id==='double-shot' ? skillTargets.length===1 ? 'Escolha a segunda casa' : 'Escolha duas casas' : 'Escolha uma casa'}</small>
+              </button>`
+            : `<button type="button" class="zip-fire-button" data-action="fire" ${canAct && selected ? '' : 'disabled'}>
+                <strong>ATIRAR</strong><small>${fireHint}</small>
+              </button>`}
+        </div>
+        ${skillControls || activeEffects || radarInfo
+          ? `<div class="zip-battle-context" aria-live="polite">${skillControls}${activeEffects}${radarInfo}</div>`
+          : ''}
+      </footer>
     </main>
     ${pausedOverlay}
   </div>`;
