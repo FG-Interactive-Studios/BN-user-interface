@@ -47,3 +47,6 @@
 
 /* Alternate placement and combat composition proposed by the supplied ZIP. */
 @import './zip-flow-v10.css';
+
+/* Layout/mobile QA corrections and restored TidePoint board treatment. */
+@import './zip-battle-repair-v11.css';

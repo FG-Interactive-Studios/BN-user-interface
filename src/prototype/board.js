@@ -32,13 +32,14 @@ export function occupiedCells(ships, mode) {
   return cells;
 }
 
-export function renderBoard(mode, { ships=[], hits=[], misses=[], markers=[], selected=null, interactive=false, small=false }={}) {
+export function renderBoard(mode, { ships=[], hits=[], misses=[], markers=[], highlights=[], selected=null, interactive=false, small=false }={}) {
   const geometry = mode?.geometry;
   if (!geometry?.cells?.length) return '<p class="muted">Tabuleiro indisponível.</p>';
   const own = occupiedCells(ships, mode);
   const hitSet = new Set(hits.map(keyOf)); const missSet = new Set(misses.map(keyOf));
   // Only own markers are passed by the battle screen. Never infer enemy markers.
   const markerSet = new Set(markers.map(keyOf));
+  const highlightSet = new Set(highlights.map(keyOf));
   const selectedKey = selected ? keyOf(selected) : '';
   const isRegular = geometry.kind === 'RECTANGULAR' && geometry.rows === geometry.columns && geometry.cells.length === geometry.rows * geometry.columns;
   if (isRegular) {
@@ -52,7 +53,7 @@ export function renderBoard(mode, { ships=[], hits=[], misses=[], markers=[], se
         const key=`${row},${col}`; const cell={row,col};
         if (!coords.has(key)) { html+='<span class="cell inactive"></span>'; continue; }
         const hit=hitSet.has(key),miss=missSet.has(key);
-        const cls=['cell',own.has(key)?'ship':'',hit?'hit':'',miss?'miss':'',markerSet.has(key)?'ability-point':'',selectedKey===key?'target':''].filter(Boolean).join(' ');
+        const cls=['cell',own.has(key)?'ship':'',hit?'hit':'',miss?'miss':'',markerSet.has(key)?'ability-point':'',highlightSet.has(key)?'pilot-skill-target':'',selectedKey===key?'target':''].filter(Boolean).join(' ');
         const allowed=interactive && !hit && !miss;
         html += `<button type="button" class="${cls}" ${allowed?`data-coord="${key}"`: 'disabled'} aria-label="${coordLabel(cell)}${markerSet.has(key)?', ponto de habilidade':''}${hit?', acerto':miss?', água':''}" title="${coordLabel(cell)}">${markerSet.has(key)?'<span class="bn-gdd-point" aria-hidden="true">✦</span>':''}${selectedKey===key?'<span class="target-reticle" aria-hidden="true"><i></i></span>':''}</button>`;
       }
@@ -69,7 +70,7 @@ export function renderBoard(mode, { ships=[], hits=[], misses=[], markers=[], se
   const width=Math.max(maxX-minX,1)+pad*2,height=Math.max(maxY-minY,1)+pad*2;
   return `<svg class="tide-polygon-board ${small?'small':''}" viewBox="${minX-pad} ${minY-pad} ${width} ${height}" role="group" aria-label="Tabuleiro ${esc(mode.name)}">${tiles.map(tile=>{
     const k=keyOf(tile.cell);const hit=hitSet.has(k),miss=missSet.has(k),target=selectedKey===k;
-    const cls=['tile',own.has(k)?'ship':'',hit?'hit':'',miss?'miss':'',markerSet.has(k)?'ability-point':'',target?'target':''].filter(Boolean).join(' ');
+    const cls=['tile',own.has(k)?'ship':'',hit?'hit':'',miss?'miss':'',markerSet.has(k)?'ability-point':'',highlightSet.has(k)?'pilot-skill-target':'',target?'target':''].filter(Boolean).join(' ');
     const points=tile.vertices.map(p=>`${p.x},${p.y}`).join(' ');
     const cx=tile.vertices.reduce((sum,p)=>sum+p.x,0)/tile.vertices.length;
     const cy=tile.vertices.reduce((sum,p)=>sum+p.y,0)/tile.vertices.length;

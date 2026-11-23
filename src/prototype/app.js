@@ -364,6 +364,7 @@ function battleScreen(){
     : '';
   return renderZipBattle({
     battle:b, mode, opponent, own, enemy, myTurn, finished, canAct, selected,
+    skillTargets:state.skillTargets,
     available, sunk, activeAbility, skillControls, activeEffects, radarInfo,
     clockStrip, pausedOverlay,
   }) + skillDialogMarkup();
@@ -693,7 +694,8 @@ function selectCell(row,col,side='ENEMY'){
     if(state.battle.shotsFired.some(s=>s.row===row&&s.col===col&&!s.blocked))return;
     state.selected={row,col};
     // Update only target readout/cells, not the whole combat HUD and its boards.
-    const board=root.querySelector('.combat-screen .board-panel-primary');
+    const board=root.querySelector('.combat-screen .board-panel-primary')
+      || root.querySelector('.bn-zip-battle .zip-primary-board');
     if (!board) { render(); return; }
     board.querySelectorAll('.cell.target,.tile.target').forEach(node=>{
       node.classList.remove('target');
@@ -702,7 +704,8 @@ function selectCell(row,col,side='ENEMY'){
     const key=`${row},${col}`;
     const node=[...board.querySelectorAll('[data-coord]')].find(el=>el.dataset.coord===key);
     if (node) node.classList.add('target');
-    const readout=board.querySelector('.target-readout strong');
+    const readout=board.querySelector('.target-readout strong')
+      || root.querySelector('.zip-target-indicator b');
     if(readout) readout.textContent=coordLabel(state.selected);
     const button=root.querySelector('[data-action="fire"]');
     if(button){button.disabled=false;const caption=button.querySelector('small');if(caption)caption.textContent=`Disparar em ${coordLabel(state.selected)}`;}

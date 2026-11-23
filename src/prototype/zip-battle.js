@@ -3,7 +3,7 @@ import { esc, coordLabel, renderBoard } from './board.js';
 /** ZIP reference: visual composition only. The backend still controls all battle rules. */
 export function renderZipBattle({
   battle, mode, opponent, own, enemy, myTurn, finished, canAct,
-  selected, available, sunk, activeAbility, skillControls,
+  selected, skillTargets=[], available, sunk, activeAbility, skillControls,
   activeEffects, radarInfo, clockStrip, pausedOverlay
 }) {
   const ownLost = new Set((battle.shotsReceived || []).filter(shot => shot.sunkShip).map(shot => shot.sunkShip)).size;
@@ -13,6 +13,8 @@ export function renderZipBattle({
   const remainingEnemy = Math.max(0, totalShips - enemyLost);
   const abilities = available || [];
   const usefulAbilities = abilities.filter(ability => ability.usesRemaining > 0 && !ability.locked).length;
+  const abilityCredits = Number(battle.yourAbilityPointsEarned) || 0;
+  const aimingForOwnBoard = activeAbility?.targetScope === 'OWN';
 
   const powers = abilities.length
     ? abilities.map(ability => {
@@ -22,7 +24,7 @@ export function renderZipBattle({
         title="${esc(ability.description || ability.name)}" ${disabled ? 'disabled' : ''} aria-pressed="${chosen}">
         <span class="zip-ability-emblem" aria-hidden="true">✦</span>
         <span class="zip-ability-name">${esc(ability.name)}</span>
-        <small>${ability.usesRemaining} uso(s)${ability.locked ? ' · indisponível' : ''}</small>
+        <small>${ability.usesRemaining} uso(s) · ${['radar','double-shot'].includes(ability.id)?'Grátis':'1 ponto'}${ability.locked?' · Bloqueado':''}</small>
       </button>`;
     }).join('')
     : '<p class="zip-no-powers">Este modo não possui habilidades disponíveis.</p>';
@@ -61,11 +63,13 @@ export function renderZipBattle({
           <div class="zip-board-heading">Tabuleiro do oponente · ${canAct ? 'toque para mirar' : 'aguarde seu turno'}</div>
           <div class="zip-primary-board">
             ${renderBoard(mode, {
-              hits: enemy.hits, misses: enemy.misses, selected,
+              hits: enemy.hits, misses: enemy.misses,
+              selected: activeAbility ? null : selected,
+              highlights: activeAbility && !aimingForOwnBoard ? skillTargets : [],
               interactive: canAct && (!activeAbility || activeAbility.targetScope !== 'OWN')
             })}
           </div>
-          <div class="zip-target-indicator" aria-live="polite">Alvo: <b>${selected ? coordLabel(selected) : '—'}</b></div>
+          <div class="zip-target-indicator" aria-live="polite">${activeAbility ? 'Alvos de '+esc(activeAbility.name)+': ' : 'Alvo: '}<b>${activeAbility ? skillTargets.map(coordLabel).join(', ') || '—' : selected ? coordLabel(selected) : '—'}</b></div>
         </section>
 
         <section class="zip-lower-section" aria-label="Defesa e poderes">
@@ -75,14 +79,15 @@ export function renderZipBattle({
               ${renderBoard(mode, {
                 ships: battle.yourShips, hits: own.hits, misses: own.misses,
                 markers: battle.yourAbilityPointCells || [], small: true,
-                interactive: canAct && Boolean(activeAbility) && activeAbility.targetScope === 'OWN'
+                highlights: activeAbility && aimingForOwnBoard ? skillTargets : [],
+                interactive: canAct && Boolean(activeAbility) && aimingForOwnBoard
               })}
             </div>
           </div>
           <div class="zip-tactics-section">
             <details class="zip-abilities-menu">
               <summary aria-label="Escolher habilidade" title="Habilidades da partida">
-                <span>Poderes</span><span class="zip-powers-count">${usefulAbilities} disponíveis</span><span aria-hidden="true">⌄</span>
+                <span>Poderes</span><span class="zip-powers-count">${usefulAbilities} disponíveis · ${abilityCredits} pts</span><span aria-hidden="true">⌄</span>
               </summary>
               <div class="zip-abilities-options">
                 <div class="zip-abilities-grid">${powers}</div>
@@ -91,7 +96,7 @@ export function renderZipBattle({
             </details>
             ${activeAbility
               ? `<p class="zip-active-power" aria-live="polite">Selecionado: <b>${esc(activeAbility.name)}</b></p>`
-              : '<p class="zip-tactical-hint">Escolha um poder para sua próxima ação.</p>'}
+              : `<p class="zip-tactical-hint">${canAct?'Use um poder ou faça um disparo normal.':'Poderes disponíveis no seu próximo turno.'}</p>`}
             ${skillControls}
             ${activeEffects}
             ${radarInfo}
