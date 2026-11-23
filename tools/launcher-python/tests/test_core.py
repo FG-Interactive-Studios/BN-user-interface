@@ -168,6 +168,7 @@ class LocalAdminHintTests(unittest.TestCase):
             workspace = Path(tmp)
             api_path = self.api_with_local_admin_bootstrap(workspace)
             (api_path / "mvnw").touch()
+            (api_path / "mvnw.cmd").touch()  # Windows CI uses the CMD wrapper.
             front = workspace / "front"
             front.mkdir()
             (front / "package-lock.json").touch()
