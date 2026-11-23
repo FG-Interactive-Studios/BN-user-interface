@@ -34,7 +34,7 @@ await mkdir('artifacts/figma-combat',{recursive:true});
 
 try {
  for(const status of ['PREPARING','PLAYING']){
-  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:412,height:915}]){
+  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1366,height:768}]){
    const errors=[];
    const page=await browser.newPage({viewport,deviceScaleFactor:1});
    page.on('pageerror',e=>errors.push(e.message));
