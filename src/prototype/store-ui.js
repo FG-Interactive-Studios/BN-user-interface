@@ -1,8 +1,8 @@
 import { esc } from './board.js';
+import {walletMarkup} from './figma-wallet.js';
 
 export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
   const items=(catalog?.items||[]).filter(item=>filter==='ALL'||item.category===filter);
-  const credits=catalog ? String(catalog.credits) : '—';
   const categoryOptions=[
     ['ALL','Todos'],['SKIN','Embarcações'],['SOUND','Sons'],['CAPTAIN','Capitães'],['BUNDLE','Coleções']
   ].map(([id,label])=>`<option value="${id}" ${filter===id?'selected':''}>${label}</option>`).join('');
@@ -35,7 +35,7 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
   return `<section class="bn-page bn-store-page tp-store-page" aria-label="Loja de cosméticos">
     <header class="bn-page-heading tp-store-header">
       <div><h1>Loja</h1><p>Personalize sua frota com itens cosméticos.</p></div>
-      <div class="tp-store-wallet"><small>Créditos de teste</small><strong>${esc(credits)}</strong></div>
+      <div class="tp-store-wallet bn-store-wallet">${walletMarkup(catalog)}</div>
     </header>
     <div class="tp-store-toolbar"><label for="store-filter">Categorias</label>
       <select class="tp-mode-select" id="store-filter">${categoryOptions}</select>
