@@ -59,3 +59,6 @@
 
 /* Turn status replaces the decorative compass; CSS only, no new game logic. */
 @import './zip-turn-panel-v14.css';
+
+/* Smaller mobile boards, reversed desktop fleet, and unobstructed power targeting. */
+@import './zip-tactical-preview-v15.css';
