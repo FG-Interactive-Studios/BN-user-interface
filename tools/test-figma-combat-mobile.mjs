@@ -101,6 +101,14 @@ try {
      assert.equal(await page.locator('.bn-placement-ship[data-item-id="CARRIER"] img[src*="ship-carrier.webp"]').count(),1,'ZIP carrier artwork absent');
      assert.equal(await page.locator('.bn-placement-ship[data-item-id="DESTROYER"] img[src*="ship-destroyer-gd.webp"]').count(),1,'GD destroyer artwork absent');
      assert.equal(await page.locator('.bn-placement-ship[data-item-id="SEARCH"] img').count(),0,'SEARCH must not inherit unrelated submarine art');
+     for(const type of ['CARRIER','DESTROYER']) {
+       const art=page.locator('.bn-placement-ship[data-item-id="'+type+'"] img');
+       const decoded=await art.evaluate(async img=>{
+         try {await img.decode();return img.naturalWidth>0&&img.naturalHeight>0;}
+         catch {return false;}
+       });
+       assert.ok(decoded,'Broken sprite file for '+type+': '+explain);
+     }
      const backdrop=await page.locator('.bn-zip-placement').evaluate(el=>getComputedStyle(el).backgroundImage);
      assert.ok(backdrop.includes('/assets/bn-zip/bg.webp'),'ZIP background is not active on preparation: '+backdrop);
      assert.equal(await page.locator('.bn-placement-ship.is-selected').count(),1);
