@@ -7,7 +7,11 @@ const items=[
  {id:'captain_corsair',category:'CAPTAIN',name:'Capitão Corsário',description:'Piloto',price:0,enabled:false,owned:false,equipped:false},
  {id:'bundle_corsair',category:'BUNDLE',name:'Coleção Corsária',description:'Pacote planejado',price:0,enabled:false,owned:false,equipped:false}
 ];
-const html=renderCosmeticStore({credits:300,items});
+const html=renderCosmeticStore({credits:300,premiumCredits:0,items});
+assert.match(html,/Premium/);
+assert.match(html,/Moedas/);
+assert.match(html,/blue-coin\.png/);
+assert.match(html,/gold-coin\.png/);
 assert.match(html,/300/);assert.match(html,/Em uso/);assert.match(html,/Comprar · 90 créditos/);
 assert.match(html,/data-action="store-buy"/);
 assert.match(html,/Aguardando recursos do Game Design/);
