@@ -18,7 +18,7 @@ import { compactEnemyContacts } from './mobile-presenters.js';
 const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20l-3-6H5l-3 6zM8 12V8h4v4M12 6V4"/></svg>`;
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">Batalha Naval</div><div class="brand-sub">Duelo 1v1 em alto-mar</div></div></div>`;
 const state = {
-  profile: null, modes: [], lobby: null, preparation: null, battle: null,
+  profile: null, modes: [], lobby: null, queue: null, preparation: null, battle: null,
   modeId: 'classic', selected: null, draft: null, placementShip: null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
@@ -96,7 +96,12 @@ function routeForLobby(status) {return status==='WAITING'?'matchmaking':status==
 function synchronizeRoute() {
   // Keep the departure dialog open until acknowledged, including after a room closes.
   if (state.roomExitNotice) { if (!state.lobby && currentRoute()!=='lobby') go('lobby'); return; }
-  if (!state.lobby) { if (['placement','match','result'].includes(currentRoute())) go('lobby'); return; }
+  if (!state.lobby) {
+    if(state.queue?.status==='SEARCHING') {
+      if(['lobby','placement','match','result'].includes(currentRoute()))go('matchmaking');
+    } else if(['placement','match','result'].includes(currentRoute()))go('lobby');
+    return;
+  }
   const route=routeForLobby(state.lobby.status);
   if (currentRoute()!==route && ['matchmaking','placement','match','result','lobby'].includes(currentRoute())) go(route);
 }
@@ -109,7 +114,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -117,7 +122,7 @@ async function sessionInit() {
   void loadStore({quiet:true});
   await reconcile();
   await api.connectRealtime((message)=>{
-    if (['LOBBY_UPDATED','LOBBY_CLOSED','LOBBY_LEFT','PREPARATION_UPDATED','BATTLE_UPDATED'].includes(message.type)) {
+    if (['LOBBY_UPDATED','LOBBY_CLOSED','LOBBY_LEFT','MATCH_FOUND','MATCH_SEARCHING','PREPARATION_UPDATED','BATTLE_UPDATED'].includes(message.type)) {
       // REST always recovers an authoritative personalized snapshot, including after reconnection.
       void reconcile();
     }
@@ -132,13 +137,15 @@ async function sessionInit() {
   // snapshot. REST is a safety net, not a substitute for websocket presence.
   // 60s when online; 20s while recovering from a websocket outage.
   if (!refreshTimer) refreshTimer=setInterval(()=>{
-    if (!api.isAuthenticated() || !state.lobby) return;
+    if (!api.isAuthenticated()) return;
     const now=Date.now();
-    if (!state.socketOnline || now-lastFallbackReconcileAt >= 60000) {
+    // Search must progress even when the player's socket is unavailable.
+    if (state.queue?.status==='SEARCHING' ||
+       (state.lobby && (!state.socketOnline || now-lastFallbackReconcileAt >= 60000))) {
       lastFallbackReconcileAt=now;
       void reconcile();
     }
-  }, 20000);
+  }, 5000);
 }
 async function reconcile() {
   if (!api.isAuthenticated() || loading) return;
@@ -147,12 +154,21 @@ async function reconcile() {
     let room;
     try { room=await api.get('/matchmaking/lobbies/me'); }
     catch(e) { if (e instanceof api.ApiError && e.status===404) room=null; else throw e; }
+    let queue=null;
+    if(!room) {
+      try {
+        const search=await api.get('/matchmaking/queue/me');
+        if(search?.status==='MATCHED'&&search.room)room=search.room;
+        else if(search?.status==='SEARCHING')queue=search;
+      } catch(e) { if (!(e instanceof api.ApiError && e.status===404))throw e; }
+    }
     if (!api.isAuthenticated()) return;
     if (room && state.lobby?.code===room.code && room.revision < state.lobby.revision) return;
     const previousRoom=state.lobby;
     const previous=previousRoom?.status;
-    let changed=JSON.stringify(previousRoom)!==JSON.stringify(room);
-    if (!state.leavingRoom && !state.roomExitNotice) {
+    let changed=JSON.stringify(previousRoom)!==JSON.stringify(room)
+      || JSON.stringify(state.queue)!==JSON.stringify(queue);
+    if (!state.leavingRoom && !state.roomExitNotice && !(previousRoom?.publicMatch && queue)) {
       const departure = roomDeparture(previousRoom, room, state.profile?.id);
       if (departure) {
         state.roomExitNotice={type:departure};
@@ -160,6 +176,7 @@ async function reconcile() {
       }
     }
     state.lobby=room;
+    state.queue=queue;
     if (!room) {
       state.skillMode=null;state.skillTargets=[];state.skillDialog=false;
       if (state.preparation || state.battle || state.draft) changed=true;
@@ -255,9 +272,29 @@ function lobbyScreen() {
 
 function waitingScreen() {
   const room=state.lobby;
+  if (!room && state.queue?.status==='SEARCHING') {
+    const mode=state.modes.find(mode=>mode.id===state.queue.modeId);
+    return mainContent(`<section class="bn-queue-search" aria-label="Buscando adversário">
+      <span class="bn-kicker">PAREAMENTO ONLINE</span>
+      <h1>Buscando adversário</h1>
+      <p>Procurando outro capitão no modo <strong>${esc(mode?.name||state.queue.modeId)}</strong>.</p>
+      ${radarMarkup()}
+      <p class="bn-queue-status" role="status" aria-live="polite">Busca em andamento · você entrará na sala automaticamente quando encontrar alguém.</p>
+      <button type="button" class="bn-room-leave-button" data-action="cancel-public-search">Cancelar busca</button>
+    </section>`,{noNav:true,noHeader:true,variant:'bn-waiting-screen bn-queue-screen'});
+  }
   if (!room) {
     const options=state.modes.map(mode=>`<option value="${esc(mode.id)}" ${state.modeId===mode.id?'selected':''}>${esc(mode.name)} · ${mode.geometry?.cells?.length||0} casas</option>`).join('');
-    return mainContent(`<div class="matchmaking-wrap tp-create-room-wrap"><section class="panel mm-card tp-create-room-card tp-room-setup"><div class="eyebrow">Canal de combate</div><h2 class="form-title">Criar sala privada</h2><p class="form-sub tp-setup-description">Escolha o tabuleiro e convide outro capitão.</p><div class="tp-create-mode"><label class="eyebrow" for="mode-picker">Modo de jogo</label><select class="tp-mode-select" id="mode-picker" ${options?'':'disabled'}>${options||'<option>Sem modos habilitados</option>'}</select></div><div class="tp-actions tp-create-actions"><button type="button" class="btn btn-ghost" data-go="lobby">← Voltar</button><button type="button" class="btn btn-orange" data-action="create-lobby" ${options?'':'disabled'}>Criar sala</button></div></section></div>`,{noNav:true});
+    return mainContent(`<div class="matchmaking-wrap tp-create-room-wrap"><section class="panel mm-card tp-create-room-card tp-room-setup bn-match-choice">
+      <div class="eyebrow">Canal de combate</div><h2 class="form-title">Encontrar uma batalha</h2>
+      <p class="form-sub tp-setup-description">Escolha o modo e encontre outro jogador automaticamente, sem código.</p>
+      <div class="tp-create-mode"><label class="eyebrow" for="mode-picker">Modo de jogo</label>
+        <select class="tp-mode-select" id="mode-picker" ${options?'':'disabled'}>${options||'<option>Sem modos habilitados</option>'}</select></div>
+      <button type="button" class="btn btn-orange bn-search-button" data-action="find-public-match" ${options?'':'disabled'}>Buscar partida</button>
+      <div class="bn-match-separator"><span>ou jogue com amigos</span></div>
+      <button type="button" class="btn btn-ghost bn-private-button" data-action="create-lobby" ${options?'':'disabled'}>Criar sala com código</button>
+      <button type="button" class="bn-match-back" data-go="lobby">← Voltar ao lobby</button>
+    </section></div>`,{noNav:true});
   }
   // The backend only exposes name, avatar ID, connection and readiness.
   // The approved art also depicts level, wins and a countdown, none of which
@@ -286,14 +323,18 @@ function waitingScreen() {
       <button type="button" class="bn-room-close" data-action="leave-lobby" aria-label="Sair da sala" title="Sair da sala">×</button>
       <h1 id="bn-waiting-heading">Sala de espera</h1>
     </div>
-    <p class="bn-room-description">A batalha começa quando os dois capitães estiverem prontos.</p>
-    <button type="button" data-action="copy-code" class="bn-room-invite" aria-label="Copiar código da sala ${esc(room.code)}">
-      <span>Código da sala</span><strong>${esc(room.code)}</strong><span aria-hidden="true">⧉</span>
-    </button>
+    <p class="bn-room-description">${room.publicMatch
+      ? 'Adversário encontrado! Os dois capitães precisam marcar Pronto para posicionar a frota.'
+      : 'A batalha começa quando os dois capitães estiverem prontos.'}</p>
+    ${room.publicMatch
+      ? '<div class="bn-queue-found" role="status">Pareamento público · adversário encontrado</div>'
+      : `<button type="button" data-action="copy-code" class="bn-room-invite" aria-label="Copiar código da sala ${esc(room.code)}">
+          <span>Código da sala</span><strong>${esc(room.code)}</strong><span aria-hidden="true">⧉</span>
+        </button>`}
     <div class="bn-room-duel" aria-label="Capitães da sala">
-      ${playerCard(host,'Anfitrião')}
+      ${playerCard(host,room.publicMatch?'Jogador 1':'Anfitrião')}
       <div class="bn-room-versus" aria-hidden="true">VS</div>
-      ${playerCard(guest,'Convidado')}
+      ${playerCard(guest,room.publicMatch?'Jogador 2':'Convidado')}
     </div>
     <p class="bn-room-confirmation" role="status" aria-live="polite">
       <span>${other ? 'Confirmações' : 'Aguardando adversário'}</span>
@@ -527,6 +568,7 @@ async function joinFromModal(form, code) {
   state.busy=true;
   try {
     state.lobby=await api.post('/matchmaking/lobbies/join',{code:code.trim().toUpperCase()});
+    state.queue=null;
     if((state.lobby?.players||[]).length>=2)audio.play('game_found');
     root.querySelector('#tp-join-dialog')?.close();
     go('matchmaking');
@@ -640,13 +682,32 @@ async function runAction(action,itemId=null) {
     case 'open-join-modal': { const dialog=root.querySelector('#tp-join-dialog'); if (dialog && !dialog.open) { dialog.showModal(); dialog.querySelector('input[name=code]')?.focus(); } break; }
     case 'close-join-modal':root.querySelector('#tp-join-dialog')?.close();break;
     case 'logout':await guard(async()=>{await api.logout();reset();clearInterval(refreshTimer);refreshTimer=null;go('auth');});break;
-    case 'create-lobby':await guard(async()=>{state.lobby=await api.post('/matchmaking/lobbies',{modeId:state.modeId});go('matchmaking');});break;
+    case 'find-public-match':await guard(async()=>{
+      const search=await api.post('/matchmaking/queue',{modeId:state.modeId});
+      state.queue=search.status==='SEARCHING'?search:null;
+      state.lobby=search.status==='MATCHED'?search.room:null;
+      if(state.lobby?.players?.length===2)audio.play('game_found');
+      go('matchmaking');
+    });break;
+    case 'cancel-public-search':await guard(async()=>{
+      if(state.queue?.status!=='SEARCHING')return;
+      try {await api.remove('/matchmaking/queue/me');}
+      catch(error) {
+        if(error instanceof api.ApiError && error.status===409){await reconcile();return;}
+        throw error;
+      }
+      state.queue=null;go('lobby');
+    });break;
+    case 'create-lobby':await guard(async()=>{
+      state.lobby=await api.post('/matchmaking/lobbies',{modeId:state.modeId});
+      state.queue=null;go('matchmaking');
+    });break;
     case 'copy-code':if(state.lobby){try{await navigator.clipboard.writeText(state.lobby.code);notice('Código copiado para a área de transferência.');}catch{notice(`Código da sala: ${state.lobby.code}`);}}break;
     case 'ready':await guard(async()=>{const me=state.lobby?.players.find(p=>p.id===state.profile.id);state.lobby=await api.put('/matchmaking/lobbies/me/ready',{ready:!me?.ready});await reconcile();});break;
     case 'leave-lobby':{
       if (state.lobby?.status==='PLAYING' && !confirm('Sair agora significa desistir e perder a partida. Continuar?')) return;
       state.leavingRoom=true;
-      try {await guard(async()=>{await api.remove('/matchmaking/lobbies/me');state.lobby=null;state.battle=null;state.preparation=null;state.draft=null;go('lobby');});}
+      try {await guard(async()=>{await api.remove('/matchmaking/lobbies/me');state.lobby=null;state.queue=null;state.battle=null;state.preparation=null;state.draft=null;go('lobby');});}
       finally {state.leavingRoom=false;}
       break;}
     case 'play-again': {

@@ -67,3 +67,6 @@
 @import './zip-mobile-fit-v16.css';
 /* Result: show the player and opponent from separate server histories. */
 @import './figma-result-compare-v8.css';
+
+/* Public queue and private invite choice. */
+@import './public-matchmaking-v1.css';

@@ -1,0 +1,123 @@
+/* Public matchmaking uses the existing Figma battle palette and private room. */
+body[data-route="matchmaking"] .bn-match-choice {
+  width:min(100%,500px)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:clamp(10px,1.6dvh,15px)!important;
+  align-items:stretch;
+  margin:auto;
+}
+body[data-route="matchmaking"] .bn-match-choice .form-title {
+  margin:0;
+}
+body[data-route="matchmaking"] .bn-match-choice .tp-setup-description {
+  max-width:38ch;
+  line-height:1.4;
+}
+body[data-route="matchmaking"] .bn-match-choice .tp-create-mode,
+body[data-route="matchmaking"] .bn-match-choice .tp-mode-select {
+  width:100%;
+}
+body[data-route="matchmaking"] .bn-match-choice .bn-search-button {
+  width:100%;
+  min-height:56px;
+  background:var(--bn-gold,#fbbf24)!important;
+  color:#10191f!important;
+  border-radius:12px!important;
+  font:800 clamp(18px,3.8vw,24px)/1.1 'Barlow Condensed',sans-serif;
+  cursor:pointer;
+}
+body[data-route="matchmaking"] .bn-match-choice .bn-private-button {
+  min-height:49px;
+  width:100%;
+  border:1px solid rgba(126,203,215,.8);
+  border-radius:12px;
+  font:700 clamp(16px,3vw,20px)/1.15 'Barlow Condensed',sans-serif;
+}
+body[data-route="matchmaking"] .bn-match-choice .bn-match-separator {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:#adccd7;
+  font:600 12px/1.2 'Lexend',sans-serif;
+  text-align:center;
+}
+body[data-route="matchmaking"] .bn-match-separator:before,
+body[data-route="matchmaking"] .bn-match-separator:after {
+  content:'';flex:1;height:1px;background:rgba(145,190,200,.35);
+}
+body[data-route="matchmaking"] .bn-match-back {
+  align-self:center;
+  min-height:36px;
+  padding:5px 12px;
+  color:#dceef5;
+  background:transparent;
+  border:0;
+  cursor:pointer;
+  font:600 13px 'Lexend',sans-serif;
+}
+body[data-route="matchmaking"] .bn-queue-screen .main {
+  padding:clamp(15px,2.5dvh,32px) 14px!important;
+}
+body[data-route="matchmaking"] .bn-queue-search {
+  width:min(100%,480px);
+  margin:auto;
+  padding:clamp(18px,3dvh,30px);
+  display:flex;
+  flex-direction:column;
+  gap:clamp(12px,2dvh,21px);
+  align-items:center;
+  border:1px solid rgba(122,209,210,.5);
+  border-radius:22px;
+  background:rgba(5,20,30,.91);
+  box-shadow:0 12px 38px rgba(0,0,0,.45);
+  color:#fff;
+  text-align:center;
+}
+body[data-route="matchmaking"] .bn-queue-search h1 {
+  margin:0;
+  color:var(--bn-gold,#fbbf24);
+  font:400 clamp(32px,8vw,49px)/1 'Pirata One',Georgia,serif;
+}
+body[data-route="matchmaking"] .bn-queue-search p {
+  max-width:37ch;
+  margin:0;
+  font:400 clamp(12px,3.2vw,15px)/1.45 'Lexend',sans-serif;
+  color:#d4e4ec;
+}
+body[data-route="matchmaking"] .bn-queue-search p strong {color:#89eee4;}
+body[data-route="matchmaking"] .bn-queue-search .radar {
+  width:clamp(145px,31dvh,245px)!important;
+  height:clamp(145px,31dvh,245px)!important;
+  max-width:65vw;
+  max-height:65vw;
+  margin:0 auto!important;
+}
+body[data-route="matchmaking"] .bn-queue-search .bn-queue-status {
+  color:#a8d6df;
+  font-size:12px;
+}
+body[data-route="matchmaking"] .bn-queue-search .bn-room-leave-button {
+  width:100%;
+  max-width:330px;
+  min-height:49px;
+}
+body[data-route="matchmaking"] .bn-queue-found {
+  align-self:center;
+  border:1px solid rgba(64,211,168,.7);
+  border-radius:999px;
+  padding:8px 14px;
+  background:#123a3a;
+  color:#8ff4d0;
+  font:600 clamp(11px,2.9vw,14px)/1.3 'Lexend',sans-serif;
+  text-align:center;
+}
+@media(max-height:620px) and (max-width:849px) {
+  body[data-route="matchmaking"] .bn-queue-search {gap:9px;padding:13px;}
+  body[data-route="matchmaking"] .bn-queue-search .radar {
+    height:clamp(120px,25dvh,170px)!important;width:clamp(120px,25dvh,170px)!important;
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  body[data-route="matchmaking"] .bn-queue-search .radar * {animation:none!important;}
+}
