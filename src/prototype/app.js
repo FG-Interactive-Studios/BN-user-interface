@@ -265,9 +265,22 @@ function authForm(isRegister=false) {
   </main></div>`;
 }
 
-/** Waiting-room radar: uses the existing .radar design. */
+/** Figma-approved green sonar; matchmaking still uses the API state. */
 function radarMarkup() {
-  return `<div class="radar" aria-hidden="true"><span class="radar-contact radar-contact-one"></span><span class="radar-contact radar-contact-two"></span><span class="radar-contact radar-contact-three"></span></div>`;
+  return `<div class="radar bn-search-radar" aria-hidden="true">
+    <span class="bn-radar-grid"></span><span class="bn-radar-axis is-horizontal"></span>
+    <span class="bn-radar-axis is-vertical"></span>
+    <span class="bn-radar-ring ring-one"></span><span class="bn-radar-ring ring-two"></span>
+    <span class="bn-radar-ring ring-three"></span><span class="bn-radar-ring ring-four"></span>
+    <span class="bn-radar-sweep"></span><span class="bn-radar-contact one"></span>
+    <span class="bn-radar-contact two"></span><span class="bn-radar-center"></span>
+  </div>`;
+}
+function updateSearchElapsed(){
+  const node=root?.querySelector?.('[data-search-elapsed]');
+  if(!node || !state.queueStartedAt)return;
+  const elapsed=Math.max(0,Math.floor((Date.now()-state.queueStartedAt)/1000));
+  node.textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(elapsed%60).padStart(2,'0');
 }
 
 function lobbyScreen() {
@@ -304,12 +317,21 @@ function waitingScreen() {
   if (!room && state.queue?.status==='SEARCHING') {
     const mode=state.modes.find(mode=>mode.id===state.queue.modeId);
     return mainContent(`<section class="bn-queue-search" aria-label="Buscando adversário">
-      <span class="bn-kicker">PAREAMENTO ONLINE</span>
-      <h1>Buscando adversário</h1>
-      <p>Procurando outro capitão no modo <strong>${esc(mode?.name||state.queue.modeId)}</strong>.</p>
+      <div class="bn-queue-header">
+        <span class="bn-kicker">PAREAMENTO ONLINE</span>
+        <h1>Procurando partida</h1>
+        <p>Buscando outro capitão para <strong>${esc(mode?.name||state.queue.modeId)}</strong></p>
+      </div>
       ${radarMarkup()}
-      <p class="bn-queue-status" role="status" aria-live="polite">Busca em andamento · você entrará na sala automaticamente quando encontrar alguém.</p>
-      <button type="button" class="bn-room-leave-button" data-action="cancel-public-search">Cancelar busca</button>
+      <div class="bn-queue-readout" role="status" aria-live="polite">
+        <span>Tempo de busca nesta sessão</span>
+        <strong data-search-elapsed>00:00</strong>
+        <small>Buscando adversário<span class="bn-queue-ellipsis" aria-hidden="true">...</span></small>
+      </div>
+      <div class="bn-queue-footer">
+        <p>A sala abrirá automaticamente quando outro jogador for encontrado.</p>
+        <button type="button" class="bn-room-leave-button" data-action="cancel-public-search">Cancelar busca</button>
+      </div>
     </section>`,{noNav:true,noHeader:true,variant:'bn-waiting-screen bn-queue-screen'});
   }
   if (!room) {
