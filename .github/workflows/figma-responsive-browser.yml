@@ -6,6 +6,7 @@ on:
       - 'tools/test-figma-viewport.mjs'
       - 'tools/test-figma-combat-mobile.mjs'
       - 'tools/test-figma-waiting-room.mjs'
+      - 'tools/test-public-matchmaking.mjs'
       - 'tools/test-figma-placement.mjs'
       - 'tools/test-figma-result.mjs'
       - 'tools/test-figma-profile.mjs'
@@ -35,6 +36,8 @@ jobs:
         run: node tools/test-figma-combat-mobile.mjs
       - name: Check Figma waiting room layout and readiness
         run: node tools/test-figma-waiting-room.mjs
+      - name: Check public matchmaking and optional code-based room
+        run: node tools/test-public-matchmaking.mjs
       - name: Check Figma fleet placement and API confirmation
         run: node tools/test-figma-placement.mjs
       - name: Check approved Figma result panels and storm framing
@@ -51,6 +54,7 @@ jobs:
             artifacts/figma-responsive/
             artifacts/figma-combat/
             artifacts/figma-waiting/
+            artifacts/public-matchmaking/
             artifacts/figma-placement/
             artifacts/figma-result/
             artifacts/figma-profile/
