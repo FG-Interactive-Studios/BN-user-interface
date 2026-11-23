@@ -568,6 +568,7 @@ async function joinFromModal(form, code) {
   state.busy=true;
   try {
     state.lobby=await api.post('/matchmaking/lobbies/join',{code:code.trim().toUpperCase()});
+    state.queue=null;
     if((state.lobby?.players||[]).length>=2)audio.play('game_found');
     root.querySelector('#tp-join-dialog')?.close();
     go('matchmaking');
@@ -681,13 +682,32 @@ async function runAction(action,itemId=null) {
     case 'open-join-modal': { const dialog=root.querySelector('#tp-join-dialog'); if (dialog && !dialog.open) { dialog.showModal(); dialog.querySelector('input[name=code]')?.focus(); } break; }
     case 'close-join-modal':root.querySelector('#tp-join-dialog')?.close();break;
     case 'logout':await guard(async()=>{await api.logout();reset();clearInterval(refreshTimer);refreshTimer=null;go('auth');});break;
-    case 'create-lobby':await guard(async()=>{state.lobby=await api.post('/matchmaking/lobbies',{modeId:state.modeId});go('matchmaking');});break;
+    case 'find-public-match':await guard(async()=>{
+      const search=await api.post('/matchmaking/queue',{modeId:state.modeId});
+      state.queue=search.status==='SEARCHING'?search:null;
+      state.lobby=search.status==='MATCHED'?search.room:null;
+      if(state.lobby?.players?.length===2)audio.play('game_found');
+      go('matchmaking');
+    });break;
+    case 'cancel-public-search':await guard(async()=>{
+      if(state.queue?.status!=='SEARCHING')return;
+      try {await api.remove('/matchmaking/queue/me');}
+      catch(error) {
+        if(error instanceof api.ApiError && error.status===409){await reconcile();return;}
+        throw error;
+      }
+      state.queue=null;go('lobby');
+    });break;
+    case 'create-lobby':await guard(async()=>{
+      state.lobby=await api.post('/matchmaking/lobbies',{modeId:state.modeId});
+      state.queue=null;go('matchmaking');
+    });break;
     case 'copy-code':if(state.lobby){try{await navigator.clipboard.writeText(state.lobby.code);notice('Código copiado para a área de transferência.');}catch{notice(`Código da sala: ${state.lobby.code}`);}}break;
     case 'ready':await guard(async()=>{const me=state.lobby?.players.find(p=>p.id===state.profile.id);state.lobby=await api.put('/matchmaking/lobbies/me/ready',{ready:!me?.ready});await reconcile();});break;
     case 'leave-lobby':{
       if (state.lobby?.status==='PLAYING' && !confirm('Sair agora significa desistir e perder a partida. Continuar?')) return;
       state.leavingRoom=true;
-      try {await guard(async()=>{await api.remove('/matchmaking/lobbies/me');state.lobby=null;state.battle=null;state.preparation=null;state.draft=null;go('lobby');});}
+      try {await guard(async()=>{await api.remove('/matchmaking/lobbies/me');state.lobby=null;state.queue=null;state.battle=null;state.preparation=null;state.draft=null;go('lobby');});}
       finally {state.leavingRoom=false;}
       break;}
     case 'play-again': {
