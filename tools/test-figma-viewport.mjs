@@ -126,7 +126,9 @@ try {
   await assertStickyAccountHeader('store');
   await page.locator('.tp-store-card').first().waitFor();
   assert.equal(await page.locator('.tp-store-card').count(),3,'store must display live API items');
-  assert.match(await page.locator('.tp-store-wallet').innerText(),/300/);
+  assert.match(await page.locator('.bn-wallet-pill.is-free strong').innerText(),/300/);
+  assert.equal(await page.locator('.bn-wallet-pills').count(),1,'Store must display only one wallet in the sticky header');
+  assert.equal(await page.locator('.bn-store-wallet').count(),0,'Redundant store wallet must be removed');
   if(viewport.width===375)await page.screenshot({path:'artifacts/figma-responsive/store-375.png',fullPage:true});
   await page.locator('.bn-header-identity').click();
   await page.locator('.bn-profile-stage').waitFor();
