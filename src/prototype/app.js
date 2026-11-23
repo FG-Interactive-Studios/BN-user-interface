@@ -335,12 +335,18 @@ function clearSkillTargeting(){
   state.skillTargets=[];state.skillArea=[];state.skillAnchor=null;
 }
 function chooseAbilityTarget(anchor){
-  const plan=planAbility({ability:skillMeta(state.skillMode),anchor,mode:state.battle?.mode||activeMode(),battle:state.battle,direction:state.skillDirection});
+  const selectedTargets=state.skillMode==='double-shot' && state.skillTargets.length===1 ? state.skillTargets : [];
+  const plan=planAbility({ability:skillMeta(state.skillMode),anchor,mode:state.battle?.mode||activeMode(),battle:state.battle,direction:state.skillDirection,selectedTargets});
   if(!plan.valid)return plan;
   state.skillAnchor=anchor;state.skillTargets=plan.targets;state.skillArea=plan.affected;
   return plan;
 }
 function skillTargetSummary(){
+  if(state.skillMode==='double-shot'){
+    if(!state.skillTargets.length)return 'Escolha a primeira casa; depois uma segunda, em qualquer posição.';
+    if(state.skillTargets.length===1)return 'Primeira casa: '+coordLabel(state.skillTargets[0])+' · Escolha a segunda.';
+    return 'Alvos: '+state.skillTargets.map(coordLabel).join(' e ')+' · Confirme o poder.';
+  }
   if(!state.skillArea.length)return 'Toque numa casa para escolher a área.';
   return state.skillArea.length===1?'1 casa afetada':state.skillArea.length+' casas afetadas';
 }
@@ -350,8 +356,10 @@ function paintAbilityPreview(target){
   const board=target?.closest('.zip-own-board,.zip-primary-board');
   const scope=board?.classList.contains('zip-own-board')?'OWN':'ENEMY';
   const raw=target?.dataset.coord?.split(',').map(Number);
-  const plan=raw?.length===2&&skillScope(state.skillMode)===scope
-    ? planAbility({ability:skillMeta(state.skillMode),anchor:{row:raw[0],col:raw[1]},mode:state.battle?.mode||activeMode(),battle:state.battle,direction:state.skillDirection})
+  const selectedTargets=state.skillMode==='double-shot' && state.skillTargets.length===1 ? state.skillTargets : [];
+  const alreadyComplete=state.skillMode==='double-shot' && state.skillTargets.length===2;
+  const plan=!alreadyComplete&&raw?.length===2&&skillScope(state.skillMode)===scope
+    ? planAbility({ability:skillMeta(state.skillMode),anchor:{row:raw[0],col:raw[1]},mode:state.battle?.mode||activeMode(),battle:state.battle,direction:state.skillDirection,selectedTargets})
     : null;
   screen.querySelectorAll('.pilot-skill-preview,.pilot-skill-preview-origin,.pilot-skill-preview-destination').forEach(node=>{
     node.classList.remove('pilot-skill-preview','pilot-skill-preview-origin','pilot-skill-preview-destination');
