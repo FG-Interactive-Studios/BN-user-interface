@@ -31,6 +31,7 @@ const mock=(page,profile)=>{
     refreshToken:'test-refresh',expiresIn:900,user:profile});
   if(path==='/api/users/me')return respond(route,profile);
   if(path==='/api/game-modes')return respond(route,[mode]);
+  if(path==='/api/store')return respond(route,{credits:1250,premiumCredits:0,items:[]});
   if(path==='/api/realtime/ticket')return route.fulfill({status:503,body:'{}'});
   if(path==='/api/matchmaking/state'&&method==='GET'){
     lookups.unified++;
@@ -100,12 +101,39 @@ try {
  }
  await login(a,profiles[0].email);
  await login(b,profiles[1].email);
+ await a.locator('.bn-wallet-pill').first().waitFor({timeout:10000});
+ await a.waitForFunction(()=>document.querySelector('.bn-wallet-pill.is-free strong')?.textContent==='1.250');
+ assert.equal(await a.locator('.bn-wallet-pill.is-free strong').innerText(),'1.250',
+   'Free balance must come from API, not Figma sample values');
+ assert.equal(await a.locator('.bn-wallet-pill.is-premium strong').innerText(),'0');
+ assert.ok(await a.locator('.bn-feature-icon img').isVisible(),'Original cannon asset must appear');
+ assert.ok(await a.locator('.bn-rank-emblem img').isVisible(),'Approved ship/rank asset must appear');
  await a.locator('[data-go="matchmaking"]').click();
  await a.locator('.bn-match-choice').waitFor();
  assert.ok(await a.locator('[data-action="find-public-match"]').isVisible());
  assert.ok(await a.locator('[data-action="create-lobby"]').isVisible());
  await a.locator('[data-action="find-public-match"]').click();
  await a.locator('.bn-queue-search').waitFor();
+ assert.equal(await a.locator('.bn-search-radar .bn-radar-ring').count(),4,
+   'Figma radar requires concentric green rings');
+ const radarStyle=await a.locator('.bn-search-radar').evaluate(node=>({
+   color:getComputedStyle(node).borderTopColor,background:getComputedStyle(node).backgroundColor,
+   bounds:node.getBoundingClientRect().toJSON()
+ }));
+ assert.equal(radarStyle.color,'rgb(46, 230, 119)','Figma scan green must win CSS cascade');
+ assert.ok(radarStyle.bounds.width>=200 && radarStyle.bounds.width<=350);
+ assert.ok(await a.locator('[data-search-elapsed]').isVisible());
+ await a.setViewportSize({width:320,height:568});
+ const mobileFit=await a.locator('.bn-queue-search').evaluate(el=>{
+   const radar=el.querySelector('.bn-search-radar').getBoundingClientRect();
+   const button=el.querySelector('[data-action="cancel-public-search"]').getBoundingClientRect();
+   return {scroll:document.documentElement.scrollWidth,width:innerWidth,
+     radarBottom:radar.bottom,buttonTop:button.top,buttonBottom:button.bottom,height:innerHeight};
+ });
+ assert.ok(mobileFit.scroll<=mobileFit.width+2,'Radar created horizontal overflow at 320px');
+ assert.ok(mobileFit.radarBottom<=mobileFit.buttonTop,'Radar overlaps cancel action on short mobile');
+ assert.ok(mobileFit.buttonBottom<=mobileFit.height+2,'Cancel action should fit on short mobile');
+ await a.setViewportSize({width:375,height:667});
  assert.equal(queue.has(profiles[0].id),true);
  assert.equal(await a.locator('.bn-room-invite').count(),0);
  await a.screenshot({path:'artifacts/public-matchmaking/search-mobile.png',fullPage:true});
