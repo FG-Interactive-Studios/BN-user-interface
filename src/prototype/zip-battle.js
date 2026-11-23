@@ -39,11 +39,8 @@ export function renderZipBattle({
             <button type="button" data-action="forfeit" ${finished ? 'disabled' : ''}>Desistir da partida</button>
           </div>
         </details>
-        <div class="zip-turn-indicator ${myTurn && !finished ? 'is-your-turn' : ''}" role="status" aria-live="polite">
-          <span class="zip-compass" aria-hidden="true">✥</span>
-          <strong>${finished ? 'Batalha concluída' : battle.paused ? 'Partida pausada' : myTurn ? 'Sua vez!' : 'Vez do rival'}</strong>
-        </div>
-        <div class="zip-match-timers" aria-label="Temporizadores oficiais da partida">${clockStrip || '<span>Encerrada</span>'}</div>
+        <div class="zip-battle-headline"><span>COMBATE NAVAL</span><strong>Batalha em curso</strong></div>
+        <div class="zip-battle-identity" aria-label="Estado do confronto">${finished ? 'Concluída' : 'Em andamento'}</div>
       </header>
 
       <section class="zip-scoreboard" aria-label="Placar da partida">
@@ -72,18 +69,29 @@ export function renderZipBattle({
           <div class="zip-target-indicator" aria-live="polite">${activeAbility ? 'Alvos de '+esc(activeAbility.name)+': ' : 'Alvo: '}<b>${activeAbility ? skillTargets.map(coordLabel).join(', ') || '—' : selected ? coordLabel(selected) : '—'}</b></div>
         </section>
 
-        <section class="zip-lower-section" aria-label="Defesa e poderes">
-          <div class="zip-own-section">
-            <h2>Sua frota</h2>
-            <div class="zip-own-board">
-              ${renderBoard(mode, {
-                ships: battle.yourShips, hits: own.hits, misses: own.misses,
-                markers: battle.yourAbilityPointCells || [], small: true,
-                highlights: activeAbility && aimingForOwnBoard ? skillTargets : [],
-                interactive: canAct && Boolean(activeAbility) && aimingForOwnBoard
-              })}
-            </div>
+        <div class="zip-compass-divider" aria-label="Bússola, turno atual e prazos da batalha">
+          <span class="zip-compass-widget ${myTurn ? 'is-your-turn' : 'is-rival-turn'}" aria-hidden="true">
+            <span class="zip-compass-north">N</span><span class="zip-compass-needle"></span><span class="zip-compass-south">S</span>
+          </span>
+          <span class="zip-turn-status"><small>TURNO ATUAL</small><strong>${finished ? 'CONCLUÍDA' : battle.paused ? 'PAUSADA' : myTurn ? 'SEU TURNO' : 'ADVERSÁRIO'}</strong></span>
+          <span class="zip-round-clocks" aria-label="Temporizadores oficiais">${clockStrip || '<span>Encerrada</span>'}</span>
+        </div>
+
+        <section class="zip-own-section" aria-label="Tabuleiro de defesa">
+          <div class="zip-board-heading">SUA FROTA · ${remainingOwn} navios operacionais</div>
+          <div class="zip-own-board">
+            ${renderBoard(mode, {
+              ships: battle.yourShips, hits: own.hits, misses: own.misses,
+              markers: battle.yourAbilityPointCells || [], small: true,
+              highlights: activeAbility && aimingForOwnBoard ? skillTargets : [],
+              interactive: canAct && Boolean(activeAbility) && aimingForOwnBoard
+            })}
           </div>
+        </section>
+      </div>
+
+      <footer class="zip-battle-footer" aria-label="Controles de batalha">
+        <div class="zip-battle-action-bar">
           <div class="zip-tactics-section">
             <details class="zip-abilities-menu">
               <summary aria-label="Escolher habilidade" title="Habilidades da partida">
@@ -97,18 +105,17 @@ export function renderZipBattle({
             ${activeAbility
               ? `<p class="zip-active-power" aria-live="polite">Selecionado: <b>${esc(activeAbility.name)}</b></p>`
               : `<p class="zip-tactical-hint">${canAct?'Use um poder ou faça um disparo normal.':'Poderes disponíveis no seu próximo turno.'}</p>`}
-            ${skillControls}
-            ${activeEffects}
-            ${radarInfo}
           </div>
-        </section>
-      </div>
-
-      <button type="button" class="zip-fire-button" data-action="fire"
-        ${canAct && selected && !activeAbility ? '' : 'disabled'}>
-        <strong>Atirar!</strong>
-        <small>${selected ? `Alvo ${coordLabel(selected)}` : myTurn ? 'Selecione uma casa no mapa inimigo' : 'Aguardando oponente'}</small>
-      </button>
+          <button type="button" class="zip-fire-button" data-action="fire"
+            ${canAct && selected && !activeAbility ? '' : 'disabled'}>
+            <strong>ATIRAR</strong>
+            <small>${selected ? `Alvo ${coordLabel(selected)}` : myTurn ? 'Selecione uma casa' : 'Aguardando rival'}</small>
+          </button>
+        </div>
+        ${skillControls || activeEffects || radarInfo
+          ? `<div class="zip-battle-context" aria-live="polite">${skillControls}${activeEffects}${radarInfo}</div>`
+          : ''}
+      </footer>
     </main>
     ${pausedOverlay}
   </div>`;
