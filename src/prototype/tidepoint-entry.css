@@ -56,3 +56,6 @@
 
 /* ZIP background and carrier art, without changing GD class definitions. */
 @import './zip-approved-art-v13.css';
+
+/* Turn status replaces the decorative compass; CSS only, no new game logic. */
+@import './zip-turn-panel-v14.css';

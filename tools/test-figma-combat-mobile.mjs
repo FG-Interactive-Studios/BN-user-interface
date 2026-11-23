@@ -19,6 +19,7 @@ const ships=[{type:'CARRIER',row:0,col:0,orientation:'HORIZONTAL'},
 const placement={preparationId:91,revision:1,mode,
  yourShips:[],fleetPlaced:false,fleetConfirmed:false,opponentConfirmed:false};
 const match={matchId:91,revision:1,status:'PLAYING',mode,
+ turnDeadlineAt:new Date(Date.now()+60000).toISOString(),matchDeadlineAt:new Date(Date.now()+600000).toISOString(),
  turnPlayerId:13,yourShips:ships,shotsReceived:[],
  yourAbilityPointsEarned:0,yourAbilityPointCells:[{row:5,col:2},{row:5,col:4},{row:6,col:5},{row:7,col:7}],
  yourAbilities:[
@@ -33,7 +34,7 @@ const browser=await chromium.launch({headless:true});
 await mkdir('artifacts/figma-combat',{recursive:true});
 
 try {
- for(const status of ['PREPARING','PLAYING']){
+ for(const status of ['PREPARING','PLAYING','RIVAL','PAUSED']){
   for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1366,height:768}]){
    const errors=[];
    const page=await browser.newPage({viewport,deviceScaleFactor:1});
@@ -45,7 +46,7 @@ try {
       }:path==='/api/users/me'?player:path==='/api/game-modes'?[mode]:
       path==='/api/matchmaking/lobbies/me'?{...room,status}:
       path==='/api/matches/me/placement'?placement:
-      path==='/api/matches/me'?match:null;
+      path==='/api/matches/me'?{...match,turnPlayerId:status==='RIVAL'?17:13,paused:status==='PAUSED'}:null;
     if(response!==null) return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(response)});
     if(path==='/api/realtime/ticket')return route.fulfill({status:503,body:'{"code":"UNAVAILABLE"}',contentType:'application/json'});
     return route.fulfill({status:404,body:'{}',contentType:'application/json'});
@@ -148,7 +149,7 @@ try {
        viewportWidth:innerWidth,viewportHeight:innerHeight,
        head:rect('.zip-battle-header'),
        score:rect('.zip-scoreboard'),
-       compass:rect('.zip-compass-divider'),
+       turn:rect('.zip-turn-panel'),
        actions:rect('.zip-battle-action-bar'),
        enemy:rect('.zip-enemy-section'),
        board:rect('.zip-primary-board .board-main'),
@@ -167,7 +168,7 @@ try {
    assert.ok(metrics.pageHeight<=viewport.height+2,'Battle document should fit screen: '+explain);
    assert.ok(metrics.board.width>=Math.min(130,viewport.width*.4),'Targeting board too small: '+explain);
    assert.ok(Math.abs(metrics.board.height-metrics.board.width)<=3,'Targeting board distorted: '+explain);
-   for(const key of ['head','score','enemy','board','compass','defense','powers','fire','ownBoard']) {
+   for(const key of ['head','score','enemy','board','turn','defense','powers','fire','ownBoard']) {
      const bounds=metrics[key];
      assert.ok(bounds.left>=-2&&bounds.right<=viewport.width+2,'Offscreen horizontal '+key+': '+explain);
      assert.ok(bounds.top>=-2&&bounds.bottom<=viewport.height+2,'Offscreen vertical '+key+': '+explain);
@@ -175,11 +176,11 @@ try {
    assert.ok(metrics.head.bottom<=metrics.score.top+3,'Score overlays header: '+explain);
    assert.ok(metrics.score.bottom<=metrics.board.top+3,'Target board overlaps score: '+explain);
    if(viewport.width<=849) {
-     assert.ok(metrics.board.bottom<=metrics.compass.top+4,'Compass overlaps attack board: '+explain);
-     assert.ok(metrics.compass.bottom<=metrics.defense.top+4,'Defense overlaps compass: '+explain);
+     assert.ok(metrics.board.bottom<=metrics.turn.top+4,'Turn panel overlaps attack board: '+explain);
+     assert.ok(metrics.turn.bottom<=metrics.defense.top+4,'Defense overlaps turn panel: '+explain);
    } else {
-     assert.ok(metrics.board.right<=metrics.compass.left+4,'Desktop: enemy board must precede compass: '+explain);
-     assert.ok(metrics.compass.right<=metrics.ownBoard.left+4,'Desktop: compass must precede own board: '+explain);
+     assert.ok(metrics.board.right<=metrics.turn.left+4,'Desktop: enemy board must precede turn panel: '+explain);
+     assert.ok(metrics.turn.right<=metrics.ownBoard.left+4,'Desktop: compass must precede own board: '+explain);
      assert.ok(metrics.board.width>=300,'Desktop boards must use the available space: '+explain);
    }
    assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);
@@ -193,7 +194,39 @@ try {
    assert.ok(Math.abs(metrics.previewCell.width-metrics.previewCell.height)<=2,'Own cell distorted: '+explain);
    assert.ok(metrics.ownBoard.width>=Math.min(130,viewport.width*.4),'Defense board collapsed: '+explain);
    await page.screenshot({path:'artifacts/figma-combat/'+route+'-initial-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
+   const turnPanel=page.locator('.zip-turn-panel');
+   assert.equal(await page.locator('.zip-compass-widget').count(),0,'Decorative compass still present');
+   assert.equal(await turnPanel.count(),1,'Missing turn panel');
+   assert.ok(await page.locator('.bn-clock-turn').isVisible(),'Turn clock is not visible');
+   assert.match(await page.locator('.bn-clock-turn').innerText(),/Tempo do turno/);
+   const turnTitle=await page.locator('.zip-turn-headline').innerText();
+   const turnHint=await page.locator('.zip-turn-hint').innerText();
    const fire=page.locator('[data-action="fire"]');
+   if(status==='RIVAL') {
+     assert.equal(turnTitle,'TURNO DO ADVERSÁRIO');
+     assert.match(turnHint,/Aguarde a jogada do oponente/);
+     assert.ok(await turnPanel.evaluate(el=>el.classList.contains('is-opponent-turn')));
+     assert.ok(await fire.isDisabled(),'Shooting enabled during opponent turn');
+     await page.screenshot({path:'artifacts/figma-combat/match-rival-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
+     assert.deepEqual(errors,[],'Page errors '+explain);
+     await page.close();
+     continue;
+   }
+   if(status==='PAUSED') {
+     assert.equal(turnTitle,'PARTIDA PAUSADA');
+     assert.match(turnHint,/Aguardando reconexão/);
+     assert.ok(await turnPanel.evaluate(el=>el.classList.contains('is-paused')));
+     assert.ok(await fire.isDisabled(),'Shooting enabled while paused');
+     assert.ok(await page.locator('.bn-gdd-paused').isVisible(),'Pause overlay missing');
+     await page.screenshot({path:'artifacts/figma-combat/match-paused-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
+     assert.deepEqual(errors,[],'Page errors '+explain);
+     await page.close();
+     continue;
+   }
+   assert.equal(turnTitle,'SEU TURNO');
+   assert.match(turnHint,/Escolha um alvo ou use uma habilidade/);
+   assert.ok(await turnPanel.evaluate(el=>el.classList.contains('is-your-turn')));
+
    assert.ok(await fire.isDisabled(),'Fire must be disabled before target selection');
    const target=page.locator('.zip-primary-board .board-main [data-coord="0,1"]');
    await target.click();

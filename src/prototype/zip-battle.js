@@ -15,6 +15,12 @@ export function renderZipBattle({
   const usefulAbilities = abilities.filter(ability => ability.usesRemaining > 0 && !ability.locked).length;
   const abilityCredits = Number(battle.yourAbilityPointsEarned) || 0;
   const aimingForOwnBoard = activeAbility?.targetScope === 'OWN';
+  const turnState = finished ? 'finished' : battle.paused ? 'paused' : myTurn ? 'your-turn' : 'opponent-turn';
+  const turnTitle = finished ? 'PARTIDA ENCERRADA' : battle.paused ? 'PARTIDA PAUSADA' : myTurn ? 'SEU TURNO' : 'TURNO DO ADVERSÁRIO';
+  const turnHint = finished ? 'Confira o resultado da partida' : battle.paused ? 'Aguardando reconexão' :
+    myTurn ? activeAbility ? 'Escolha os alvos da habilidade' : 'Escolha um alvo ou use uma habilidade' : 'Aguarde a jogada do oponente';
+  const fireHint = finished ? 'Partida encerrada' : battle.paused ? 'Partida pausada' :
+    myTurn ? selected ? `Alvo ${coordLabel(selected)}` : 'Selecione uma casa' : 'Aguardando oponente';
 
   const powers = abilities.length
     ? abilities.map(ability => {
@@ -29,7 +35,7 @@ export function renderZipBattle({
     }).join('')
     : '<p class="zip-no-powers">Este modo não possui habilidades disponíveis.</p>';
 
-  return `<div class="screen combat-screen bn-zip-battle">
+  return `<div class="screen combat-screen bn-zip-battle" data-turn="${turnState}">
     <main class="zip-game-layout" aria-label="Batalha naval em andamento">
       <header class="zip-battle-header">
         <details class="zip-battle-menu">
@@ -57,7 +63,7 @@ export function renderZipBattle({
 
       <div class="zip-battle-center">
         <section class="zip-enemy-section" aria-label="Tabuleiro de ataque">
-          <div class="zip-board-heading">Tabuleiro do oponente · ${canAct ? 'toque para mirar' : 'aguarde seu turno'}</div>
+          <div class="zip-board-heading">Tabuleiro do oponente · ${canAct ? 'toque para mirar' : finished ? 'partida encerrada' : battle.paused ? 'partida pausada' : 'aguarde o oponente'}</div>
           <div class="zip-primary-board">
             ${renderBoard(mode, {
               hits: enemy.hits, misses: enemy.misses,
@@ -69,13 +75,14 @@ export function renderZipBattle({
           <div class="zip-target-indicator" aria-live="polite">${activeAbility ? 'Alvos de '+esc(activeAbility.name)+': ' : 'Alvo: '}<b>${activeAbility ? skillTargets.map(coordLabel).join(', ') || '—' : selected ? coordLabel(selected) : '—'}</b></div>
         </section>
 
-        <div class="zip-compass-divider" aria-label="Bússola, turno atual e prazos da batalha">
-          <span class="zip-compass-widget ${myTurn ? 'is-your-turn' : 'is-rival-turn'}" aria-hidden="true">
-            <span class="zip-compass-north">N</span><span class="zip-compass-needle"></span><span class="zip-compass-south">S</span>
-          </span>
-          <span class="zip-turn-status"><small>TURNO ATUAL</small><strong>${finished ? 'CONCLUÍDA' : battle.paused ? 'PAUSADA' : myTurn ? 'SEU TURNO' : 'ADVERSÁRIO'}</strong></span>
-          <span class="zip-round-clocks" aria-label="Temporizadores oficiais">${clockStrip || '<span>Encerrada</span>'}</span>
-        </div>
+        <section class="zip-turn-panel is-${turnState}" aria-label="Situação do turno e cronômetros">
+          <div class="zip-turn-copy" role="status" aria-live="polite" aria-atomic="true">
+            <span class="zip-turn-eyebrow"><i class="zip-turn-signal" aria-hidden="true"></i>TURNO ATUAL</span>
+            <strong class="zip-turn-headline">${turnTitle}</strong>
+            <small class="zip-turn-hint">${turnHint}</small>
+          </div>
+          <div class="zip-round-clocks" aria-label="Temporizadores oficiais">${clockStrip || '<span>Encerrada</span>'}</div>
+        </section>
 
         <section class="zip-own-section" aria-label="Tabuleiro de defesa">
           <div class="zip-board-heading">SUA FROTA · ${remainingOwn} navios operacionais</div>
@@ -109,7 +116,7 @@ export function renderZipBattle({
           <button type="button" class="zip-fire-button" data-action="fire"
             ${canAct && selected && !activeAbility ? '' : 'disabled'}>
             <strong>ATIRAR</strong>
-            <small>${selected ? `Alvo ${coordLabel(selected)}` : myTurn ? 'Selecione uma casa' : 'Aguardando rival'}</small>
+            <small>${fireHint}</small>
           </button>
         </div>
         ${skillControls || activeEffects || radarInfo

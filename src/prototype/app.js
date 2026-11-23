@@ -358,7 +358,7 @@ function battleScreen(){
     ? `<div class="bn-gdd-paused" role="status" aria-live="polite"><b>Aguardando reconexão...</b><small>A partida e o turno estão pausados.</small><small>Limite para reconectar: <strong data-deadline-at="${esc(reconnectDeadline)}">—</strong></small></div>`
     : '';
   const clockStrip=finished?''
-    : `<span class="bn-match-clock-strip"><span>Turno: <b data-deadline-at="${esc(b.turnDeadlineAt||'')}" data-clock-paused="${Boolean(b.paused)}">—</b></span><span>Partida: <b data-deadline-at="${esc(b.matchDeadlineAt||'')}" data-clock-paused="${Boolean(b.paused)}">—</b></span></span>`;
+    : `<span class="bn-match-clock-strip"><span class="bn-clock-turn"><small>Tempo do turno</small><b data-deadline-at="${esc(b.turnDeadlineAt||'')}" data-clock-paused="${Boolean(b.paused)}">—</b></span><span class="bn-clock-match"><small>Partida</small><b data-deadline-at="${esc(b.matchDeadlineAt||'')}" data-clock-paused="${Boolean(b.paused)}">—</b></span></span>`;
   const radarInfo=radarResult ? `<p class='tp-radar-result'>Último radar em ${coordLabel(radarResult)}: ${esc(radarResult.contacts)} contato(s) no setor 3×3.</p>` : '';
   const activeEffects=(b.yourActiveEffects||[]).length
     ? `<div class='tp-active-effects' aria-live='polite'>${b.yourActiveEffects.map(effect=>`<span class='tp-active-effect'>${esc(effect.label)} · ${effect.actionsRemaining} ação(ões) restante(s)</span>`).join('')}</div>`
