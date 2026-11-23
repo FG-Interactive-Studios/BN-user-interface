@@ -44,7 +44,7 @@ try {
     const response=path==='/api/auth/login'?{
        tokenType:'Bearer',accessToken:'qa-token',refreshToken:'qa-refresh',expiresIn:900,user:player
       }:path==='/api/users/me'?player:path==='/api/game-modes'?[mode]:
-      path==='/api/matchmaking/lobbies/me'?{...room,status}:
+      path==='/api/matchmaking/lobbies/me'?{...room,status:status==='PREPARING'?'PREPARING':'PLAYING'}:
       path==='/api/matches/me/placement'?placement:
       path==='/api/matches/me'?{...match,turnPlayerId:status==='RIVAL'?17:13,paused:status==='PAUSED'}:null;
     if(response!==null) return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(response)});
