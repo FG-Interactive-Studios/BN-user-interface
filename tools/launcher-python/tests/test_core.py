@@ -188,7 +188,9 @@ class LocalAdminHintTests(unittest.TestCase):
                     app.launch(front, api_path, docker=False, reuse_api=True)
                 self.assertIsNone(app.local_admin)
                 self.assertTrue(app.reused_api)
-            app.stop()
+            with patch.object(core, "terminate_tree") as terminate:
+                app.stop()
+            self.assertTrue(terminate.called)
             self.assertIsNone(app.local_admin)
 
 
