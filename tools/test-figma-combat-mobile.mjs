@@ -87,6 +87,13 @@ try {
      assert.equal(layout.containerType,'normal','Board collapsed by size containment: '+explain);
      assert.equal(layout.cellBorder,'solid','Grid cell border changed: '+explain);
      assert.ok(layout.head.bottom<=layout.board.top+3,'Board overlaps header: '+explain);
+     const titleBounds=await page.evaluate(()=>{
+       const h=document.querySelector('.bn-placement-header h1').getBoundingClientRect();
+       const clock=document.querySelector('.bn-placement-phase').getBoundingClientRect();
+       return {titleRight:h.right,titleTop:h.top,titleBottom:h.bottom,clockLeft:clock.left,clockBottom:clock.bottom};
+     });
+     assert.ok(titleBounds.titleRight<=titleBounds.clockLeft+2,'Preparation title overlaps timer: '+explain+' '+JSON.stringify(titleBounds));
+     assert.ok(titleBounds.titleBottom<=layout.head.bottom+2,'Preparation title clipped by header: '+explain+' '+JSON.stringify(titleBounds));
      assert.ok(layout.board.bottom<=layout.fleet.top+4,'Ship cards overlap board: '+explain);
      assert.ok(layout.fleet.bottom<=layout.tools.top+4,'Tools overlap ship cards: '+explain);
      assert.equal(await page.locator('.bn-placement-screen .board-main .cell').count(),64);
@@ -155,6 +162,7 @@ try {
    assert.ok(Math.abs(metrics.cell.width-metrics.cell.height)<=2,'Target cell distorted: '+explain);
    assert.ok(Math.abs(metrics.previewCell.width-metrics.previewCell.height)<=2,'Own cell distorted: '+explain);
    assert.ok(metrics.ownBoard.width>=90,'Own-board preview collapsed: '+explain);
+   await page.screenshot({path:'artifacts/figma-combat/'+route+'-initial-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    const fire=page.locator('[data-action="fire"]');
    assert.ok(await fire.isDisabled(),'Fire must be disabled before target selection');
    const target=page.locator('.zip-primary-board .board-main [data-coord="0,1"]');
@@ -177,7 +185,7 @@ try {
    await powers.click();
    assert.equal(await powerOptions.isVisible(),false,'Powers failed to close: '+explain);
    await powers.click();
-   await page.locator('[data-action="pick-ability"][data-ability-id="radar"]').click();
+   await page.locator('.zip-abilities-menu [data-action="pick-ability"][data-ability-id="radar"]').click();
    assert.ok(await page.locator('.tp-pilot-skill-control').isVisible(),'Power targeting UI missing: '+explain);
    await page.locator('.zip-primary-board .board-main [data-coord="0,2"]').click();
    assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),1,
