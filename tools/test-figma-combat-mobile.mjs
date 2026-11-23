@@ -94,7 +94,10 @@ try {
      });
      assert.ok(titleBounds.titleRight<=titleBounds.clockLeft+2,'Preparation title overlaps timer: '+explain+' '+JSON.stringify(titleBounds));
      assert.ok(titleBounds.titleBottom<=layout.head.bottom+2,'Preparation title clipped by header: '+explain+' '+JSON.stringify(titleBounds));
-     assert.ok(layout.board.bottom<=layout.fleet.top+4,'Ship cards overlap board: '+explain);
+     if(viewport.width<=849)
+       assert.ok(layout.board.bottom<=layout.fleet.top+4,'Ship cards overlap board: '+explain);
+     else
+       assert.ok(layout.board.right<=layout.fleet.left+4,'Desktop placement columns overlap: '+explain);
      assert.ok(layout.fleet.bottom<=layout.tools.top+4,'Tools overlap ship cards: '+explain);
      assert.equal(await page.locator('.bn-placement-screen .board-main .cell').count(),64);
      assert.equal(await page.locator('.bn-placement-ship').count(),3);
