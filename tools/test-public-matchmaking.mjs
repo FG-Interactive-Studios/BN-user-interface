@@ -31,7 +31,12 @@ const mock=(page,profile)=>{
     refreshToken:'test-refresh',expiresIn:900,user:profile});
   if(path==='/api/users/me')return respond(route,profile);
   if(path==='/api/game-modes')return respond(route,[mode]);
-  if(path==='/api/store')return respond(route,{credits:1250,premiumCredits:0,items:[]});
+  if(path==='/api/store')return respond(route,{credits:1250,premiumCredits:0,items:[
+    {id:'skin_default',category:'SKIN',name:'Original',description:'Padrão',price:0,owned:true,equipped:true,enabled:true},
+    {id:'skin_coral',category:'SKIN',name:'Coral',description:'Nova pintura',price:90,owned:false,equipped:false,enabled:true},
+    {id:'skin_abyss',category:'SKIN',name:'Abismo',description:'Nova pintura',price:95,owned:false,equipped:false,enabled:true},
+    {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Som beta',price:40,owned:false,equipped:false,enabled:true}
+  ]});
   if(path==='/api/realtime/ticket')return route.fulfill({status:503,body:'{}'});
   if(path==='/api/matchmaking/state'&&method==='GET'){
     lookups.unified++;
@@ -108,6 +113,29 @@ try {
  assert.equal(await a.locator('.bn-wallet-pill.is-premium strong').innerText(),'0');
  assert.ok(await a.locator('.bn-feature-icon img').isVisible(),'Original cannon asset must appear');
  assert.ok(await a.locator('.bn-rank-emblem img').isVisible(),'Approved ship/rank asset must appear');
+ // Desktop store must use the viewport, not the 480px portrait shell.
+ await b.locator('[data-go="store"]').click();
+ await b.locator('.tp-store-card').first().waitFor({timeout:10000});
+ assert.equal(await b.locator('.tp-store-card').count(),4);
+ const storeGeometry=await b.locator('.tp-store-page').evaluate(el=>{
+   const shell=el.closest('.shell').getBoundingClientRect();
+   const page=el.getBoundingClientRect();
+   const grid=el.querySelector('.tp-store-grid');
+   return {shell:shell.width,page:page.width,
+     columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,
+     walletCount:document.querySelectorAll('.bn-wallet-pills').length,
+     innerWallet:el.querySelectorAll('.bn-store-wallet').length,
+     horizontalOverflow:document.documentElement.scrollWidth-innerWidth};
+ });
+ assert.ok(storeGeometry.shell>=1200,'Desktop store remains constrained to portrait shell');
+ assert.ok(storeGeometry.page>=1000,'Desktop store content remains too narrow');
+ assert.ok(storeGeometry.columns>=3,'Desktop store needs at least three card columns');
+ assert.equal(storeGeometry.walletCount,1,'Exactly one wallet in the store header');
+ assert.equal(storeGeometry.innerWallet,0,'No second wallet inside the store page');
+ assert.ok(storeGeometry.horizontalOverflow<=2,'Store desktop must not horizontally overflow');
+ await b.screenshot({path:'artifacts/public-matchmaking/store-desktop.png',fullPage:true});
+ await b.locator('[data-go="lobby"]').click();
+ await b.locator('.bn-lobby').waitFor();
  await a.locator('[data-go="matchmaking"]').click();
  await a.locator('.bn-match-choice').waitFor();
  assert.ok(await a.locator('[data-action="find-public-match"]').isVisible());
@@ -116,6 +144,29 @@ try {
  await a.locator('.bn-queue-search').waitFor();
  assert.equal(await a.locator('.bn-search-radar .bn-radar-ring').count(),4,
    'Figma radar requires concentric green rings');
+ assert.equal(await a.locator('.bn-search-radar .bn-radar-contact').count(),12,
+   'Radar should have 12 decorative blips');
+ const scanner=await a.locator('.bn-search-radar').evaluate(el=>{
+   const sweep=el.querySelector('.bn-radar-sweep'), contacts=[...el.querySelectorAll('.bn-radar-contact')];
+   const style=getComputedStyle(sweep);
+   const pseudo=[getComputedStyle(el,'::before'),getComputedStyle(el,'::after')];
+   return {duration:style.animationDuration,colors:style.backgroundImage,
+     pseudoDisabled:pseudo.every(p=>p.content==='none'&&p.display==='none'),
+     contacts:contacts.map(node=>({
+       animation:getComputedStyle(node).animationDuration,
+       delay:getComputedStyle(node).animationDelay,
+       left:parseFloat(node.style.left),top:parseFloat(node.style.top)
+     }))};
+ });
+ assert.equal(scanner.duration,'2.2s','Green sweep must use the former blue sweep speed');
+ assert.ok(scanner.pseudoDisabled,'Legacy blue sweep layers must be removed');
+ assert.ok(!scanner.colors.includes('82, 214, 255'),'Sweep cannot retain cyan beam');
+ for(const contact of scanner.contacts){
+   assert.equal(contact.animation,'2.2s','Every blip follows the sweep period');
+   const expected=((Math.atan2(contact.left-50,50-contact.top)*180/Math.PI+360)%360)/360*2.2;
+   assert.ok(Math.abs(parseFloat(contact.delay)-expected)<0.002,
+     'Blip must flash when the clockwise beam reaches its position');
+ }
  const radarStyle=await a.locator('.bn-search-radar').evaluate(node=>({
    color:getComputedStyle(node).borderTopColor,background:getComputedStyle(node).backgroundColor,
    bounds:node.getBoundingClientRect().toJSON()
