@@ -6,24 +6,26 @@ import { createServer } from 'vite';
 import { chromium } from 'playwright';
 
 const mode={
- id:'classic',name:'Clássico',placementDirections:['HORIZONTAL','VERTICAL'],
- geometry:{kind:'RECTANGULAR',rows:10,columns:10,cells:Array.from({length:100},(_,i)=>({row:Math.floor(i/10),col:i%10}))},
- fleet:[{id:'CARRIER',length:5},{id:'BATTLESHIP',length:4},{id:'CRUISER',length:3},
-        {id:'SUBMARINE',length:3},{id:'DESTROYER',length:2}]
+ id:'classic-powers',name:'Clássico com poderes',placementDirections:['HORIZONTAL','VERTICAL'],
+ geometry:{kind:'RECTANGULAR',rows:8,columns:8,cells:Array.from({length:64},(_,i)=>({row:Math.floor(i/8),col:i%8}))},
+ fleet:[{id:'SEARCH',length:1},{id:'DESTROYER',length:2},{id:'CARRIER',length:5}]
 };
 const player={id:13,nickname:'Jogador QA',email:'qa@example.test',avatarId:'captain'};
 const room={code:'ABC123',status:'PREPARING',revision:1,mode,
  players:[{id:13,nickname:'Jogador QA',ready:true},{id:17,nickname:'Adversário',ready:true}]};
 const ships=[{type:'CARRIER',row:0,col:0,orientation:'HORIZONTAL'},
-{type:'BATTLESHIP',row:1,col:0,orientation:'HORIZONTAL'},
-{type:'CRUISER',row:2,col:0,orientation:'HORIZONTAL'},
-{type:'SUBMARINE',row:3,col:0,orientation:'HORIZONTAL'},
-{type:'DESTROYER',row:4,col:0,orientation:'HORIZONTAL'}];
+{type:'DESTROYER',row:1,col:0,orientation:'HORIZONTAL'},
+{type:'SEARCH',row:2,col:0,orientation:'HORIZONTAL'}];
 const placement={preparationId:91,revision:1,mode,
  yourShips:[],fleetPlaced:false,fleetConfirmed:false,opponentConfirmed:false};
 const match={matchId:91,revision:1,status:'PLAYING',mode,
  turnPlayerId:13,yourShips:ships,shotsReceived:[],
- shotsFired:[{row:0,col:0,hit:false},{row:1,col:1,hit:true}]};
+ yourAbilityPointsEarned:0,yourAbilityPointCells:[{row:5,col:2},{row:5,col:4},{row:6,col:5},{row:7,col:7}],
+ yourAbilities:[
+  {id:'radar',name:'Radar',description:'Encontra contatos na área 3×3',usesRemaining:1,targetCount:1,targetScope:'ENEMY',locked:false},
+  {id:'double-shot',name:'Tiro duplo',description:'Duas casas num turno',usesRemaining:1,targetCount:2,targetScope:'ENEMY',locked:false},
+  {id:'air-strike',name:'Ataque aéreo',description:'Área 2×2',usesRemaining:1,targetCount:1,targetScope:'ENEMY',locked:true}
+ ],shotsFired:[{row:0,col:0,hit:false},{row:1,col:1,hit:true}]};
 
 const vite=await createServer({server:{host:'127.0.0.1',port:4181,strictPort:true},logLevel:'error'});
 await vite.listen();
@@ -32,7 +34,7 @@ await mkdir('artifacts/figma-combat',{recursive:true});
 
 try {
  for(const status of ['PREPARING','PLAYING']){
-  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844}]){
+  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:412,height:915}]){
    const errors=[];
    const page=await browser.newPage({viewport,deviceScaleFactor:1});
    page.on('pageerror',e=>errors.push(e.message));
@@ -85,10 +87,17 @@ try {
      assert.equal(layout.containerType,'normal','Board collapsed by size containment: '+explain);
      assert.equal(layout.cellBorder,'solid','Grid cell border changed: '+explain);
      assert.ok(layout.head.bottom<=layout.board.top+3,'Board overlaps header: '+explain);
+     const titleBounds=await page.evaluate(()=>{
+       const h=document.querySelector('.bn-placement-header h1').getBoundingClientRect();
+       const clock=document.querySelector('.bn-placement-phase').getBoundingClientRect();
+       return {titleRight:h.right,titleTop:h.top,titleBottom:h.bottom,clockLeft:clock.left,clockBottom:clock.bottom};
+     });
+     assert.ok(titleBounds.titleRight<=titleBounds.clockLeft+2,'Preparation title overlaps timer: '+explain+' '+JSON.stringify(titleBounds));
+     assert.ok(titleBounds.titleBottom<=layout.head.bottom+2,'Preparation title clipped by header: '+explain+' '+JSON.stringify(titleBounds));
      assert.ok(layout.board.bottom<=layout.fleet.top+4,'Ship cards overlap board: '+explain);
      assert.ok(layout.fleet.bottom<=layout.tools.top+4,'Tools overlap ship cards: '+explain);
-     assert.equal(await page.locator('.bn-placement-screen .board-main .cell').count(),100);
-     assert.equal(await page.locator('.bn-placement-ship').count(),5);
+     assert.equal(await page.locator('.bn-placement-screen .board-main .cell').count(),64);
+     assert.equal(await page.locator('.bn-placement-ship').count(),3);
      assert.equal(await page.locator('.bn-placement-ship.is-selected').count(),1);
      assert.ok(await page.locator('[data-action="random-placement"]').isEnabled());
      for(const selector of ['[data-action="random-placement"]','[data-action="confirm-placement"]','[data-action="leave-lobby"]']){
@@ -109,67 +118,83 @@ try {
      continue;
    }
 
+
    const metrics=await page.evaluate(()=>{
-    const rect=selector=>{
-      const el=document.querySelector(selector);
-      if(!el)throw Error('Missing '+selector);
-      const r=el.getBoundingClientRect();
-      return {x:r.x,y:r.y,left:r.left,top:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height,
-              scrollWidth:el.scrollWidth,scrollHeight:el.scrollHeight,clientWidth:el.clientWidth,clientHeight:el.clientHeight};
-    };
-    return {
-      viewport:innerWidth,
-      rootWidth:document.documentElement.scrollWidth,
-      pageHeight:document.documentElement.scrollHeight,
-      head:rect('.combat-screen .match-head'),
-      boardPanel:rect('.combat-screen .premium-board-panel'),
-      board:rect('.combat-screen .board-main'),
-      hud:rect('.combat-screen .premium-hud'),
-      rail:rect('.combat-screen .side-stack'),
-      actions:rect('.combat-screen '+(document.body.dataset.route==='placement'?'.placement-actions':'.combat-actions')),
-      wrapper:rect('.combat-screen .combat-board-wrap'),
-      containerType:getComputedStyle(document.querySelector('.combat-screen .combat-board-wrap')).containerType,
-    };
+     const rect=selector=>{
+       const element=document.querySelector(selector);
+       if(!element)throw Error('Missing '+selector);
+       const r=element.getBoundingClientRect();
+       return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,height:r.height};
+     };
+     return {
+       rootWidth:document.documentElement.scrollWidth,
+       pageHeight:document.documentElement.scrollHeight,
+       viewportWidth:innerWidth,viewportHeight:innerHeight,
+       head:rect('.zip-battle-header'),
+       score:rect('.zip-scoreboard'),
+       enemy:rect('.zip-enemy-section'),
+       board:rect('.zip-primary-board .board-main'),
+       defense:rect('.zip-own-section'),
+       powers:rect('.zip-tactics-section'),
+       fire:rect('.zip-fire-button'),
+       ownBoard:rect('.zip-own-board .board-preview'),
+       cell:rect('.zip-primary-board .board-main .cell'),
+       previewCell:rect('.zip-own-board .board-preview .cell'),
+     };
    });
    const explain=status+' '+viewport.width+'x'+viewport.height+' '+JSON.stringify(metrics);
-   assert.ok(metrics.rootWidth<=viewport.width+2,'Document horizontal overflow: '+explain);
-   assert.ok(metrics.board.width >= viewport.width*0.68,'Tiny board: '+explain);
-   assert.ok(Math.abs(metrics.board.height-metrics.board.width)<=3,'Board is not square: '+explain);
-   assert.ok(metrics.board.left>=-2 && metrics.board.right<=viewport.width+2,'Board not inside viewport: '+explain);
-   assert.equal(metrics.containerType,'normal','Wrong size container: '+explain);
-   assert.ok(metrics.head.bottom<=metrics.boardPanel.top+3,'Board overlaps header: '+explain);
-   assert.ok(metrics.boardPanel.bottom<=metrics.hud.top+4,'HUD overlaps board: '+explain);
-   assert.ok(metrics.hud.bottom<=metrics.rail.top+4,'Secondary rail overlaps actions: '+explain);
-   assert.ok(metrics.pageHeight>=viewport.height,'Page collapses: '+explain);
-   const selectors=status==='PREPARING'?
-    ['[data-action="random-placement"]','[data-action="confirm-placement"]','[data-action="leave-lobby"]']:
-    ['[data-action="fire"]','[data-action="forfeit"]'];
-   for(const selector of selectors){
-     const button=page.locator(selector);
-     await button.scrollIntoViewIfNeeded({timeout:5000});
-     const accessible=await button.evaluate(btn=>{
-       const r=btn.getBoundingClientRect();
-       return {top:r.top,bottom:r.bottom,width:r.width,height:r.height,viewport:innerHeight};
-     });
-     assert.ok(accessible.width>150 && accessible.height>=35,
-       'Action collapsed '+selector+' '+explain+' '+JSON.stringify(accessible));
-     assert.ok(accessible.top>=-2 && accessible.bottom<=viewport.height+2,
-       'Cannot scroll to action '+selector+' '+explain+' '+JSON.stringify(accessible));
+   assert.ok(metrics.rootWidth<=viewport.width+2,'Battle document horizontal overflow: '+explain);
+   assert.ok(metrics.pageHeight<=viewport.height+2,'Battle document should fit screen: '+explain);
+   assert.ok(metrics.board.width>=viewport.width*.58,'Targeting board too small: '+explain);
+   assert.ok(Math.abs(metrics.board.height-metrics.board.width)<=3,'Targeting board distorted: '+explain);
+   for(const key of ['head','score','enemy','board','defense','powers','fire','ownBoard']) {
+     const bounds=metrics[key];
+     assert.ok(bounds.left>=-2&&bounds.right<=viewport.width+2,'Offscreen horizontal '+key+': '+explain);
+     assert.ok(bounds.top>=-2&&bounds.bottom<=viewport.height+2,'Offscreen vertical '+key+': '+explain);
    }
-   if(status==='PLAYING'){
-     assert.equal(await page.locator('.combat-screen .board-main .cell').count(),100);
-     assert.ok(await page.locator('.combat-screen .preview-panel .board-preview').count()===1);
-     const target=page.locator('.combat-screen .board-main [data-coord="0,1"]');
-     await target.click();
-     assert.ok(await page.locator('[data-action="fire"]').isEnabled(),'Selecting target did not enable attack');
-   }else{
-     assert.equal(await page.locator('.combat-screen .board-main .cell').count(),100);
-     assert.equal(await page.locator('.placement-fleet-card .tp-ships>div').count(),5);
-     assert.ok(await page.locator('[data-action="random-placement"]').isEnabled());
-   }
+   assert.ok(metrics.head.bottom<=metrics.score.top+3,'Score overlays header: '+explain);
+   assert.ok(metrics.score.bottom<=metrics.board.top+3,'Target board overlaps score: '+explain);
+   assert.ok(metrics.board.bottom<=metrics.defense.top+4,'Defense overlaps attack: '+explain);
+   assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);
+   assert.ok(metrics.powers.bottom<=metrics.fire.top+4,'Powers overlap fire control: '+explain);
+   assert.equal(await page.locator('.zip-primary-board .board-main .cell').count(),64);
+   assert.equal(await page.locator('.zip-own-board .board-preview .cell').count(),64);
+   assert.ok(Math.abs(metrics.cell.width-metrics.cell.height)<=2,'Target cell distorted: '+explain);
+   assert.ok(Math.abs(metrics.previewCell.width-metrics.previewCell.height)<=2,'Own cell distorted: '+explain);
+   assert.ok(metrics.ownBoard.width>=90,'Own-board preview collapsed: '+explain);
+   await page.screenshot({path:'artifacts/figma-combat/'+route+'-initial-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
+   const fire=page.locator('[data-action="fire"]');
+   assert.ok(await fire.isDisabled(),'Fire must be disabled before target selection');
+   const target=page.locator('.zip-primary-board .board-main [data-coord="0,1"]');
+   await target.click();
+   assert.ok(await fire.isEnabled(),'Selecting target did not enable attack');
+   assert.match(await page.locator('.zip-target-indicator').innerText(),/A2/);
+   const menu=page.locator('.zip-battle-menu summary');
+   await menu.click();
+   assert.ok(await page.locator('[data-action="forfeit"]').isVisible(),'Forfeit option must remain reachable');
+   await menu.click();
+   const powers=page.locator('.zip-abilities-menu summary');
+   const powerOptions=page.locator('.zip-abilities-options');
+   assert.equal(await powerOptions.isVisible(),false,'Closed powers menu is covering the grid: '+explain);
+   await powers.click();
+   assert.ok(await powerOptions.isVisible(),'Powers do not open: '+explain);
+   assert.equal(await page.locator('.zip-ability').count(),3);
+   const popup=await powerOptions.boundingBox();
+   assert.ok(popup && popup.x>=-2 && popup.x+popup.width<=viewport.width+2,
+     'Power menu extends outside viewport: '+explain);
+   await powers.click();
+   assert.equal(await powerOptions.isVisible(),false,'Powers failed to close: '+explain);
+   await powers.click();
+   await page.locator('.zip-abilities-menu [data-action="pick-ability"][data-ability-id="radar"]').click();
+   assert.ok(await page.locator('.tp-pilot-skill-control').isVisible(),'Power targeting UI missing: '+explain);
+   await page.locator('.zip-primary-board .board-main [data-coord="0,2"]').click();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),1,
+     'Selected power target is not highlighted: '+explain);
+   await page.locator('[data-action="cancel-ability"]').click();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),0);
    await page.screenshot({path:'artifacts/figma-combat/'+route+'-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    assert.deepEqual(errors,[],'Page errors '+explain);
-   console.log('PASS '+status+' '+viewport.width+'x'+viewport.height+'; board '+metrics.board.width.toFixed(0)+'px, scroll-safe actions');
+   console.log('PASS '+status+' '+viewport.width+'x'+viewport.height+'; ZIP battle board '+metrics.board.width.toFixed(0)+'px, scroll-free controls');
    await page.close();
   }
  }

@@ -44,3 +44,9 @@
 
 /* GDD v1.2: compact timing and own-board markers, does not resize boards. */
 @import './gdd-clock-hud.css';
+
+/* Alternate placement and combat composition proposed by the supplied ZIP. */
+@import './zip-flow-v10.css';
+
+/* Layout/mobile QA corrections and restored TidePoint board treatment. */
+@import './zip-battle-repair-v11.css';

@@ -41,12 +41,12 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
     </button>`;
   }).join('');
 
-  return `<div class="screen combat-screen placement-screen bn-placement-screen">
+  return `<div class="screen combat-screen placement-screen bn-placement-screen bn-zip-placement">
     <main class="bn-placement-page" aria-labelledby="bn-placement-title">
       <header class="bn-placement-header">
         <div class="bn-placement-heading">
           <button type="button" class="bn-placement-exit" data-action="leave-lobby" aria-label="Sair da sala" title="Sair da sala">×</button>
-          <h1 id="bn-placement-title">Sua frota</h1>
+          <div><span class="bn-placement-kicker">Fase estratégica</span><h1 id="bn-placement-title">Posicione os navios</h1></div>
         </div>
         <span class="bn-placement-phase" aria-label="Prazo de preparação definido pelo servidor">
           <span class="bn-placement-clock" aria-hidden="true">◷</span>
@@ -62,6 +62,7 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
         </div>
       </div>
         <div class="bn-placement-side">
+          <span class="bn-placement-fleet-label">Esquadra naval · ${ships.length}/${mode.fleet.length}</span>
           <section class="bn-placement-fleet" aria-label="Seleção de embarcações">
         ${cards}
       </section>
