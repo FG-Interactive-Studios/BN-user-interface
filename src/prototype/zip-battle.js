@@ -72,7 +72,7 @@ export function renderZipBattle({
               interactive: canAct && (!activeAbility || activeAbility.targetScope !== 'OWN')
             })}
           </div>
-          <div class="zip-target-indicator" aria-live="polite">${activeAbility ? 'Área prevista · ' : 'Alvo: '}<b>${activeAbility ? skillArea.length ? skillArea.length+' casas afetadas' : activeAbility.targetCount===0 ? 'Sem seleção necessária' : 'Escolha uma casa' : selected ? coordLabel(selected) : '—'}</b></div>
+          <div class="zip-target-indicator" aria-live="polite">${activeAbility ? 'Área prevista · ' : 'Alvo: '}<b>${activeAbility ? skillArea.length ? skillArea.length===1 ? '1 casa afetada' : skillArea.length+' casas afetadas' : activeAbility.targetCount===0 ? 'Sem seleção necessária' : 'Escolha uma casa' : selected ? coordLabel(selected) : '—'}</b></div>
         </section>
 
         <section class="zip-turn-panel is-${turnState}" aria-label="Situação do turno e cronômetros">
