@@ -18,7 +18,7 @@ export function renderZipBattle({
   const turnState = finished ? 'finished' : battle.paused ? 'paused' : myTurn ? 'your-turn' : 'opponent-turn';
   const turnTitle = finished ? 'PARTIDA ENCERRADA' : battle.paused ? 'PARTIDA PAUSADA' : myTurn ? 'SEU TURNO' : 'TURNO DO ADVERSÁRIO';
   const turnHint = finished ? 'Confira o resultado da partida' : battle.paused ? 'Aguardando reconexão' :
-    myTurn ? activeAbility ? 'Escolha uma casa e confirme a habilidade' : 'Escolha um alvo ou use uma habilidade' : 'Aguarde a jogada do oponente';
+    myTurn ? activeAbility ? activeAbility.id==='double-shot' ? 'Escolha duas casas para o tiro duplo' : 'Escolha uma casa e confirme a habilidade' : 'Escolha um alvo ou use uma habilidade' : 'Aguarde a jogada do oponente';
   const fireHint = finished ? 'Partida encerrada' : battle.paused ? 'Partida pausada' :
     myTurn ? selected ? `Alvo ${coordLabel(selected)}` : 'Selecione uma casa' : 'Aguardando oponente';
 
@@ -115,7 +115,7 @@ export function renderZipBattle({
           ${activeAbility
             ? `<button type="button" class="zip-fire-button zip-activate-power" data-action="activate-ability"
                 ${canAct && skillTargets.length===activeAbility.targetCount && !activeAbility.locked ? '' : 'disabled'}>
-                <strong>ATIVAR PODER</strong><small>${activeAbility.targetCount===0 ? 'Sem alvo necessário' : skillTargets.length===activeAbility.targetCount ? 'Confirmar área escolhida' : 'Escolha uma casa'}</small>
+                <strong>ATIVAR PODER</strong><small>${activeAbility.targetCount===0 ? 'Sem alvo necessário' : skillTargets.length===activeAbility.targetCount ? 'Confirmar área escolhida' : activeAbility.id==='double-shot' ? skillTargets.length===1 ? 'Escolha a segunda casa' : 'Escolha duas casas' : 'Escolha uma casa'}</small>
               </button>`
             : `<button type="button" class="zip-fire-button" data-action="fire" ${canAct && selected ? '' : 'disabled'}>
                 <strong>ATIRAR</strong><small>${fireHint}</small>
