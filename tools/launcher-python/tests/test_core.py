@@ -123,6 +123,78 @@ class ProcessSafetyTests(unittest.TestCase):
 
 
 
+class LocalAdminHintTests(unittest.TestCase):
+    @staticmethod
+    def api_with_local_admin_bootstrap(directory: Path) -> Path:
+        api_path = directory / "api"
+        service_dir = api_path / "src/main/java/com/FGInteractive/BatalhaNaval/auth/service"
+        service_dir.mkdir(parents=True)
+        (service_dir / "InitialAdminBootstrapRunner.java").write_text(
+            'if (environment.acceptsProfiles(Profiles.of("local"))) '
+            'service.createLocalIfMissing();', encoding="utf-8"
+        )
+        (service_dir / "InitialAdminBootstrapService.java").write_text(
+            'final String email = "admin@admin.com"; '
+            'encoder.encode("admin");', encoding="utf-8"
+        )
+        return api_path
+
+    def test_detects_local_bootstrap_and_never_requires_creds_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self.api_with_local_admin_bootstrap(Path(tmp))
+            hint = core.local_admin_hint(path, {"SPRING_PROFILES_ACTIVE": "local"})
+            self.assertEqual(hint, core.LocalAdminHint("admin@admin.com", "admin"))
+            self.assertFalse((path / "bootstrap-admin-credentials.txt").exists())
+
+    def test_does_not_offer_credentials_on_wrong_profile_disabled_bootstrap_or_old_api(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self.api_with_local_admin_bootstrap(Path(tmp))
+            for env in (
+                {},
+                {"SPRING_PROFILES_ACTIVE": "prod"},
+                {"SPRING_PROFILES_ACTIVE": "local", "ADMIN_BOOTSTRAP_ENABLED": "false"},
+                {"SPRING_PROFILES_ACTIVE": "local", "ADMIN_BOOTSTRAP_LOCAL_DEFAULT_ENABLED": "0"},
+            ):
+                with self.subTest(env=env):
+                    self.assertIsNone(core.local_admin_hint(path, env))
+            (path / "src/main/java/com/FGInteractive/BatalhaNaval/auth/service/"
+             "InitialAdminBootstrapService.java").write_text(
+                 "public boolean createIfMissing() { return false; }", encoding="utf-8")
+            self.assertIsNone(core.local_admin_hint(
+                path, {"SPRING_PROFILES_ACTIVE": "local"}))
+
+    def test_only_owned_local_api_exposes_hint_and_never_logs_password(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            api_path = self.api_with_local_admin_bootstrap(workspace)
+            (api_path / "mvnw").touch()
+            (api_path / "mvnw.cmd").touch()  # Windows CI uses the CMD wrapper.
+            front = workspace / "front"
+            front.mkdir()
+            (front / "package-lock.json").touch()
+            (front / "node_modules").mkdir()
+            app = core.Engine(workspace / "app", lambda message: None)
+            with patch.object(app, "node_check", return_value="npm"), \
+                 patch.object(app, "java_check"), \
+                 patch.object(core, "port_busy", return_value=False), \
+                 patch.object(app, "spawn", return_value=SimpleNamespace()), \
+                 patch.object(app, "pipe_logs"), \
+                 patch.object(app, "wait"):
+                with patch.object(core, "api_healthy", return_value=False):
+                    app.launch(front, api_path, docker=False, reuse_api=False)
+                self.assertEqual(app.local_admin, core.LocalAdminHint())
+                self.assertNotIn("Senha inicial", app.log_path.read_text(encoding="utf-8"))
+                app.local_admin = None
+                with patch.object(core, "api_healthy", return_value=True):
+                    app.launch(front, api_path, docker=False, reuse_api=True)
+                self.assertIsNone(app.local_admin)
+                self.assertTrue(app.reused_api)
+            with patch.object(core, "terminate_tree") as terminate:
+                app.stop()
+            self.assertTrue(terminate.called)
+            self.assertIsNone(app.local_admin)
+
+
 class DockerStartupTests(unittest.TestCase):
     def test_engine_probe_returns_linux(self):
         result = SimpleNamespace(returncode=0, stdout="linux\n", stderr="")
