@@ -34,3 +34,7 @@
 - [ ] Verificar se skins compradas/substituídas não sobrescrevem o pacote visual `skin_default` sem assets homologados
 
 O critério de fidelidade é **reproduzir os recursos reais do layout**, não recriá-los visualmente por CSS. O CI de geometria não é prova de fidelidade estética.
+
+## Sprite básico adicional (revisão da PR #17)
+
+A pasta [Navios iniciais](https://drive.google.com/drive/folders/1wr8Yq4ZvaWD5cSHmP36D8RS47PKbv9ew) contém `Destroier.webp` (ID de Drive `1jTC0_gmKj-GThu3QZBlKP6kGDLe8rNTc`). Foi integrado **em arquivo distinto**, `ship-destroyer-gd.webp`, associado exclusivamente a `DESTROYER`, sem reutilizar `ship-battleship.png` do ZIP. Não equivale a homologar o uso do submarino do ZIP para `SEARCH`. O arquivo foi transcodificado mantendo a transparência e usado apenas como arte ilustrativa de card/frota, não altera comprimento de navio ou propriedade de cosmético.
