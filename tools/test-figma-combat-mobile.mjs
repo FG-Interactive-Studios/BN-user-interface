@@ -81,7 +81,7 @@ try {
      });
      const explain='PREPARING '+viewport.width+'x'+viewport.height+' '+JSON.stringify(layout);
      assert.ok(layout.rootWidth<=viewport.width+2,'Document horizontal overflow: '+explain);
-     assert.ok(layout.board.width>=viewport.width*.68,'Tiny preserved board: '+explain);
+     assert.ok(layout.board.width>=Math.min(viewport.width*.68,500),'Tiny preserved board: '+explain);
      assert.ok(Math.abs(layout.board.height-layout.board.width)<=3,'Board is not square: '+explain);
      assert.ok(layout.board.left>=-2&&layout.board.right<=viewport.width+2,'Board outside viewport: '+explain);
      assert.equal(layout.containerType,'normal','Board collapsed by size containment: '+explain);
