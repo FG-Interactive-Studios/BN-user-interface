@@ -25,7 +25,12 @@ const match={matchId:91,revision:1,status:'PLAYING',mode,
  yourAbilities:[
   {id:'radar',name:'Radar',description:'Encontra contatos na área 3×3',usesRemaining:1,targetCount:1,targetScope:'ENEMY',locked:false},
   {id:'double-shot',name:'Tiro duplo',description:'Duas casas num turno',usesRemaining:1,targetCount:2,targetScope:'ENEMY',locked:false},
-  {id:'air-strike',name:'Ataque aéreo',description:'Área 2×2',usesRemaining:1,targetCount:1,targetScope:'ENEMY',locked:true}
+  {id:'air-strike',name:'Ataque aéreo',description:'Área 2×2',usesRemaining:1,targetCount:1,targetScope:'ENEMY',locked:false},
+  {id:'line-barrage',name:'Rajada em linha',description:'Três casas em linha',usesRemaining:1,targetCount:2,targetScope:'ENEMY',locked:false},
+  {id:'hull-shield',name:'Escudo de casco',description:'Protege navio intacto',usesRemaining:1,targetCount:1,targetScope:'OWN',locked:false},
+  {id:'retreat',name:'Retirada',description:'Move navio intacto',usesRemaining:1,targetCount:2,targetScope:'OWN',locked:false},
+  {id:'last-chance',name:'Última chance',description:'Evita o próximo ataque fatal',usesRemaining:1,targetCount:0,targetScope:'NONE',locked:false},
+  {id:'interference',name:'Interferência',description:'Bloqueia habilidades',usesRemaining:1,targetCount:0,targetScope:'NONE',locked:false}
  ],shotsFired:[{row:0,col:0,hit:false},{row:1,col:1,hit:true}]};
 
 const vite=await createServer({server:{host:'127.0.0.1',port:4181,strictPort:true},logLevel:'error'});
@@ -179,8 +184,8 @@ try {
      assert.ok(metrics.board.bottom<=metrics.turn.top+4,'Turn panel overlaps attack board: '+explain);
      assert.ok(metrics.turn.bottom<=metrics.defense.top+4,'Defense overlaps turn panel: '+explain);
    } else {
-     assert.ok(metrics.board.right<=metrics.turn.left+4,'Desktop: enemy board must precede turn panel: '+explain);
-     assert.ok(metrics.turn.right<=metrics.ownBoard.left+4,'Desktop: compass must precede own board: '+explain);
+     assert.ok(metrics.ownBoard.right<=metrics.turn.left+4,'Desktop: own fleet must be LEFT of turn panel: '+explain);
+     assert.ok(metrics.turn.right<=metrics.board.left+4,'Desktop: enemy grid must be RIGHT of turn panel: '+explain);
      assert.ok(metrics.board.width>=300,'Desktop boards must use the available space: '+explain);
    }
    assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);
@@ -198,7 +203,7 @@ try {
    assert.equal(await page.locator('.zip-compass-widget').count(),0,'Decorative compass still present');
    assert.equal(await turnPanel.count(),1,'Missing turn panel');
    assert.ok(await page.locator('.bn-clock-turn').isVisible(),'Turn clock is not visible');
-   assert.match(await page.locator('.bn-clock-turn').innerText(),/Tempo do turno/);
+   assert.match(await page.locator('.bn-clock-turn').innerText(),/tempo do turno/i);
    const turnTitle=await page.locator('.zip-turn-headline').innerText();
    const turnHint=await page.locator('.zip-turn-hint').innerText();
    const fire=page.locator('[data-action="fire"]');
@@ -241,20 +246,73 @@ try {
    assert.equal(await powerOptions.isVisible(),false,'Closed powers menu is covering the grid: '+explain);
    await powers.click();
    assert.ok(await powerOptions.isVisible(),'Powers do not open: '+explain);
-   assert.equal(await page.locator('.zip-ability').count(),3);
+   assert.equal(await page.locator('.zip-ability').count(),8);
    const popup=await powerOptions.boundingBox();
    assert.ok(popup && popup.x>=-2 && popup.x+popup.width<=viewport.width+2,
      'Power menu extends outside viewport: '+explain);
    await powers.click();
    assert.equal(await powerOptions.isVisible(),false,'Powers failed to close: '+explain);
-   await powers.click();
-   await page.locator('.zip-abilities-menu [data-action="pick-ability"][data-ability-id="radar"]').click();
-   assert.ok(await page.locator('.tp-pilot-skill-control').isVisible(),'Power targeting UI missing: '+explain);
-   await page.locator('.zip-primary-board .board-main [data-coord="0,2"]').click();
-   assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),1,
-     'Selected power target is not highlighted: '+explain);
+   const pick=async id=>{
+     await page.locator('.zip-abilities-menu summary').click();
+     await page.locator('.zip-abilities-menu [data-action="pick-ability"][data-ability-id="'+id+'"]').click();
+     assert.ok(await page.locator('.zip-power-guide').isVisible(),'Power guide missing: '+id+' '+explain);
+     assert.ok(await page.locator('[data-action="cancel-ability"]').isVisible(),'Cancel missing: '+id);
+     assert.ok(await page.locator('[data-action="activate-ability"]').isVisible(),'Activate missing: '+id);
+   };
+   await pick('radar');
+   const hoverCell=page.locator('.zip-primary-board [data-coord="3,3"]');
+   await hoverCell.hover();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-preview').count(),9,
+     'Radar must preview its full 3x3 sector on hover: '+explain);
+   await page.screenshot({path:'artifacts/figma-combat/match-radar-hover-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
+   await hoverCell.click();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),9,
+     'Selecting radar anchor must retain nine marked cells: '+explain);
+   assert.ok(await page.locator('[data-action="activate-ability"]').isEnabled());
+   const enemyAfterSelection=await page.locator('.zip-primary-board .board-main').boundingBox();
+   const footerGuide=await page.locator('.zip-power-guide').boundingBox();
+   assert.ok(enemyAfterSelection&&footerGuide&&enemyAfterSelection.y+enemyAfterSelection.height<=footerGuide.y+3,
+     'Power controls cover the enemy board: '+explain);
+   const enemyVisibility=await page.locator('.zip-primary-board .board-main .cell').evaluateAll(cells=>{
+     const board=cells[0].parentElement.getBoundingClientRect();
+     const last=cells.at(-1).getBoundingClientRect();
+     return last.bottom<=board.bottom+2&&last.right<=board.right+2;
+   });
+   assert.equal(enemyVisibility,true,'Skill hides last board row: '+explain);
    await page.locator('[data-action="cancel-ability"]').click();
    assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),0);
+   await pick('double-shot');
+   await page.locator('.zip-primary-board [data-coord="3,3"]').click();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),2,'Double shot needs two auto targets');
+   assert.ok(await page.locator('[data-action="activate-ability"]').isEnabled(),'Double shot still needs two separate clicks');
+   await page.locator('[data-action="cancel-ability"]').click();
+   await pick('air-strike');
+   await page.locator('.zip-primary-board [data-coord="3,3"]').hover();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-preview').count(),4,'Area strike must show 2x2');
+   await page.locator('.zip-primary-board [data-coord="3,3"]').click();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),4,'Area strike must select 4 affected cells');
+   await page.locator('[data-action="cancel-ability"]').click();
+   await pick('line-barrage');
+   await page.locator('.zip-primary-board [data-coord="3,3"]').click();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),3,'Line barrage must auto choose 3 cells');
+   assert.ok(await page.locator('[data-action="activate-ability"]').isEnabled());
+   await page.locator('[data-action="cycle-ability-direction"]').click();
+   assert.equal(await page.locator('.zip-primary-board .pilot-skill-target').count(),3,'Direction change lost selected footprint');
+   await page.locator('[data-action="cancel-ability"]').click();
+   await pick('hull-shield');
+   await page.locator('.zip-own-board [data-coord="1,0"]').hover();
+   assert.equal(await page.locator('.zip-own-board .pilot-skill-preview').count(),2,'Own hull shield does not preview ship');
+   await page.locator('.zip-own-board [data-coord="1,0"]').click();
+   assert.equal(await page.locator('.zip-own-board .pilot-skill-target').count(),2,'Own board click was interpreted as enemy');
+   await page.locator('[data-action="cancel-ability"]').click();
+   await pick('retreat');
+   await page.locator('.zip-own-board [data-coord="1,0"]').click();
+   assert.ok(await page.locator('[data-action="activate-ability"]').isEnabled(),'Retreat should select start and move automatically');
+   assert.ok(await page.locator('.zip-own-board .pilot-skill-target').count()>=2);
+   await page.locator('[data-action="cancel-ability"]').click();
+   await pick('last-chance');
+   assert.ok(await page.locator('[data-action="activate-ability"]').isEnabled(),'Targetless power should work without a board click');
+   await page.locator('[data-action="cancel-ability"]').click();
    await page.screenshot({path:'artifacts/figma-combat/'+route+'-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    assert.deepEqual(errors,[],'Page errors '+explain);
    console.log('PASS '+status+' '+viewport.width+'x'+viewport.height+'; ZIP battle board '+metrics.board.width.toFixed(0)+'px, scroll-free controls');
