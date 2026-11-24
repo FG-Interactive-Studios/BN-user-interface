@@ -4,6 +4,7 @@ import {AudioEvents} from './audio-events.js';
 import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
+import {renderFleetEquipment,renderEquipmentSelection,equipmentCategory,ownedEquipment} from './fleet-equipment.js';
 import {selectedExpression,publicExpression,impactAttacker,paidFuneral,paidCommentary} from './expressive-cosmetics.js';
 import {tauntControls, equippedTaunts, funnyReaction, funeralReaction} from './chaos-humor.js';
 import {walletMarkup,walletDialogMarkup} from './figma-wallet.js';
@@ -147,7 +148,7 @@ function go(route) {
   route = resolvedRoute(route, api.isAuthenticated(), state.lobby?.status);
   if (route!=='profile') {state.profileEditorOpen=false;state.profileSecurityOpen=false;}
   if(route==='admin'&&state.profile?.admin!==true)return notice('Área restrita a administradores.',true);
-  if (currentRoute()===route) render(); else location.hash=route;
+  if (currentRoute()===route&&!(route==='fleet'&&fleetCategory())) render(); else location.hash=route;
 }
 function nav(active='play') {
   return `<nav class="bottom-nav bn-bottom-nav" aria-label="Navegação principal">
@@ -598,23 +599,15 @@ function resultScreen() {
     reward:rewardReceipts.get(battle.matchId),celebrate});
 }
 
+function fleetCategory(){
+  const category=new URLSearchParams(location.hash.split('?')[1]||'').get('equipment');
+  return equipmentCategory(category)?category:null;
+}
 function fleetScreen(){
   const mode=activeMode()||state.modes[0];
-  const ships=mode?.fleet||[];
-  const catalogue=ships.length
-    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">${shipArt(def.id,equippedId(state.store?.items,'SKIN','skin_default'))?`<img src="${shipArt(def.id,equippedId(state.store?.items,'SKIN','skin_default'))}" class="bn-fleet-thumb" alt="" loading="lazy" />`:'⚓'}</span>
-       <div><strong>${esc(shipName(def.id))}</strong><small>${def.length} casas</small></div>
-       <span class="bn-ship-status">Disponível</span></article>`).join('')
-    : '<p class="bn-available-note">Nenhum modo de jogo habilitado no momento.</p>';
-  return mainContent(`<div class="bn-page bn-fleet-page">
-    <header class="bn-page-heading"><h1>Sua frota</h1><p>Escolha sua estratégia antes de entrar em batalha.</p></header>
-    <section class="bn-surface bn-fleet-catalogue"><div class="bn-section-title"><span>EMBARCAÇÕES</span><strong>${esc(mode?.name||'Clássico')}</strong></div>
-      <div class="bn-ship-list">${catalogue}</div></section>
-    <section class="bn-surface bn-fleet-info"><div class="bn-section-title"><span>PREPARAÇÃO</span><strong>Frota de combate</strong></div>
-      <p>A frota é definida pela API para cada modo. Você posiciona seus navios ao entrar na partida.</p>
-      <button type="button" class="btn btn-primary bn-primary-button" data-go="lobby">Preparar partida</button>
-    </section>
-  </div>`,{active:'fleet'});
+  const category=fleetCategory();
+  const options={catalog:state.store,mode,loading:state.storeLoading||state.busy};
+  return mainContent(category?renderEquipmentSelection(category,options):renderFleetEquipment(options),{active:'fleet',variant:'bn-equipment-screen'});
 }
 function storeScreen(){
   return mainContent(renderCosmeticStore(state.store,{loading:state.storeLoading||state.busy,filter:state.storeFilter}),{active:'store'});
@@ -624,7 +617,7 @@ async function loadStore({quiet=false}={}){
   state.storeLoading=true;
   const generation=++storeLoadGeneration;
   const userId=state.profile?.id;
-  if(currentRoute()==='store') render();
+  if(['store','fleet'].includes(currentRoute())) render();
   try {
     const snapshot=await api.get('/store');
     if(generation!==storeLoadGeneration||!api.isAuthenticated()||state.profile?.id!==userId)return;
@@ -791,6 +784,24 @@ async function runAction(action,itemId=null) {
       const currency=state.walletDialog;state.walletDialog=null;state.notice='';state.error=false;render();
       root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();break;
     }
+    case 'fleet-select':
+      if(currentRoute()==='fleet'&&equipmentCategory(itemId)){state.notice='';state.error=false;location.hash='fleet?equipment='+encodeURIComponent(itemId);}
+      break;
+    case 'fleet-back':
+      if(currentRoute()==='fleet'){state.notice='';state.error=false;go('fleet');}
+      break;
+    case 'fleet-reload':
+      if(currentRoute()==='fleet')void loadStore();
+      break;
+    case 'fleet-equip': {
+      const category=fleetCategory();
+      if(currentRoute()!=='fleet'||!category||!ownedEquipment(state.store,category).some(item=>item.id===itemId&&!item.equipped))break;
+      await guard(async()=>{
+        state.store=await api.put('/store/equip/'+encodeURIComponent(itemId));
+        configureAudio(audioRoute||currentRoute());
+      });
+      break;
+    }
     case 'store-category':
       if(currentRoute()==='store'&&['ALL','SKIN','SOUND','TAUNT','CAPTAIN','BUNDLE','COSMETICS'].includes(itemId)){state.storeFilter=itemId;render();root.querySelector('.bn-store-category[data-item-id="'+itemId+'"]')?.focus({preventScroll:true});}
       break;
@@ -915,6 +926,7 @@ async function runAction(action,itemId=null) {
     case 'store-equip':await guard(async()=>{
       if(!itemId) return;
       state.store=await api.put('/store/equip/'+encodeURIComponent(itemId));
+      configureAudio(audioRoute||currentRoute());
       document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
       notice('Item equipado com sucesso.');
     });break;
@@ -1208,7 +1220,7 @@ function bindEvents() {
     if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();
     if(currentRoute()!=='profile'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
     render();
-    if(currentRoute()==='store' && !state.store && !state.storeLoading) void loadStore();
+    if(['store','fleet'].includes(currentRoute()) && !state.store && !state.storeLoading) void loadStore();
     if(currentRoute()==='admin'&&state.profile?.admin===true&&state.adminModes===null&&!state.adminLoading)void loadAdminModes();
   });
 }

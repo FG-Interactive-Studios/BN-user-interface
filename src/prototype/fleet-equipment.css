@@ -1,0 +1,73 @@
+/* Equipment overview: fleet and captain are visual anchors. */
+body[data-route="fleet"] .screen.bn-equipment-screen>.shell{width:100%!important;max-width:none!important;min-height:100dvh!important}
+body[data-route="fleet"] .bn-equipment-screen .main{display:block!important;width:100%!important;padding:18px clamp(14px,4vw,54px) 124px!important}
+body[data-route="fleet"] .bn-equipment-screen .tp-content{display:block!important;width:100%!important;max-width:1200px!important;margin:0 auto!important;padding:0!important}
+body[data-route="fleet"] .bn-equipment-page{display:flex!important;flex-direction:column;width:100%!important;max-width:none!important;min-width:0;gap:16px}
+.bn-equipment-heading{display:flex;align-items:center;gap:12px}
+.bn-equipment-heading h1{font:400 clamp(34px,5vw,52px)/1 'Pirata One',serif;margin:0;color:#fff}
+.bn-equipment-heading p{font:400 12px/1.4 'Lexend',sans-serif;color:#c9dce4;margin:6px 0 0}
+.bn-equipment-showcase{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr);gap:14px;min-width:0}
+.bn-equipment-fleet,.bn-equipment-captain{min-width:0;display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid #49717d;border-radius:16px;background:radial-gradient(ellipse at 50% 40%,#173f4ec9,#07141de8 75%);box-shadow:0 7px 20px #0006}
+.bn-equipment-section-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0}
+.bn-equipment-section-heading>div{min-width:0}
+.bn-equipment-kicker{color:#83ded6;font:600 10px/1.2 'Lexend',sans-serif;letter-spacing:.08em}
+.bn-equipment-section-heading h2,.bn-equipment-other h2,.bn-inventory-active h2,.bn-inventory-heading{font:400 clamp(24px,3vw,33px)/1.05 'Pirata One',serif;color:#fff;margin:4px 0;overflow-wrap:anywhere}
+.bn-equipment-change,.bn-equipment-equip,.bn-equipment-back{flex:none;cursor:pointer;background:#153c48;border:1px solid #68b9c5;color:#e7fbff;border-radius:9px;font:600 12px/1.2 'Lexend',sans-serif;padding:10px;min-height:38px}
+.bn-equipment-change span{margin-left:3px;color:#9cdbd9}
+.bn-equipment-ships{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:9px;flex:1;min-width:0}
+body[data-route="fleet"] .bn-equipment-ship{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;min-width:0;text-align:center;padding:8px 4px;background:#07141c99;border:1px solid #365662;border-radius:12px}
+.bn-equipment-ship-art{display:grid;place-items:center;height:clamp(120px,26dvh,245px);width:100%;min-width:0}
+.bn-equipment-ship-art img{display:block;width:100%;height:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 7px 6px #0009)}
+.bn-equipment-ship-art>span{font-size:34px;color:#79bfc8}
+body[data-route="fleet"] .bn-equipment-ship strong{font:400 clamp(17px,2vw,24px)/1.1 'Pirata One',serif;color:#fff;overflow-wrap:anywhere}
+body[data-route="fleet"] .bn-equipment-ship small{font:400 10px/1.2 'Lexend',sans-serif;margin:0;color:#abc1cc}
+.bn-equipment-hero-portrait{min-height:0;height:clamp(142px,29dvh,275px);display:grid;place-items:center;overflow:hidden;border-radius:12px;background:#08131b80}
+.bn-equipment-hero-portrait img{display:block;width:100%;height:100%;min-height:0;object-fit:contain}
+.bn-equipment-mode{font:400 11px/1.35 'Lexend',sans-serif;color:#b4c8d1;margin:0}
+.bn-equipment-other h2{margin:0 0 9px}
+.bn-equipment-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.bn-equipment-slot{display:flex;align-items:center;gap:10px;min-width:0;text-align:left;color:#eefaff;background:#0b202ceb;border:1px solid #365663;border-radius:11px;padding:9px;cursor:pointer;min-height:62px}
+.bn-equipment-slot-icon{flex:0 0 36px;height:36px;display:grid;place-items:center;font-size:23px;background:#173948;border-radius:8px;color:#7de4dd}
+.bn-equipment-slot-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.bn-equipment-slot-copy small{color:#9ec6d0;font:400 10px/1.2 'Lexend',sans-serif}
+.bn-equipment-slot-copy strong{font:600 12px/1.3 'Lexend',sans-serif;overflow-wrap:anywhere}
+.bn-equipment-slot:hover,.bn-equipment-change:hover{border-color:#fbc650}
+.bn-equipment-page button:focus-visible{outline:2px solid #ffc329;outline-offset:2px}
+.bn-equipment-message{font:400 12px/1.4 'Lexend',sans-serif;color:#cbdce2;padding:12px;background:#0e222e;border-radius:8px;margin:0}
+.bn-equipment-message button{color:#ffce68;background:none;border:0;cursor:pointer}
+.bn-equipment-back{font-size:26px;width:38px;padding:0}
+.bn-inventory-active{display:grid;gap:6px}
+.bn-inventory-active .bn-inventory-card{max-width:720px}
+.bn-inventory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.bn-inventory-heading{display:flex;align-items:center;gap:10px}
+.bn-inventory-heading small{font:500 12px/1 'Lexend',sans-serif;color:#a9c5cd}
+.bn-inventory-card{min-width:0;display:grid;grid-template-columns:minmax(0,120px) minmax(0,1fr);align-items:center;gap:10px;padding:10px;border:1px solid #3c616f;border-radius:12px;background:#0c202cee}
+.bn-inventory-card.is-active{border-color:#6fe1bb;background:linear-gradient(120deg,#103b38,#0c202c);grid-template-columns:minmax(0,180px) minmax(0,1fr)}
+.bn-inventory-card .tp-store-preview,.bn-inventory-card .bn-equipment-portrait-art{position:relative!important;display:flex;align-items:center;justify-content:center;min-width:0;width:100%;height:auto!important;min-height:0!important;max-height:145px!important;aspect-ratio:4/3;overflow:hidden;border-radius:8px;background:#122d3c}
+.bn-inventory-card .bn-equipment-portrait-art img,.bn-inventory-card .tp-store-preview>img{display:block;max-width:100%;width:100%;height:100%;object-fit:contain}
+.bn-inventory-card .tp-store-preview.is-fleet>img{width:30%;height:90%}
+.bn-inventory-copy{display:flex;flex-direction:column;gap:6px;min-width:0}
+.bn-inventory-copy h3{font:400 24px/1 'Pirata One',serif;margin:0;color:#fff;overflow-wrap:anywhere}
+.bn-inventory-copy p{font:400 11px/1.4 'Lexend',sans-serif;color:#c7d7df;margin:0}
+.bn-equipment-equip{align-self:flex-start;background:#ffc329;border-color:#ffdc82;color:#14212a}
+.bn-inventory-equipped{font:600 12px/1.2 'Lexend',sans-serif;color:#91edbd}
+@media(min-width:850px){
+ body[data-route="fleet"] .bn-equipment-screen .bottom-nav{width:min(calc(100vw - 48px),690px)!important;max-width:690px!important}
+}
+@media(max-width:849px){
+ body[data-route="fleet"] .bn-equipment-screen .main{padding:12px 12px 120px!important}
+ .bn-equipment-showcase{grid-template-columns:minmax(0,1fr);gap:10px}
+ .bn-equipment-fleet,.bn-equipment-captain{padding:10px;gap:8px}
+ .bn-equipment-ships{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .bn-equipment-ship-art{height:clamp(78px,24vw,140px)}
+ .bn-equipment-captain{display:grid;grid-template-columns:minmax(0,1fr) 88px;grid-template-rows:auto auto;align-items:center}
+ .bn-equipment-captain .bn-equipment-section-heading{grid-column:1;grid-row:1;flex-wrap:wrap}
+ .bn-equipment-captain .bn-equipment-mode{grid-column:1;grid-row:2}
+ .bn-equipment-hero-portrait{grid-column:2;grid-row:1/3;height:112px}
+ .bn-equipment-slots{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ .bn-equipment-slot{padding:7px;gap:5px;min-height:58px}
+ .bn-equipment-slot-icon{flex-basis:28px;height:28px;font-size:18px}
+ .bn-equipment-slot-copy strong{font-size:11px}
+ .bn-inventory-grid{grid-template-columns:minmax(0,1fr)}
+ .bn-inventory-card,.bn-inventory-card.is-active{grid-template-columns:100px minmax(0,1fr);padding:8px}
+}

@@ -93,3 +93,13 @@ assert.match(connectionStatusContent(true),/tp-live-dot online/);
 assert.ok(!connectionStatusContent(true).includes('<span>'),'Online indicator has no visible text');
 assert.match(connectionStatusContent(false),/tp-live-dot warning/);
 assert.match(connectionStatusContent(false),/<span>Reconectando<\/span>/);
+
+const {renderFleetEquipment,renderEquipmentSelection,ownedEquipment,equipmentCategory}=await import('../src/prototype/fleet-equipment.js');
+const equipFixture={items:[{id:'skin_default',category:'SKIN',name:'Original',enabled:true,owned:true,equipped:true},{id:'skin_pirate',category:'SKIN',name:'Pirata',enabled:true,owned:true,equipped:false},{id:'skin_space',category:'SKIN',name:'Não adquirido',enabled:true,owned:false},{id:'skin_magnate',category:'SKIN',name:'Desativado',enabled:false,owned:true},{id:'bundle_space',category:'BUNDLE',owned:true,enabled:true}]};
+assert.equal(ownedEquipment(equipFixture,'SKIN').length,2);
+assert.equal(equipmentCategory('BUNDLE'),undefined);
+const selection=renderEquipmentSelection('SKIN',{catalog:equipFixture});
+assert.match(selection,/bn-inventory-active[\s\S]*data-equipment-id="skin_default"/);
+assert.match(selection,/data-action="fleet-equip" data-item-id="skin_pirate"/);
+assert.ok(!selection.includes('skin_space')&&!selection.includes('skin_magnate')&&!selection.includes('bundle_space'));
+assert.match(renderFleetEquipment({catalog:equipFixture,mode:{fleet:[{id:'SEARCH',length:1}]}}),/skin_default\/search-intact/);

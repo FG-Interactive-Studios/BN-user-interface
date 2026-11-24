@@ -94,3 +94,6 @@
 
 /* Shared account header and bounded profile portrait, last in cascade. */
 @import './shared-header-profile-v22.css';
+
+/* Active fleet showcase and category-specific inventory views. */
+@import './fleet-equipment.css';

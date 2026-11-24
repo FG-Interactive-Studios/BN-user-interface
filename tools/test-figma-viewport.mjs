@@ -143,6 +143,15 @@ try {
   await assertSameHeader('fleet');
   assert.equal(await page.locator('.bn-wallet-pills').count(),0);
   assert.equal(await page.locator('.bn-ship-item').count(),5,'fleet should follow API');
+  assert.equal(await page.locator('.bn-fleet-info').count(),0);
+  assert.equal(await page.locator('.bn-equipment-slot').count(),9);
+  await page.locator('[data-action="fleet-select"][data-item-id="SKIN"]').click();
+  await page.locator('.bn-equipment-selection[data-equipment-category="SKIN"]').waitFor();
+  assert.equal(await page.locator('.bn-inventory-active [data-equipment-id="skin_default"]').count(),1);
+  assert.equal(await page.locator('.bn-inventory-grid [data-equipment-id="skin_coral"]').count(),0,'Unowned product must not appear in inventory');
+  await page.locator('[data-action="fleet-back"]').click();
+  await page.locator('.bn-equipment-showcase').waitFor();
+  await horizontalFit('fleet after selection');
   if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/fleet-'+viewport.width+'.png',fullPage:true});
   await page.locator('.bn-nav-store').click();
   await page.locator('.bn-store-page').waitFor();
