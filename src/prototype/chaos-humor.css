@@ -74,3 +74,9 @@ body[data-route="store"] .bn-taunt-phrase {
 @media(prefers-reduced-motion:reduce){
   .bn-chaos-toast{animation:none!important;}
 }
+
+.bn-rivalry-score{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px;padding:6px 10px;border:1px solid #81c6bf80;border-radius:8px;background:#0b293ad9;color:#f4e9c7;font-size:clamp(11px,2.5vw,14px);width:100%;box-sizing:border-box}
+.bn-rivalry-score small{display:block;color:#b7d9df;font-size:.8em}
+.bn-rivalry-numbers{white-space:nowrap}.bn-rivalry-numbers b{font-variant-numeric:tabular-nums;font-size:1.3em;color:#ffe299}
+
+.bn-impact-clowns{display:block;font-size:clamp(18px,5vw,30px);letter-spacing:.2em;margin-top:5px;animation:bn-impact-party .55s ease-out both}.bn-neon-frame .bn-profile-portrait-inner{outline:3px solid #8bf7ff;box-shadow:0 0 18px #9d61ff;animation:bn-neon-pulse 2s ease-in-out infinite alternate}.bn-neon-frame .bn-profile-portrait-inner span{color:#c5ffff}body[data-board-theme='abyss'] .zip-primary-board,body[data-board-theme='abyss'] .zip-own-board,body[data-board-theme='abyss'] .bn-placement-board-wrap{outline:2px solid #a78bfa;outline-offset:2px;box-shadow:0 0 12px #7545b766}@keyframes bn-impact-party{from{transform:scale(.5);opacity:.3}to{transform:scale(1);opacity:1}}@keyframes bn-neon-pulse{from{box-shadow:0 0 7px #9d61ff}to{box-shadow:0 0 18px #6bfaff}}@media(prefers-reduced-motion:reduce){.bn-impact-clowns,.bn-neon-frame .bn-profile-portrait-inner{animation:none!important}}

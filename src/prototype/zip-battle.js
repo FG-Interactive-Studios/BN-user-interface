@@ -1,4 +1,5 @@
 import { esc, coordLabel, renderBoard } from './board.js';
+import {expressionTitle} from './expressive-cosmetics.js';
 
 /** ZIP reference: visual composition only. The backend still controls all battle rules. */
 export function renderZipBattle({
@@ -56,7 +57,7 @@ export function renderZipBattle({
         </div>
         <div class="zip-score-value" aria-label="Acertos ${enemy.hits.length} a ${own.hits.length}">${enemy.hits.length} × ${own.hits.length}</div>
         <div class="zip-score-side zip-score-opponent">
-          <strong>${esc(opponent?.nickname || 'Oponente')}</strong>
+          <strong>${esc(opponent?.nickname || 'Oponente')}${expressionTitle(opponent?.cosmetics?.TITLE)?` · ${esc(expressionTitle(opponent.cosmetics.TITLE))}`:''}</strong>
           <small>Navios: ${remainingEnemy}/${totalShips} · Acertos: ${own.hits.length}</small>
         </div>
       </section>
@@ -113,6 +114,13 @@ export function renderZipBattle({
                   </div>
                 </details>`}
           </div>
+          <div class="zip-attack-buttons">
+            <button type="button" class="zip-desperation-button" data-action="desperation-shot"
+              aria-label="Aperta e Reza: disparo aleatório normal, uma vez por partida"
+              title="${battle.yourDesperationUsed?'Tiro do Desespero já usado':'Aperta e Reza · sorteia uma casa válida e consome seu turno'}"
+              ${canAct&&!activeAbility&&!battle.yourDesperationUsed?'':'disabled'}>
+              <span aria-hidden="true">🎲</span><small>REZA</small>
+            </button>
           ${activeAbility
             ? `<button type="button" class="zip-fire-button zip-activate-power" data-action="activate-ability"
                 ${canAct && skillTargets.length===activeAbility.targetCount && !activeAbility.locked ? '' : 'disabled'}>
@@ -121,6 +129,7 @@ export function renderZipBattle({
             : `<button type="button" class="zip-fire-button" data-action="fire" ${canAct && selected ? '' : 'disabled'}>
                 <strong>ATIRAR</strong><small>${fireHint}</small>
               </button>`}
+          </div>
         </div>
         ${skillControls || activeEffects || radarInfo
           ? `<div class="zip-battle-context" aria-live="polite">${skillControls}${activeEffects}${radarInfo}</div>`

@@ -23,6 +23,9 @@ jobs:
       - run: node tools/test-zip-cell-assets.mjs
       - run: node tools/test-ability-targeting.mjs
       - run: node tools/test-match-report.mjs
+      - run: node tools/test-chaos-awards.mjs
+      - run: node tools/test-rivalry.mjs
+      - run: node tools/test-expressive.mjs
 
       - run: node tools/test-mobile-typography.mjs
 

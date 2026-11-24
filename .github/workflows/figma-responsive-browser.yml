@@ -13,6 +13,7 @@ on:
       - 'tools/test-figma-result.mjs'
       - 'tools/test-rematch.mjs'
       - 'tools/test-chaos-economy.mjs'
+      - 'tools/test-chaos-finale.mjs'
       - 'tools/test-figma-profile.mjs'
       - 'tools/test-figma-settings.mjs'
       - '.github/workflows/figma-responsive-browser.yml'
@@ -52,6 +53,8 @@ jobs:
         run: node tools/test-rematch.mjs
       - name: Check fake coins, shop, taunts and battle reward
         run: node tools/test-chaos-economy.mjs
+      - name: Check random shot and ridiculous award mobile/desktop
+        run: node tools/test-chaos-finale.mjs
       - name: Check approved Figma player profile and edit forms
         run: node tools/test-figma-profile.mjs
       - name: Check approved Figma settings layout and real account actions
@@ -69,6 +72,7 @@ jobs:
             artifacts/figma-result/
             artifacts/rematch/
             artifacts/chaos-economy/
+            artifacts/chaos-finale/
             artifacts/figma-profile/
             artifacts/figma-settings/
           if-no-files-found: ignore

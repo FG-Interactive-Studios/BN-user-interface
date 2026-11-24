@@ -4,12 +4,14 @@ import {AudioEvents} from './audio-events.js';
 import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
-import {tauntControls, equippedTaunts, funnyReaction} from './chaos-humor.js';
+import {selectedExpression,publicExpression,impactAttacker,paidFuneral,paidCommentary} from './expressive-cosmetics.js';
+import {tauntControls, equippedTaunts, funnyReaction, funeralReaction} from './chaos-humor.js';
 import {walletMarkup} from './figma-wallet.js';
 import {RADAR_SWEEP_SECONDS, sonarContactMarkup} from './radar-blips.js';
 import shipEmblem from '../assets/figma/ship-icon.png';
 import cannonIcon from '../assets/figma/cannon.png';
 import { renderFigmaResult } from './figma-result.js';
+import {buildMatchReport,ridiculousAward} from './match-report.js';
 import { renderFigmaProfile } from './figma-profile.js';
 import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
 import { renderFigmaPlacement } from './figma-placement.js';
@@ -40,6 +42,7 @@ let storeLoadGeneration=0;
 const rewardReceipts=new Map();
 const rewardRequests=new Set();
 const shownTaunts=new Set();
+const celebratedMatches=new Set();
 let chaosToastTimer;
 let activeChaosToast=null;
 function mountChaosToast(){
@@ -50,12 +53,13 @@ function mountChaosToast(){
   toast.className='bn-chaos-toast is-'+activeChaosToast.kind;
   toast.setAttribute('role','status');
   toast.textContent=activeChaosToast.text;
+  if(activeChaosToast.clown){const deco=document.createElement('span');deco.className='bn-impact-clowns';deco.setAttribute('aria-hidden','true');deco.textContent='🤡 🎉 🤡 🎊 🤡';toast.append(deco);}
   root.append(toast);
 }
-function showChaosToast(message,kind='taunt'){
+function showChaosToast(message,kind='taunt',clown=false){
   if(!root||currentRoute()!=='match')return;
   activeChaosToast={text:message,kind:kind==='hit'?'hit':kind==='miss'?'miss':kind==='sunk'?'sunk':'taunt',
-    until:Date.now()+3200};
+    until:Date.now()+3200,clown};
   mountChaosToast();
   clearTimeout(chaosToastTimer);
   chaosToastTimer=setTimeout(()=>{
@@ -99,11 +103,17 @@ function syncAudio(route){
   configureAudio(route);
   // Do not overlap the outcome or combat entry with generic UI transitions.
   if(changedRoute&&!['match','result','placement'].includes(route))audio.play('ui_transition');
+  const before=audioEvents.battle;
   const events=audioEvents.update({room:state.lobby,battle:state.battle,userId:state.profile?.id});
   for(const event of events)audio.play(event);
   if(route==='match'){
-    const reaction=funnyReaction(events,state.battle?.revision||0);
-    if(reaction)showChaosToast(reaction.text,reaction.kind);
+    const rev=state.battle?.revision||0, me=state.profile?.id, rival=state.lobby?.players?.find(p=>p.id!==me)?.id;
+    const victim=events.includes('ship_sunk_ally')?me:events.includes('ship_sunk_enemy')?rival:null;
+    const funeral=victim==null?null:paidFuneral(publicExpression(state.lobby,victim,'FUNERAL'),rev);
+    const reaction=funeral?{kind:'sunk',text:funeral}:funeralReaction(events,rev)||funnyReaction(events,rev);
+    const attacker=impactAttacker(before,state.battle,me,rival);
+    const clown=attacker!=null&&publicExpression(state.lobby,attacker,'ATTACK')==='attack_clown';
+    if(reaction)showChaosToast(paidCommentary(selectedExpression(state.store?.items,'COMMENTATOR'),reaction.kind,rev)||reaction.text,reaction.kind,clown);
   }
 }
 let root;
@@ -182,7 +192,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -574,8 +584,10 @@ function battleScreen(){
 function resultScreen() {
   const battle=state.battle;
   if(!battle)return mainContent(panel('Resultado','Aguardando dados da partida.'),{noNav:true});
+  const celebrate=!celebratedMatches.has(battle.matchId);
+  if(celebrate)celebratedMatches.add(battle.matchId);
   return renderFigmaResult({battle,profile:state.profile,lobby:state.lobby,
-    reward:rewardReceipts.get(battle.matchId)});
+    reward:rewardReceipts.get(battle.matchId),celebrate});
 }
 
 function fleetScreen(){
@@ -621,7 +633,7 @@ async function loadStore({quiet=false}={}){
   }
 }
 function profileScreen(){
-  return renderFigmaProfile(state.profile);
+  return renderFigmaProfile(state.profile,{title:selectedExpression(state.store?.items,'TITLE'),frame:selectedExpression(state.store?.items,'FRAME')});
 }
 function settingsScreen(){
   return renderFigmaSettings(state.profile,state.preferences);
@@ -688,6 +700,7 @@ function render(){ if (!root) return;
   updateNotice();
   if (state.busy) root.classList.add('tp-loading'); else root.classList.remove('tp-loading');
   document.body.dataset.route=route;
+  document.body.dataset.boardTheme=selectedExpression(state.store?.items,'BOARD_THEME')==='board_abyss'?'abyss':'default';
   syncAudio(route);
   document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
   if(route==='profile'&&state.profileEditorOpen){
@@ -892,6 +905,14 @@ async function runAction(action,itemId=null) {
       state.queue=null;go('matchmaking');
     });break;
     case 'copy-code':if(state.lobby){try{await navigator.clipboard.writeText(state.lobby.code);notice('Código copiado para a área de transferência.');}catch{notice(`Código da sala: ${state.lobby.code}`);}}break;
+    case 'copy-award':{
+      if(currentRoute()!=='result'||!state.battle)return;
+      const award=ridiculousAward(buildMatchReport(state.battle,state.profile?.id));
+      const share=`🏆 ${award.emoji} ${award.title} — ${award.description} #BatalhaNaval`;
+      try {await navigator.clipboard.writeText(share);notice('Prêmio copiado para compartilhar!');}
+      catch {notice(share);}
+      break;
+    }
     case 'ready':await guard(async()=>{const me=state.lobby?.players.find(p=>p.id===state.profile.id);state.lobby=await api.put('/matchmaking/lobbies/me/ready',{ready:!me?.ready});await reconcile();});break;
     case 'leave-lobby':{
       if (state.lobby?.status==='PLAYING' && !confirm('Sair agora significa desistir e perder a partida. Continuar?')) return;
@@ -1000,6 +1021,25 @@ async function runAction(action,itemId=null) {
         notice(`Radar em ${coordLabel(last)}: ${last.contacts} contato(s) no setor 3×3.`);
       await reconcile();
     });break;
+    case 'desperation-shot':{
+      if(state.busy||currentRoute()!=='match'||!state.battle
+        ||state.skillMode||state.battle.status!=='PLAYING'
+        ||state.battle.paused||state.battle.yourDesperationUsed
+        ||state.battle.turnPlayerId!==state.profile?.id)return;
+      if(!confirm('🎲 Aperta e Reza! O servidor escolherá um alvo aleatório. Isso gasta seu turno e só pode ser usado uma vez por partida. Continuar?'))return;
+      await guard(async()=>{
+        const previous=state.battle.shotsFired||[];
+        state.battle=await api.post('/matches/me/shots/desperation');
+        const latest=(state.battle.shotsFired||[]).find(shot=>
+          !previous.some(old=>old.row===shot.row&&old.col===shot.col&&
+            old.hit===shot.hit&&Boolean(old.blocked)===Boolean(shot.blocked)));
+        syncAudio(currentRoute());
+        state.selected=null;
+        await reconcile();
+        if(latest&&currentRoute()==='match')showChaosToast('🎲 Aperta e Reza acertou '+coordLabel(latest)+'!','taunt');
+      });
+      break;
+    }
     case 'fire':await guard(async()=>{
       if(!state.selected||state.skillMode||!state.battle||state.battle.turnPlayerId!==state.profile.id||state.battle.paused)return;
       state.battle=await api.post('/matches/me/shots',state.selected);

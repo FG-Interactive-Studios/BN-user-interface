@@ -82,3 +82,6 @@
 
 /* Humorous battle effects and sellable text-only provocation packs. */
 @import './chaos-humor.css';
+
+/* Chaotic finale, ridiculous awards and server-drawn random shot. */
+@import './chaos-finale-v19.css';
