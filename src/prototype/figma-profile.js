@@ -1,10 +1,12 @@
 import { esc, shipName } from './board.js';
+import {captainArt} from './ship-art.js';
+import {expressionTitle} from './expressive-cosmetics.js';
 
 /** Approved Figma player-profile artboard.
  * Data from /api/users/me only. No invented rank, XP, record or achievements.
  * The existing account editor and password forms remain functional in a modal.
  */
-export function renderFigmaProfile(profile) {
+export function renderFigmaProfile(profile,{title,frame,captain}={}) {
   const p=profile||{};
   const nickname=esc(p.nickname||'Capitão');
   const initial=esc(Array.from(String(p.nickname||'C').trim())[0]?.toLocaleUpperCase('pt-BR')||'C');
@@ -26,12 +28,15 @@ export function renderFigmaProfile(profile) {
         <h1 id="bn-profile-title">Perfil</h1>
       </header>
       <section class="bn-profile-card bn-profile-captain" aria-labelledby="bn-profile-name">
-        <div class="bn-profile-portrait">
-          <div class="bn-profile-portrait-inner" aria-label="Avatar selecionado: ${esc(avatar)}"><span>${initial}</span></div>
+        <div class="bn-profile-portrait ${frame==='frame_neon'?'bn-neon-frame':''}">
+          <div class="bn-profile-portrait-inner" role="img" aria-label="Capitão equipado">
+            <img class="bn-gd-profile-captain" src="${captainArt(captain||'captain_default')}" data-fallback="${captainArt('captain_default')}" alt="" width="128" height="128">
+            <span class="bn-profile-initial" hidden aria-hidden="true">${initial}</span>
+          </div>
           <span class="bn-profile-level">Nível —</span>
         </div>
         <div class="bn-profile-identity">
-          <h2 id="bn-profile-name">${nickname}</h2>
+          <h2 id="bn-profile-name">${nickname}</h2>${expressionTitle(title)?`<p class="bn-profile-rank">${esc(expressionTitle(title))}</p>`:''}
           <p class="bn-profile-rank">${id} <span aria-hidden="true">·</span> Patentes em breve</p>
           <div class="bn-profile-xp-track" role="img" aria-label="Progresso de XP não disponível na API"></div>
           <p class="bn-profile-xp-label">Experiência indisponível</p>

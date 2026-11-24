@@ -40,18 +40,24 @@ await mkdir('artifacts/figma-combat',{recursive:true});
 
 try {
  for(const status of ['PREPARING','PLAYING','RIVAL','PAUSED']){
-  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1366,height:768}]){
+  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1366,height:768},...(status==='PREPARING'?[]:[{width:1366,height:636},{width:1024,height:600},{width:850,height:650}])]){
    const errors=[];
+   let battleFixture={...match,turnPlayerId:status==='RIVAL'?17:13,paused:status==='PAUSED'};
    const page=await browser.newPage({viewport,deviceScaleFactor:1});
    page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname;
+    if(path==='/api/matches/me/shots'&&route.request().method()==='POST'){
+      const target=route.request().postDataJSON();
+      battleFixture={...battleFixture,revision:battleFixture.revision+2,shotsFired:[...battleFixture.shotsFired,{...target,hit:true}],turnPlayerId:17};
+      return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(battleFixture)});
+    }
     const response=path==='/api/auth/login'?{
        tokenType:'Bearer',accessToken:'qa-token',refreshToken:'qa-refresh',expiresIn:900,user:player
       }:path==='/api/users/me'?player:path==='/api/game-modes'?[mode]:
       path==='/api/matchmaking/lobbies/me'?{...room,status:status==='PREPARING'?'PREPARING':'PLAYING'}:
       path==='/api/matches/me/placement'?placement:
-      path==='/api/matches/me'?{...match,turnPlayerId:status==='RIVAL'?17:13,paused:status==='PAUSED'}:null;
+      path==='/api/matches/me'?battleFixture:null;
     if(response!==null) return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(response)});
     if(path==='/api/realtime/ticket')return route.fulfill({status:503,body:'{"code":"UNAVAILABLE"}',contentType:'application/json'});
     return route.fulfill({status:404,body:'{}',contentType:'application/json'});
@@ -107,10 +113,11 @@ try {
      assert.ok(layout.fleet.bottom<=layout.tools.top+4,'Tools overlap ship cards: '+explain);
      assert.equal(await page.locator('.bn-placement-screen .board-main .cell').count(),64);
      assert.equal(await page.locator('.bn-placement-ship').count(),3);
-     assert.equal(await page.locator('.bn-placement-ship[data-item-id="CARRIER"] img[src*="ship-carrier.webp"]').count(),1,'ZIP carrier artwork absent');
-     assert.equal(await page.locator('.bn-placement-ship[data-item-id="DESTROYER"] img[src*="ship-destroyer-gd.webp"]').count(),1,'GD destroyer artwork absent');
-     assert.equal(await page.locator('.bn-placement-ship[data-item-id="SEARCH"] img').count(),0,'SEARCH must not inherit unrelated submarine art');
-     for(const type of ['CARRIER','DESTROYER']) {
+     for(const type of ['CARRIER','DESTROYER','SEARCH']) {
+       assert.equal(await page.locator('.bn-placement-ship[data-item-id="'+type+'"] img[src*="/assets/gd/skin_default/"]').count(),1,
+         'Official fleet art absent for '+type);
+     }
+     for(const type of ['CARRIER','DESTROYER','SEARCH']) {
        const art=page.locator('.bn-placement-ship[data-item-id="'+type+'"] img');
        const decoded=await art.evaluate(async img=>{
          try {await img.decode();return img.naturalWidth>0&&img.naturalHeight>0;}
@@ -141,6 +148,8 @@ try {
    }
 
 
+   await page.locator('.zip-battle-header').waitFor({timeout:15000});
+   await page.locator('.zip-primary-board .board-main .cell').first().waitFor({timeout:15000});
    const metrics=await page.evaluate(()=>{
      const rect=selector=>{
        const element=document.querySelector(selector);
@@ -158,6 +167,9 @@ try {
        actions:rect('.zip-battle-action-bar'),
        enemy:rect('.zip-enemy-section'),
        enemyHeading:rect('.zip-enemy-section .zip-board-heading'),
+       enemyPortrait:rect('.zip-enemy-section .zip-combat-captain'),
+       ownPortrait:rect('.zip-own-section .zip-combat-captain'),
+       footer:rect('.zip-battle-footer'),
        board:rect('.zip-primary-board .board-main'),
        defense:rect('.zip-own-section'),
        defenseHeading:rect('.zip-own-section .zip-board-heading'),
@@ -175,24 +187,38 @@ try {
    assert.ok(metrics.pageHeight<=viewport.height+2,'Battle document should fit screen: '+explain);
    assert.ok(metrics.board.width>=Math.min(130,viewport.width*.4),'Targeting board too small: '+explain);
    assert.ok(Math.abs(metrics.board.height-metrics.board.width)<=3,'Targeting board distorted: '+explain);
-   for(const key of ['head','score','enemy','board','turn','defense','powers','fire','ownBoard']) {
+   for(const key of ['head','score','enemy','board','turn','defense','powers','fire','ownBoard','enemyPortrait','ownPortrait','footer']) {
      const bounds=metrics[key];
      assert.ok(bounds.left>=-2&&bounds.right<=viewport.width+2,'Offscreen horizontal '+key+': '+explain);
      assert.ok(bounds.top>=-2&&bounds.bottom<=viewport.height+2,'Offscreen vertical '+key+': '+explain);
    }
    assert.ok(metrics.head.bottom<=metrics.score.top+3,'Score overlays header: '+explain);
    assert.ok(metrics.score.bottom<=metrics.board.top+3,'Target board overlaps score: '+explain);
+   assert.match(await page.locator('.zip-enemy-section .zip-side-label').innerText(),/ATAQUE.*OPONENTE/);
+   assert.match(await page.locator('.zip-own-section .zip-side-label').innerText(),/DEFESA.*SUA FROTA/);
+   assert.equal(await page.locator('.zip-scoreboard img').count(),0,'Portraits must not resize the score row');
+   for(const [portrait,section,board] of [['enemyPortrait','enemy','board'],['ownPortrait','defense','ownBoard']]) {
+     const p=metrics[portrait],s=metrics[section],b=metrics[board];
+     assert.ok(p.width>=24&&p.height>=24&&p.width<=(viewport.width>=850?145:115)&&p.height<=(viewport.width>=850?218:132),'Captain portrait not bounded: '+explain);
+     assert.ok(p.left>=s.left-2&&p.right<=s.right+2&&p.top>=s.top-2&&p.bottom<=s.bottom+2,'Captain escaped panel: '+explain);
+     assert.ok(p.right<=b.left+2||p.left>=b.right-2||p.bottom<=b.top+2,'Portrait overlaps grid: '+explain);
+   }
+   for(const selector of ['.zip-enemy-section .zip-combat-captain','.zip-own-section .zip-combat-captain']) {
+     assert.ok(await page.locator(selector).evaluate(async img=>{try{await img.decode();return img.naturalWidth>0;}catch{return false;}}),'Broken captain artwork: '+explain);
+   }
+   assert.ok(metrics.enemy.bottom<=metrics.footer.top+2&&metrics.defense.bottom<=metrics.footer.top+2&&metrics.turn.bottom<=metrics.footer.top+2,'Action footer overlaps arena: '+explain);
    if(viewport.width<=849) {
      assert.ok(metrics.enemyHeading.top>=metrics.score.bottom-2,'Enemy heading covered by scoreboard: '+explain);
      assert.ok(metrics.enemyHeading.bottom<=metrics.board.top+3,'Enemy heading overlaps attack board: '+explain);
      assert.ok(metrics.board.bottom<=metrics.turn.top+4,'Turn panel overlaps attack board: '+explain);
      assert.ok(metrics.turn.bottom<=metrics.defense.top+4,'Defense overlaps turn panel: '+explain);
      assert.ok(metrics.defenseHeading.bottom<=metrics.ownBoard.top+3,'Own heading overlaps defense: '+explain);
-     assert.ok(metrics.board.width>=metrics.ownBoard.width*1.25,'Mobile defense board must be notably smaller: '+explain);
+     assert.ok(metrics.board.width>=metrics.ownBoard.width&&metrics.ownBoard.width>=metrics.board.width*.8,'Mobile grids should be similarly sized, with attack slightly larger: '+explain);
    } else {
      assert.ok(metrics.ownBoard.right<=metrics.turn.left+4,'Desktop: own fleet must be LEFT of turn panel: '+explain);
      assert.ok(metrics.turn.right<=metrics.board.left+4,'Desktop: enemy grid must be RIGHT of turn panel: '+explain);
-     assert.ok(metrics.board.width>=300,'Desktop boards must use the available space: '+explain);
+     assert.ok(metrics.ownPortrait.right<=metrics.ownBoard.left+2&&metrics.board.right<=metrics.enemyPortrait.left+2,'Desktop portraits must be on the outer edges: '+explain);
+     assert.ok(metrics.board.width>=Math.min(300,viewport.width*.26,viewport.height*.42),'Desktop boards must use the available space: '+explain);
    }
    assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);
    assert.ok(metrics.powers.right<=metrics.fire.left+5,'Powers and fire must sit side-by-side: '+explain);
@@ -201,6 +227,8 @@ try {
    assert.ok(Math.abs(metrics.ownBoard.height-metrics.ownBoard.width)<=3,'Defense board distorted: '+explain);
    assert.equal(await page.locator('.zip-primary-board .board-main .cell').count(),64);
    assert.equal(await page.locator('.zip-own-board .board-preview .cell').count(),64);
+   assert.equal(await page.locator('.zip-own-board .bn-gd-ship-overlay img[src*="/skin_default/"]').count(),3,'Base fleet must render even without store cosmetics');
+   assert.equal(await page.locator('.zip-primary-board .bn-gd-ship-overlay').count(),0,'Enemy fleet must remain hidden');
    assert.ok(Math.abs(metrics.cell.width-metrics.cell.height)<=2,'Target cell distorted: '+explain);
    assert.ok(Math.abs(metrics.previewCell.width-metrics.previewCell.height)<=2,'Own cell distorted: '+explain);
    assert.ok(metrics.ownBoard.width>=Math.min(85,viewport.width*.27),'Defense board collapsed: '+explain);
@@ -348,6 +376,12 @@ try {
    assert.ok(await page.locator('[data-action="activate-ability"]').isEnabled(),'Targetless power should work without a board click');
    await page.locator('[data-action="cancel-ability"]').click();
    await page.screenshot({path:'artifacts/figma-combat/'+route+'-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
+   await page.locator('.zip-primary-board [data-coord="7,7"]').click();
+   await page.locator('[data-action="fire"]').click();
+   await page.waitForFunction(()=>document.querySelector('.zip-own-section .zip-captain-portrait')?.dataset.mood==='hit'&&document.querySelector('.zip-enemy-section .zip-captain-portrait')?.dataset.mood==='damage');
+   assert.match(await page.locator('.zip-own-section .zip-combat-captain').getAttribute('src'),/hit\.(png|webp|jpg)$/);
+   assert.match(await page.locator('.zip-enemy-section .zip-combat-captain').getAttribute('src'),/damage\.(png|webp|jpg)$/);
+   await page.screenshot({path:'artifacts/figma-combat/reaction-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    assert.deepEqual(errors,[],'Page errors '+explain);
    console.log('PASS '+status+' '+viewport.width+'x'+viewport.height+'; ZIP battle board '+metrics.board.width.toFixed(0)+'px, scroll-free controls');
    await page.close();

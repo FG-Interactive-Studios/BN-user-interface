@@ -1,0 +1,13 @@
+{
+  "id": "sound_pirate",
+  "version": 1,
+  "name": "Canhões Piratas",
+  "sounds": {
+    "miss": "sfx/miss.ogg",
+    "hit": "sfx/hit.ogg",
+    "ship_sunk_ally": "sfx/ship_sunk_ally.ogg",
+    "ship_sunk_enemy": "sfx/ship_sunk_enemy.ogg",
+    "shot": "sfx/shot.ogg",
+    "victory": "sfx/victory.ogg"
+  }
+}

@@ -57,6 +57,15 @@ try{
    assert.match(await page.locator('.bn-profile-rank').innerText(),/ID #13/);
    for(const block of ['captain','statistics','achievements','history'])
      assert.equal(await page.locator('.bn-profile-'+block).count(),1,block+' card missing');
+   const portrait=page.locator('.bn-gd-profile-captain');
+   await portrait.waitFor();
+   assert.ok(await portrait.evaluate(async img=>{try{await img.decode();return img.naturalWidth>0;}catch{return false;}}),'Captain must decode successfully');
+   const portraitGeometry=await page.evaluate(()=>{
+     const box=selector=>document.querySelector(selector).getBoundingClientRect();
+     const image=box('.bn-gd-profile-captain'),frame=box('.bn-profile-portrait-inner'),identity=box('.bn-profile-identity');
+     return {fits:image.width<=frame.width&&image.height<=frame.height&&image.left>=frame.left&&image.right<=frame.right, separate:frame.right<=identity.left+1, square:Math.abs(frame.width-frame.height)<1, width:frame.width};
+   });
+   assert.ok(portraitGeometry.fits&&portraitGeometry.separate&&portraitGeometry.square&&portraitGeometry.width<=132,'Captain portrait overlaps profile: '+JSON.stringify(portraitGeometry));
    assert.equal(await page.locator('.bn-profile-stat').count(),4);
    assert.equal(await page.locator('.bn-profile-achievement').count(),4);
    assert.equal(await page.locator('.bn-profile-stat strong').first().innerText(),'—');

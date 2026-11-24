@@ -1,14 +1,15 @@
 import {esc} from './board.js';
-import {buildMatchReport} from './match-report.js';
+import {buildMatchReport,ridiculousAward} from './match-report.js';
 
 /**
  * Post-battle artboard from the approved Figma PDF.
  * All competitive numbers come from BattleResponse (never fabricated rewards).
  * Leaves the battle board, lobby and other pages unchanged.
  */
-export function renderFigmaResult({battle,profile,lobby,reward=null}) {
+export function renderFigmaResult({battle,profile,lobby,reward=null,celebrate=false}) {
   const report=buildMatchReport(battle,profile?.id);
   const {won,draw}=report;
+  const award=ridiculousAward(report);
   const earned=Number.isSafeInteger(reward?.earned)?reward.earned:null;
   const rewardShown=earned===null?'—':earned>0?'+'+earned:'Já recebido';
   const rewardText=earned===null
@@ -26,18 +27,20 @@ export function renderFigmaResult({battle,profile,lobby,reward=null}) {
     : draw ? 'A batalha terminou empatada.'
     : `A batalha contra ${opponentLabel} terminou.`;
 
-  // The server provides two perspectives: shotsFired (you) and shotsReceived (opponent).
   const gameMode=esc(battle.mode?.name||'Modo de jogo');
-  const playerRow=(label,stats,isYou)=>`<div class="bn-report-player ${isYou?'is-you':'is-rival'}">
-    <strong class="bn-report-player-name">${esc(label)}</strong>
-    <div class="bn-report-player-numbers">
-      <span><b>${stats.hits}</b><small>Acertos</small></span>
-      <span><b>${stats.misses}</b><small>Erros</small></span>
-      <span><b>${stats.accuracy}%</b><small>Precisão</small></span>
-      <span><b>${stats.sunk}</b><small>Navios</small></span>
-    </div>
-  </div>`;
+  const {hits,misses,accuracy,sunk}=report.player;
+  const stat=(value,label,negative=false)=>`<div class="bn-report-stat${negative?' negative':''}"><strong>${esc(value)}</strong><span>${esc(label)}</span></div>`;
   const rematch=lobby?.rematch||null;
+  const series=lobby?.rivalry;
+  const host=lobby?.players?.[0]?.id===profile?.id;
+  const valid=series&&lobby?.players?.some(p=>p.id===profile?.id)&&
+    [series.hostWins,series.guestWins,series.draws].every(n=>Number.isSafeInteger(n)&&n>=0);
+  const myWins=valid?(host?series.hostWins:series.guestWins):0;
+  const rivalWins=valid?(host?series.guestWins:series.hostWins):0;
+  const rivalry=valid?`<div class="bn-rivalry-score" role="group" aria-label="Placar de rivalidade">
+    <span><strong>Rivalidade</strong><small>${myWins+rivalWins+series.draws>1?'A essa altura já virou pessoal.':'A revanche está chamando.'}</small></span>
+    <span class="bn-rivalry-numbers">Você <b>${myWins} × ${rivalWins}</b> Rival${series.draws?' · '+series.draws+' E':''}</span>
+  </div>`:'';
   const meIndex=lobby?.players?.findIndex(p=>p.id===profile?.id)??-1;
   const myAccepted=meIndex===0?rematch?.hostAccepted
     :meIndex===1?rematch?.guestAccepted:false;
@@ -54,10 +57,14 @@ export function renderFigmaResult({battle,profile,lobby,reward=null}) {
     :myAccepted?'Aguardando a confirmação do adversário…'
     :opponentAccepted?'O adversário quer jogar novamente com você!'
     : '';
-  const sharedNote=report.comparable
-    ? '<span class="bn-report-equal-stats"> Os acertos e erros foram iguais, mas a condição de encerramento definiu o vencedor.</span>'
+  const winnerCosmetics=lobby?.players?.find(p=>p.id===battle.winnerId)?.cosmetics;
+  const chaosCelebration=winnerCosmetics?.CELEBRATION==='celebration_chaos';
+  const celebration=celebrate
+    ? '<div class="bn-finale-effects" aria-hidden="true">'
+      + Array.from({length:12},(_,index)=>'<span class="bn-finale-particle" style="--i:'+index+';left:'+(4+index*8)+'%;--delay:'+(index*.035)+'s;--drift:'+(index%2===0?'30px':'-30px')+'">'+(chaosCelebration?['🤡','🎊','✨','🦆'][index%4]:won?'🎉':draw?'✨':'💧')+'</span>').join('')
+      + '</div>'
     : '';
-  return `<div class="screen bn-result-stage is-${outcome}">
+  return `<div class="screen bn-result-stage is-${outcome} ${celebrate?'is-celebrating':''}">${celebration}
     <main class="bn-result-viewport" aria-label="Resultado da partida">
       <header class="bn-report-hero">
         <span class="bn-report-emblem" aria-hidden="true"></span>
@@ -68,11 +75,16 @@ export function renderFigmaResult({battle,profile,lobby,reward=null}) {
       <div class="bn-report-panels">
         <section class="bn-report-panel bn-report-summary" aria-labelledby="bn-result-summary">
           <h2 id="bn-result-summary">Resumo da partida</h2>
-          <div class="bn-report-stats" aria-label="Comparação dos jogadores">
-            ${playerRow('Você',report.player,true)}
-            ${playerRow(opponent||'Adversário',report.rival,false)}
+          <div class="bn-report-stats" aria-label="Suas estatísticas da partida">
+            ${stat(hits,'Acertos')}${stat(misses,'Erros',true)}
+            ${stat(accuracy+'%','Precisão')}${stat(sunk+'/'+(battle.mode?.fleet?.length||sunk),'Navios destruídos')}
           </div>
-          <p class="bn-report-verdict" aria-live="polite">${esc(report.reason)}${sharedNote}</p>
+          <p class="bn-report-verdict" aria-live="polite">${esc(report.reason)}</p>
+          <div class="bn-report-award" role="group" aria-label="Prêmio engraçado desta batalha">
+            <span class="bn-report-award-icon" aria-hidden="true">${esc(award.emoji)}</span>
+            <span class="bn-report-award-copy"><strong>${esc(award.title)}</strong><small>${esc(award.description)}</small></span>
+            <button type="button" class="bn-report-award-share" data-action="copy-award" aria-label="Copiar prêmio ${esc(award.title)}" title="Copiar prêmio">⧉</button>
+          </div>
           <p class="bn-report-meta">Duração indisponível <span aria-hidden="true">·</span> ${gameMode}</p>
         </section>
 
@@ -91,6 +103,7 @@ export function renderFigmaResult({battle,profile,lobby,reward=null}) {
       </div>
 
       <div class="bn-report-actions">
+        ${rivalry}
         ${rematchHint?`<p class="bn-rematch-status" role="status" aria-live="polite">${esc(rematchHint)}</p>`:''}
         <button type="button" class="bn-report-replay" data-action="${rematchAction}"
           ${rematchAvailable?'':'disabled'}>${rematchText}</button>

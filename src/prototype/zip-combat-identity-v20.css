@@ -1,0 +1,255 @@
+/* Combat identity and viewport fit. The portrait composition is preserved on
+ * phones; wide screens use two distinct tactical stations. Size the grids
+ * against the remaining arena, after the header and actual footer are laid out. */
+body[data-route="match"] .bn-zip-battle .zip-game-layout {
+  display:grid!important;
+  grid-template-rows:auto auto minmax(0,1fr) auto!important;
+  height:100dvh!important;min-height:0!important;
+  gap:clamp(4px,1dvh,10px)!important;
+  box-sizing:border-box!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-scoreboard {
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+  min-height:0!important;align-items:center!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-score-side {
+  min-width:0;gap:2px!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-score-side strong {
+  display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:#92e8e0;
+}
+body[data-route="match"] .bn-zip-battle .zip-score-opponent strong {color:#ffb4aa;}
+body[data-route="match"] .bn-zip-battle .zip-score-side small {white-space:normal;}
+body[data-route="match"] .bn-zip-battle .zip-battle-center {
+  container-type:size;
+  width:100%!important;height:100%!important;min-height:0!important;
+  padding:0!important;box-sizing:border-box!important;
+  overflow:visible!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-enemy-section,
+body[data-route="match"] .bn-zip-battle .zip-own-section {
+  --side-accent:#79d8d0;--side-border:#4b9a9d80;
+  display:grid!important;
+  align-content:center!important;align-items:center!important;justify-items:center!important;
+  min-width:0!important;min-height:0!important;width:100%!important;height:auto!important;
+  gap:4px!important;padding:6px!important;box-sizing:border-box!important;
+  border:1px solid var(--side-border)!important;border-radius:10px!important;
+  background:linear-gradient(165deg,#0d2c37e8,#081c27e8)!important;
+  overflow:visible!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-enemy-section {
+  --side-accent:#ffb4a6;--side-border:#bb756d80;
+}
+body[data-route="match"] .bn-zip-battle .zip-board-heading {
+  grid-area:heading;display:flex!important;flex-direction:column;align-items:flex-start;
+  width:100%;min-width:0;min-height:0!important;gap:2px;
+  margin:0!important;padding:0!important;text-align:left!important;line-height:1.1!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-side-label {
+  font-size:clamp(9px,1.3vw,13px);letter-spacing:.07em;color:var(--side-accent);
+}
+body[data-route="match"] .bn-zip-battle .zip-board-heading strong {
+  display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:#effbff;font:800 clamp(12px,1.9vw,22px)/1.05 'Barlow Condensed',sans-serif;
+  text-transform:none;letter-spacing:normal;
+}
+body[data-route="match"] .bn-zip-battle .zip-captain-title {
+  display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:#c2d5db;font:600 10px/1.1 'Barlow',sans-serif;text-transform:none;letter-spacing:normal;
+}
+body[data-route="match"] .bn-zip-battle .zip-captain-portrait {
+  grid-area:portrait;display:block;position:relative;
+  width:100%;max-width:110px;min-width:0;min-height:0;
+  border:1px solid var(--side-border);border-radius:7px;overflow:hidden;
+  background:#0b1b28;box-sizing:border-box;
+}
+body[data-route="match"] .bn-zip-battle .zip-captain-portrait > .zip-combat-captain {
+  display:block!important;position:static!important;float:none!important;
+  width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+  margin:0!important;object-fit:cover!important;object-position:center 25%!important;
+  aspect-ratio:auto!important;pointer-events:none;
+}
+body[data-route="match"] .bn-zip-battle .zip-primary-board,
+body[data-route="match"] .bn-zip-battle .zip-own-board {
+  grid-area:board;container-type:normal!important;min-width:0!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-target-indicator {
+  grid-area:target;min-width:0;min-height:12px!important;
+  margin:0!important;text-align:center;line-height:1.05!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-turn-panel {min-width:0!important;}
+/* All controls belong to a reserved grid row, including the active-power guide. */
+body[data-route="match"] .bn-zip-battle .zip-battle-footer {
+  position:relative!important;inset:auto!important;height:auto!important;min-height:0!important;
+  align-self:end!important;max-width:100%!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-battle-action-bar {
+  grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)!important;
+  align-items:stretch!important;gap:6px!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-tactics-section {
+  position:relative;display:grid!important;grid-template-columns:minmax(0,1fr);
+  align-items:stretch!important;gap:5px!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-tactics-section:has(>.bn-taunt-menu) {
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+}
+body[data-route="match"] .bn-zip-battle .zip-tactics-section .bn-taunt-menu>summary,
+body[data-route="match"] .bn-zip-battle .zip-tactics-section .zip-abilities-menu>summary,
+body[data-route="match"] .bn-zip-battle .zip-tactics-section .zip-cancel-power {
+  box-sizing:border-box!important;width:100%!important;height:48px!important;min-height:48px!important;
+  min-width:0!important;padding:4px!important;margin:0!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-tactics-section .zip-abilities-menu {
+  position:static!important;min-width:0!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-abilities-menu>summary {
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-rows:auto auto!important;gap:2px!important;align-content:center!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-abilities-menu>summary span:first-child {
+  grid-column:1;grid-row:1;font-size:clamp(12px,2.2vw,18px)!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-abilities-menu>summary .zip-powers-count {
+  grid-column:1;grid-row:2;font-size:clamp(8px,1.6vw,10px)!important;text-align:left;
+  white-space:nowrap;letter-spacing:0;
+}
+body[data-route="match"] .bn-zip-battle .zip-abilities-menu>summary span:last-child {
+  grid-column:2;grid-row:1/3;align-self:center;
+}
+body[data-route="match"] .bn-zip-battle .zip-attack-buttons {
+  display:grid!important;grid-template-columns:clamp(36px,5vw,58px) minmax(0,1fr)!important;
+  gap:5px!important;align-items:stretch!important;min-width:0!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-attack-buttons .zip-desperation-button,
+body[data-route="match"] .bn-zip-battle .zip-attack-buttons .zip-fire-button {
+  box-sizing:border-box!important;height:48px!important;min-height:48px!important;
+  margin:0!important;width:100%!important;min-width:0!important;
+}
+body[data-route="match"] .bn-zip-battle .zip-attack-buttons .zip-fire-button small {white-space:normal!important;}
+
+/* The score follows the same left/right order as the arena. */
+body[data-route="match"] .bn-zip-battle .zip-score-value {
+  display:flex;align-items:center;justify-content:center;gap:.25em;
+}
+body[data-route="match"] .bn-zip-battle .zip-captain-portrait[data-mood="hit"] {
+  border-color:#72e5bf;box-shadow:0 0 12px #52d4ab70;
+}
+body[data-route="match"] .bn-zip-battle .zip-captain-portrait[data-mood="damage"] {
+  border-color:#ff8d7f;box-shadow:0 0 12px #fc766270;
+}
+@media(min-width:850px) {
+  body[data-route="match"] .bn-zip-battle .zip-game-layout {
+    width:min(100%,1440px)!important;max-width:1440px!important;
+    padding-inline:clamp(6px,1vw,14px)!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-scoreboard>.zip-score-side:first-child {
+    grid-column:1;grid-row:1;text-align:left;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-scoreboard>.zip-score-opponent {
+    grid-column:3;grid-row:1;text-align:right;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-score-value {grid-column:2;grid-row:1;flex-direction:row;}
+  body[data-route="match"] .bn-zip-battle .zip-battle-center {
+    --zip-portrait-side:clamp(64px,10cqw,144px);
+    --zip-turn-side:clamp(112px,10.5cqw,146px);
+    --zip-stack-board-side:max(90px,min(calc(100cqh - 68px),calc((100cqw - var(--zip-turn-side) - 8px)/2 - var(--zip-portrait-side) - 16px),480px));
+    grid-template-columns:minmax(0,1fr) var(--zip-turn-side) minmax(0,1fr)!important;
+    grid-template-rows:minmax(0,1fr)!important;gap:4px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-enemy-section,
+  body[data-route="match"] .bn-zip-battle .zip-own-section {
+    grid-template-columns:var(--zip-portrait-side) minmax(0,1fr)!important;
+    grid-template-rows:auto auto 14px!important;
+    grid-template-areas:"heading heading" "portrait board" "target target";
+    height:100%!important;align-self:stretch!important;padding:4px!important;
+    column-gap:6px!important;row-gap:4px!important;
+    align-content:center!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-own-section {grid-column:1!important;}
+  body[data-route="match"] .bn-zip-battle .zip-enemy-section {
+    grid-column:3!important;
+    grid-template-columns:minmax(0,1fr) var(--zip-portrait-side)!important;
+    grid-template-areas:"heading heading" "board portrait" "target target";
+  }
+  body[data-route="match"] .bn-zip-battle .zip-enemy-section .zip-board-heading {align-items:flex-end;text-align:right!important;}
+  body[data-route="match"] .bn-zip-battle .zip-captain-portrait {
+    width:var(--zip-portrait-side);max-width:none;
+    height:min(calc(var(--zip-portrait-side)*1.5),var(--zip-stack-board-side));
+    align-self:center;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-primary-board .board-main,
+  body[data-route="match"] .bn-zip-battle .zip-own-board .board-preview {
+    width:var(--zip-stack-board-side)!important;height:var(--zip-stack-board-side)!important;
+    max-width:none!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-turn-panel {
+    width:100%!important;min-height:0!important;padding:9px 4px!important;
+    border-top:2px solid var(--turn-accent)!important;gap:9px;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-turn-copy {width:100%;min-width:0;gap:4px;}
+  body[data-route="match"] .bn-zip-battle .zip-turn-headline {
+    width:100%;max-width:100%;font-size:clamp(15px,1.6vw,22px)!important;
+    overflow-wrap:anywhere;white-space:normal!important;text-wrap:balance;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-turn-eyebrow {font-size:9px!important;letter-spacing:.06em;}
+  body[data-route="match"] .bn-zip-battle .zip-turn-hint {font-size:10px!important;}
+  body[data-route="match"] .bn-zip-battle .zip-battle-footer {max-width:min(100%,760px)!important;}
+}
+@media(max-width:849px) {
+  body[data-route="match"] .bn-zip-battle .zip-game-layout {
+    max-width:560px!important;gap:4px!important;padding-inline:8px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-battle-headline strong {
+    font-size:clamp(14px,4.5vw,22px)!important;white-space:normal!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-battle-center {
+    --zip-mobile-unit:max(68px,min(calc((100cqh - 158px)/2),calc((100cqw - 28px)*.72/1.13),295px));
+    --zip-stack-board-side:calc(var(--zip-mobile-unit)*1.05);
+    --zip-own-board-side:calc(var(--zip-mobile-unit)*.95);
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:auto auto auto!important;
+    align-content:space-evenly!important;gap:4px!important;
+  }
+  body[data-route="match"] .bn-zip-battle[data-skill-scope="OWN"] .zip-battle-center {
+    --zip-stack-board-side:calc(var(--zip-mobile-unit)*.87);
+    --zip-own-board-side:calc(var(--zip-mobile-unit)*1.13);
+  }
+  body[data-route="match"] .bn-zip-battle .zip-enemy-section,
+  body[data-route="match"] .bn-zip-battle .zip-own-section {
+    grid-template-columns:minmax(0,1fr) minmax(0,3fr)!important;
+    grid-template-rows:auto auto auto!important;
+    grid-template-areas:"heading heading" "portrait board" "target target";
+    align-self:center!important;gap:3px 6px!important;padding:4px 6px!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-own-section {
+    grid-template-areas:"heading heading" "portrait board";
+    grid-template-rows:auto auto!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-board-heading {
+    flex-direction:row;align-items:baseline;justify-content:space-between;gap:5px;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-board-heading .zip-side-label {flex:none;}
+  body[data-route="match"] .bn-zip-battle .zip-board-heading strong {min-width:0;font-size:clamp(12px,3.3vw,17px);}
+  body[data-route="match"] .bn-zip-battle .zip-captain-title {display:none;}
+  body[data-route="match"] .bn-zip-battle .zip-captain-portrait {
+    height:min(128px,calc(var(--zip-stack-board-side)*.78));
+    max-width:92px;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-own-section .zip-captain-portrait {
+    height:min(128px,calc(var(--zip-own-board-side)*.78));
+  }
+  body[data-route="match"] .bn-zip-battle .zip-primary-board .board-main {
+    width:var(--zip-stack-board-side)!important;height:var(--zip-stack-board-side)!important;max-width:none!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-own-board .board-preview {
+    width:var(--zip-own-board-side)!important;height:var(--zip-own-board-side)!important;max-width:none!important;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-turn-panel {width:100%!important;min-height:54px!important;margin:0!important;}
+  body[data-route="match"] .bn-zip-battle .zip-tactics-section .bn-taunt-menu>summary {font-size:clamp(10px,2.8vw,14px)!important;white-space:normal!important;}
+  body[data-route="match"] .bn-zip-battle .zip-attack-buttons .zip-fire-button strong {font-size:clamp(15px,4.1vw,22px)!important;}
+  body[data-route="match"] .bn-zip-battle .zip-attack-buttons .zip-activate-power strong {font-size:clamp(11px,3.2vw,16px)!important;}
+  body[data-route="match"] .bn-zip-battle .zip-abilities-menu>summary .zip-powers-count {font-size:8px!important;white-space:normal;}
+  body[data-route="match"] .bn-zip-battle .zip-tactics-section .zip-cancel-power {font-size:clamp(10px,2.7vw,14px)!important;white-space:normal!important;}
+}

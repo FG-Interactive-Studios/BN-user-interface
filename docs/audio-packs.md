@@ -5,7 +5,7 @@ Arquivos oficiais: [efeitos](https://drive.google.com/drive/folders/1vWTJid9zdA_
 
 ## Integração
 
-AudioManager, AudioEvents e audio-packs separam reprodução, extração de eventos e catálogo. A API continua autoritativa. O catálogo usa imports Vite de arquivos existentes; o manifesto não cria URLs para arquivos ausentes. O pacote padrão inclui os 15 arquivos OGG Vorbis oficiais, importados das pastas do GD. Consulte [roteiro de uso](https://docs.google.com/document/d/1vbL_11du98aO5ieMyKxQDCmXriaCv13reQFpx9eSo4k/edit). Eventos adicionais sem arquivo permanecem silenciosos. Não há sons artificiais na versão de jogo.
+AudioManager, AudioEvents e audio-packs separam reprodução, extração de eventos e catálogo. A API continua autoritativa. O catálogo usa imports Vite de arquivos existentes; o manifesto não cria URLs para arquivos ausentes. O pacote padrão inclui os 15 arquivos OGG Vorbis oficiais, importados das pastas do GD. Consulte [roteiro de uso](https://docs.google.com/document/d/1vbL_11du98aO5ieMyKxQDCmXriaCv13reQFpx9eSo4k/edit). Eventos adicionais sem arquivo permanecem silenciosos. O pacote padrão conserva os áudios oficiais; o Sonar Retrô contém quatro efeitos sintetizados aprovados na demonstração.
 
 | Evento | Disparo | Canal |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ Não reproduz histórico ao carregar um match, nem ao receber revisão repetida/
 
 ## Pacotes de loja
 
-IDs do manifesto devem ser iguais ao item SOUND da API (existentes: sound_default, sound_sonar, sound_deep). Exemplo opcional em `src/assets/audio/sonar/manifest.json`:
+IDs do manifesto devem ser iguais ao item SOUND da API (existentes: sound_default, sound_sonar, sound_deep, sound_pirate). Exemplo opcional em `src/assets/audio/sonar/manifest.json`:
 
 ```json
 {"id":"sound_sonar","version":1,"sounds":{"shot":"sfx/shot.ogg","hit":"sfx/hit.ogg"}}
@@ -66,7 +66,7 @@ Todas as músicas (incluindo combate e resultado), radar de espera, partida enco
 
 Os slots `shot` e `match_start` ainda não têm OGGs próprios no pacote oficial. São personalizáveis, mas permanecem silenciosos no padrão até receberem arquivos do GD. Pacotes parciais são permitidos; som ausente/falha cai para o padrão. Efeitos específicos de poderes podem cair para `ability_activation`, ambos exclusivos do padrão.
 
-Para adicionar pacote, versionar arquivos + manifesto e cadastrar/ativar o item SOUND no backend depois da validação. Seleção usa apenas item equipado e possuído retornado pelo GET /api/store e pelas operações de compra/equipar. Sonar Retrô e Mar Profundo continuam indisponíveis: nenhum áudio comercial foi produzido ou cadastrado nesta etapa. Áudio é cosmético e pessoal, sem vantagem competitiva; as indicações críticas continuam visíveis independentemente da configuração sonora. Não use URLs externas ou arquivos de usuário não validados em manifesto.
+Para adicionar pacote, versionar arquivos + manifesto e cadastrar/ativar o item SOUND no backend depois da validação. Seleção usa apenas item equipado e possuído retornado pelo GET /api/store e pelas operações de compra/equipar. Sonar Retrô (`sound_sonar`) está disponível com quatro efeitos OGG aprovados (acerto, água, afundamento aliado e inimigo). Os outros eventos conservam o fallback padrão. Canhões Piratas (`sound_pirate`) contém os seis efeitos V3 aprovados: disparo, água, acerto, afundamentos aliado/inimigo e vitória. Créditos e licenças em `src/assets/audio/pirate/CREDITOS.txt`. Mar Profundo e os protótipos Futurista e Caótico permanecem indisponíveis. Áudio é cosmético e pessoal, sem vantagem competitiva; as indicações críticas continuam visíveis independentemente da configuração sonora. Não use URLs externas ou arquivos de usuário não validados em manifesto.
 
 ## Validação
 

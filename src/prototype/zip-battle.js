@@ -1,10 +1,24 @@
 import { esc, coordLabel, renderBoard } from './board.js';
+import {captainArt} from './ship-art.js';
+import {expressionTitle} from './expressive-cosmetics.js';
+
+/** Positions in the official 4×4 GD icon atlas; unknown powers retain a neutral symbol. */
+const GD_POWER_ICONS=Object.freeze({
+  'air-strike':'0% 0%',
+  'line-barrage':'33.333% 0%',
+  'double-shot':'66.667% 0%',
+  'hull-shield':'100% 0%',
+  radar:'0% 33.333%',
+  interference:'33.333% 33.333%',
+  retreat:'66.667% 33.333%',
+  'last-chance':'100% 33.333%'
+});
 
 /** ZIP reference: visual composition only. The backend still controls all battle rules. */
 export function renderZipBattle({
   battle, mode, opponent, own, enemy, myTurn, finished, canAct,
   selected, skillTargets=[], skillArea=[], available, sunk, activeAbility, skillControls,
-  activeEffects, radarInfo, clockStrip, pausedOverlay, tauntControls=''
+  activeEffects, radarInfo, clockStrip, pausedOverlay, tauntControls='', skin=null, captain=null, moods={mine:'neutral',rival:'neutral'}
 }) {
   const ownLost = new Set((battle.shotsReceived || []).filter(shot => shot.sunkShip).map(shot => shot.sunkShip)).size;
   const enemyLost = new Set(sunk.map(shot => shot.sunkShip)).size;
@@ -22,13 +36,19 @@ export function renderZipBattle({
   const fireHint = finished ? 'Partida encerrada' : battle.paused ? 'Partida pausada' :
     myTurn ? selected ? `Alvo ${coordLabel(selected)}` : 'Selecione uma casa' : 'Aguardando oponente';
 
+  const rivalName = esc(opponent?.nickname || 'Oponente');
+  const rivalTitle = expressionTitle(opponent?.cosmetics?.TITLE);
+  const ownPortrait = captainArt(captain,moods.mine);
+  const rivalPortrait = captainArt(opponent?.cosmetics?.CAPTAIN,moods.rival);
+
   const powers = abilities.length
     ? abilities.map(ability => {
       const disabled = !canAct || ability.locked || ability.usesRemaining <= 0;
       const chosen = activeAbility?.id === ability.id;
+      const powerIcon=Object.hasOwn(GD_POWER_ICONS,ability.id)?GD_POWER_ICONS[ability.id]:null;
       return `<button type="button" class="zip-ability ${chosen ? 'is-active' : ''}" data-action="pick-ability" data-ability-id="${esc(ability.id)}"
         title="${esc(ability.description || ability.name)}" ${disabled ? 'disabled' : ''} aria-pressed="${chosen}">
-        <span class="zip-ability-emblem" aria-hidden="true">✦</span>
+        <span class="zip-ability-emblem${powerIcon?' gd-power-icon':''}" ${powerIcon?`style="background-position:${powerIcon}"`:''} aria-hidden="true">${powerIcon?'':'✦'}</span>
         <span class="zip-ability-name">${esc(ability.name)}</span>
         <small>${ability.usesRemaining} uso(s) · ${['radar','double-shot'].includes(ability.id)?'Grátis':'1 ponto'}${ability.locked?' · Bloqueado':''}</small>
       </button>`;
@@ -54,16 +74,17 @@ export function renderZipBattle({
           <strong>Você</strong>
           <small>Navios: ${remainingOwn}/${totalShips} · Acertos: ${enemy.hits.length}</small>
         </div>
-        <div class="zip-score-value" aria-label="Acertos ${enemy.hits.length} a ${own.hits.length}">${enemy.hits.length} × ${own.hits.length}</div>
+        <div class="zip-score-value" aria-label="Acertos ${enemy.hits.length} a ${own.hits.length}"><span class="zip-score-own">${enemy.hits.length}</span><span aria-hidden="true">×</span><span class="zip-score-rival">${own.hits.length}</span></div>
         <div class="zip-score-side zip-score-opponent">
-          <strong>${esc(opponent?.nickname || 'Oponente')}</strong>
+          <strong>${rivalName}</strong>
           <small>Navios: ${remainingEnemy}/${totalShips} · Acertos: ${own.hits.length}</small>
         </div>
       </section>
 
       <div class="zip-battle-center">
         <section class="zip-enemy-section" aria-label="Tabuleiro de ataque">
-          <div class="zip-board-heading">Tabuleiro do oponente · ${canAct ? 'toque para mirar' : finished ? 'partida encerrada' : battle.paused ? 'partida pausada' : 'aguarde o oponente'}</div>
+          <div class="zip-board-heading"><span class="zip-side-label">ATAQUE · ÁGUAS DO OPONENTE</span><strong title="${rivalName}">${rivalName}</strong>${rivalTitle?`<small class="zip-captain-title">${esc(rivalTitle)}</small>`:''}</div>
+          <div class="zip-captain-portrait" data-mood="${moods.rival}"><img class="zip-combat-captain" src="${rivalPortrait}" alt="Capitão do adversário"></div>
           <div class="zip-primary-board">
             ${renderBoard(mode, {
               hits: enemy.hits, misses: enemy.misses,
@@ -85,10 +106,11 @@ export function renderZipBattle({
         </section>
 
         <section class="zip-own-section" aria-label="Tabuleiro de defesa">
-          <div class="zip-board-heading">SUA FROTA · ${remainingOwn} navios operacionais</div>
+          <div class="zip-board-heading"><span class="zip-side-label">DEFESA · SUA FROTA</span><strong>Você</strong></div>
+          <div class="zip-captain-portrait" data-mood="${moods.mine}"><img class="zip-combat-captain" src="${ownPortrait}" alt="Seu capitão"></div>
           <div class="zip-own-board">
             ${renderBoard(mode, {
-              ships: battle.yourShips, hits: own.hits, misses: own.misses,
+              ships: battle.yourShips, hits: own.hits, misses: own.misses, skin,
               markers: battle.yourAbilityPointCells || [], small: true,
               highlights: activeAbility && aimingForOwnBoard ? skillArea : [],
               interactive: canAct && Boolean(activeAbility) && aimingForOwnBoard
@@ -105,7 +127,7 @@ export function renderZipBattle({
               ? `<button type="button" class="zip-cancel-power" data-action="cancel-ability">Cancelar ${esc(activeAbility.name)}</button>`
               : `<details class="zip-abilities-menu">
                   <summary aria-label="Escolher habilidade" title="Habilidades da partida">
-                    <span>Poderes</span><span class="zip-powers-count">${usefulAbilities} disponíveis · ${abilityCredits} pts</span><span aria-hidden="true">⌄</span>
+                    <span>Poderes</span><span class="zip-powers-count">${usefulAbilities} disp. · ${abilityCredits} pts</span><span aria-hidden="true">⌄</span>
                   </summary>
                   <div class="zip-abilities-options">
                     <div class="zip-abilities-grid">${powers}</div>
@@ -113,6 +135,13 @@ export function renderZipBattle({
                   </div>
                 </details>`}
           </div>
+          <div class="zip-attack-buttons">
+            <button type="button" class="zip-desperation-button" data-action="desperation-shot"
+              aria-label="Aperta e Reza: disparo aleatório normal, uma vez por partida"
+              title="${battle.yourDesperationUsed?'Tiro do Desespero já usado':'Aperta e Reza · sorteia uma casa válida e consome seu turno'}"
+              ${canAct&&!activeAbility&&!battle.yourDesperationUsed?'':'disabled'}>
+              <span aria-hidden="true">🎲</span><small>REZA</small>
+            </button>
           ${activeAbility
             ? `<button type="button" class="zip-fire-button zip-activate-power" data-action="activate-ability"
                 ${canAct && skillTargets.length===activeAbility.targetCount && !activeAbility.locked ? '' : 'disabled'}>
@@ -121,6 +150,7 @@ export function renderZipBattle({
             : `<button type="button" class="zip-fire-button" data-action="fire" ${canAct && selected ? '' : 'disabled'}>
                 <strong>ATIRAR</strong><small>${fireHint}</small>
               </button>`}
+          </div>
         </div>
         ${skillControls || activeEffects || radarInfo
           ? `<div class="zip-battle-context" aria-live="polite">${skillControls}${activeEffects}${radarInfo}</div>`

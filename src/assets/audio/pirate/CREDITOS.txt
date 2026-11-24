@@ -1,0 +1,10 @@
+Canhões Piratas — versão 3 aprovada pelo líder de desenvolvimento.
+Fontes Freesound verificadas como CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/):
+qubodup — Cannon Shot — https://freesound.org/people/qubodup/sounds/187767/
+qubodup — Big Water Splash — https://freesound.org/people/qubodup/sounds/442773/
+morganpurkis — Explosion.wav — https://freesound.org/people/morganpurkis/sounds/388329/
+craigsmith — R28-03-Large Wood Ship Creaking.wav — https://freesound.org/people/craigsmith/sounds/483355/
+HowardV — small crowd cheering — https://freesound.org/people/HowardV/sounds/264377/
+Adaptações: recortes, equalização, ajuste de ganho, fades, mixagem e conversão para OGG Vorbis estéreo 48 kHz.
+A amostra 763946 (shangusburger) não foi utilizada: licença não confirmada.
+Os seis arquivos aprovados são registrados como efeitos; músicas e interface permanecem padrão.

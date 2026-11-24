@@ -20,17 +20,37 @@ const errors=[];
 try {
  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:1361,height:597},{width:1366,height:768}]){
   const page=await browser.newPage({viewport,deviceScaleFactor:1});
+  let premiumCredits=0,topups=0,lastWallet=null;
+  const equips=[];
+  let equippedFleet='skin_default';
+  page.on('dialog',dialog=>dialog.accept());
   page.on('pageerror',error=>errors.push(String(viewport.width)+': '+error.message));
   await page.route('**/api/**',async route=>{
    const path=new URL(route.request().url()).pathname;
+   if(path.startsWith('/api/store/equip/')&&route.request().method()==='PUT'){
+    const id=path.split('/').at(-1);
+    assert.ok(['skin_default','skin_pirate'].includes(id),'Only owned fleet may be equipped');
+    equips.push(id);equippedFleet=id;
+    lastWallet={...lastWallet,items:lastWallet.items.map(i=>i.category==='SKIN'?{...i,equipped:i.id===id}:i)};
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(lastWallet)});
+   }
+   if(path==='/api/store/demo-premium'&&route.request().method()==='POST'){
+    const payload=route.request().postDataJSON();assert.equal(payload.packId,'demo_100');assert.ok(payload.requestId);
+    topups++;premiumCredits+=100;lastWallet={...lastWallet,premiumCredits};
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(lastWallet)});
+   }
    const body=path==='/api/auth/login'?{tokenType:'Bearer',accessToken:'test-token',refreshToken:'test-refresh',expiresIn:900,user:player}:
      path==='/api/users/me'?player:
      path==='/api/game-modes'?modes:
-     path==='/api/store'?{credits:300,items:[
-       {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Visual padrão',price:0,enabled:true,owned:true,equipped:true},
-       {id:'skin_coral',category:'SKIN',name:'Coral',description:'Personalização',price:90,enabled:true,owned:false,equipped:false},
-       {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Em breve',price:90,enabled:false,owned:false,equipped:false}
+     path==='/api/store'?{credits:300,premiumCredits,demoPremiumEnabled:true,items:[
+       {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Visual padrão',price:0,enabled:true,owned:true,equipped:equippedFleet==='skin_default'},
+       {id:'skin_pirate',category:'SKIN',name:'Frota Pirata',description:'Frota adquirida',price:100,enabled:true,owned:true,equipped:equippedFleet==='skin_pirate'},
+       {id:'skin_coral',category:'SKIN',name:'Coral',description:'Personalização',price:90,premiumPrice:30,enabled:true,owned:false,equipped:false},
+       {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Em breve',price:90,enabled:false,owned:false,equipped:false},
+       {id:'captain_default',category:'CAPTAIN',name:'Capitão Padrão',description:'Três expressões',price:0,enabled:true,owned:true,equipped:true},
+       {id:'captain_corsair',category:'CAPTAIN',name:'Harthorne',description:'Três expressões',price:200,enabled:true,owned:true,equipped:false}
      ]}:null;
+   if(path==='/api/store')lastWallet=body;
    if(body!==null)return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
    if(path==='/api/matchmaking/lobbies/me')return route.fulfill({status:404,contentType:'application/json',body:'{"code":"NOT_FOUND"}'});
    if(path==='/api/realtime/ticket')return route.fulfill({status:503,contentType:'application/json',body:'{"code":"UNAVAILABLE"}'});
@@ -77,6 +97,20 @@ try {
   await page.locator('[data-form="login"] button[type="submit"]').click();
   await page.locator('.bn-lobby').waitFor({timeout:18000});
   await horizontalFit('lobby');
+  const measureHeader=()=>page.evaluate(()=>{
+    const header=document.querySelector('.bn-shared-header');
+    const measure=sel=>{const el=header.querySelector(sel),box=el.getBoundingClientRect(),style=getComputedStyle(el);return {width:box.width,height:box.height,font:style.fontSize,family:style.fontFamily};};
+    return {avatar:measure('.bn-header-avatar'),image:measure('.bn-header-avatar img'),name:measure('.bn-header-player strong'),menu:measure('.bn-account-menu summary')};
+  });
+  const lobbyHeader=await measureHeader();
+  const assertSameHeader=async route=>{
+    const actual=await measureHeader();
+    for(const key of ['avatar','image','menu']){
+      assert.ok(Math.abs(actual[key].width-lobbyHeader[key].width)<1&&Math.abs(actual[key].height-lobbyHeader[key].height)<1,route+' header asset mismatch '+key);
+    }
+    assert.equal(actual.name.font,lobbyHeader.name.font,route+' nickname size mismatch');
+    assert.equal(actual.name.family,lobbyHeader.name.family,route+' nickname font mismatch');
+  };
   // Desktop is a real responsive composition, not the 540px portrait shell
   // stretched into a PC screenshot. Retain the approved mobile layout.
   if (viewport.width>=900) {
@@ -118,18 +152,137 @@ try {
   await page.locator('.bn-fleet-page').waitFor();
   await horizontalFit('fleet');
   await assertStickyAccountHeader('fleet');
+  await assertSameHeader('fleet');
+  assert.equal(await page.locator('.bn-wallet-pills').count(),0);
   assert.equal(await page.locator('.bn-ship-item').count(),5,'fleet should follow API');
+  assert.equal(await page.locator('.bn-fleet-info').count(),0);
+  assert.equal(await page.locator('.bn-equipment-slot').count(),9);
+  async function verifyArtBounds(selector,frameSelector){
+    const images=page.locator(selector);
+    assert.ok(await images.count()>0,'Missing artwork: '+selector);
+    for(const img of await images.all()){
+      // Lazy images below the fold must enter the viewport before decoding.
+      // A catalog refresh can replace DOM nodes; retry against the live locator.
+      await img.scrollIntoViewIfNeeded();
+      let result;
+      for(let attempt=0;attempt<4;attempt++){
+        result=await img.evaluate(async (el,frameSelector)=>{
+          try{await el.decode()}catch(error){return {decoded:false,src:el.getAttribute('src'),connected:el.isConnected,error:String(error)};}
+          if(!el.isConnected)return {decoded:false,connected:false,src:el.getAttribute('src')};
+          const b=el.getBoundingClientRect(),f=el.closest(frameSelector).getBoundingClientRect();
+          return {decoded:el.naturalWidth>0,inside:b.left>=f.left-1&&b.right<=f.right+1&&b.top>=f.top-1&&b.bottom<=f.bottom+1,fit:getComputedStyle(el).objectFit,src:el.getAttribute('src')};
+        },frameSelector);
+        if(result.decoded)break;
+        await img.scrollIntoViewIfNeeded();
+      }
+      assert.ok(result.decoded&&result.inside&&result.fit==='contain','Artwork escaped frame or failed to load: '+JSON.stringify(result)+' at '+viewport.width);
+    }
+  }
+  await verifyArtBounds('.bn-equipment-ship-art img','.bn-equipment-ship-art');
+  assert.deepEqual(await page.locator('.bn-equipment-captain [data-mood]').evaluateAll(nodes=>nodes.map(n=>n.dataset.mood)),['neutral','hit','damage']);
+  await verifyArtBounds('.bn-equipment-captain .bn-captain-expression img','.bn-captain-expression-art');
+  await page.locator('[data-action="fleet-select"][data-item-id="CAPTAIN"]').click();
+  await page.locator('.bn-equipment-selection[data-equipment-category="CAPTAIN"]').waitFor();
+  assert.equal(await page.locator('.bn-inventory-active .bn-captain-expression').count(),3);
+  assert.equal(await page.locator('.bn-inventory-grid [data-equipment-id="captain_corsair"] .bn-captain-expression').count(),3);
+  await verifyArtBounds('.bn-inventory-card .bn-captain-expression img','.bn-captain-expression-art');
+  await horizontalFit('captain selection');
+  if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/captains-'+viewport.width+'.png',fullPage:true});
+  await page.locator('[data-action="fleet-back"]').click();
+  await page.locator('.bn-equipment-showcase').waitFor();
+  await page.locator('[data-action="fleet-select"][data-item-id="SKIN"]').click();
+  await page.locator('.bn-equipment-selection[data-equipment-category="SKIN"]').waitFor();
+  assert.equal(await page.locator('.bn-inventory-active [data-equipment-id="skin_default"]').count(),1);
+  assert.equal(await page.locator('.bn-inventory-grid [data-equipment-id="skin_coral"]').count(),0,'Unowned product must not appear in inventory');
+  await page.locator('[data-action="fleet-equip"][data-item-id="skin_pirate"]').click();
+  await page.locator('.bn-inventory-active [data-equipment-id="skin_pirate"]').waitFor();
+  assert.deepEqual(equips,['skin_pirate']);
+  await page.locator('[data-action="fleet-back"]').click();
+  await page.locator('.bn-equipment-showcase').waitFor();
+  assert.match(await page.locator('.bn-equipment-fleet h2').innerText(),/Frota Pirata/);
+  assert.ok(await page.locator('.bn-equipment-ships img[src*="/skin_pirate/"]').count()>0);
+  await verifyArtBounds('.bn-equipment-ship-art img','.bn-equipment-ship-art');
+  await page.locator('[data-action="fleet-select"][data-item-id="SKIN"]').click();
+  await page.locator('[data-action="fleet-equip"][data-item-id="skin_default"]').click();
+  await page.locator('.bn-inventory-active [data-equipment-id="skin_default"]').waitFor();
+  assert.deepEqual(equips,['skin_pirate','skin_default']);
+  await page.locator('[data-action="fleet-back"]').click();
+  await page.locator('.bn-equipment-showcase').waitFor();
+  await horizontalFit('fleet after selection');
   if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/fleet-'+viewport.width+'.png',fullPage:true});
   await page.locator('.bn-nav-store').click();
   await page.locator('.bn-store-page').waitFor();
   await horizontalFit('store');
   await assertStickyAccountHeader('store');
+  await assertSameHeader('store');
   await page.locator('.tp-store-card').first().waitFor();
-  assert.equal(await page.locator('.tp-store-card').count(),3,'store must display live API items');
+  assert.equal(await page.locator('.tp-store-card').count(),6,'store must display live API items');
+  const storeLayout=await page.evaluate(()=>{
+    const rect=selector=>document.querySelector(selector).getBoundingClientRect();
+    const nav=document.querySelector('.bn-store-categories');
+    const hero=rect('.is-featured .tp-store-preview'),card=rect('.is-featured');
+    const regular=rect('.tp-store-grid .tp-store-card'),thumb=rect('.tp-store-grid .tp-store-preview'),copy=rect('.tp-store-grid .tp-store-card-text');
+    const buttons=[...document.querySelectorAll('.is-featured .tp-store-card-footer .btn')].map(el=>{const b=el.getBoundingClientRect();return {top:b.top,bottom:b.bottom,left:b.left,right:b.right,height:b.height};});
+    return {regularHeight:regular.height,thumbWidth:thumb.width,thumbHeight:thumb.height,thumbRight:thumb.right,copyLeft:copy.left,buttons,page:rect('.tp-store-page').width,featured:rect('.bn-store-featured').width,heroWidth:hero.width,heroHeight:hero.height,cardWidth:card.width,cardTop:card.top,heroTop:hero.top,navWidth:nav.clientWidth,navScroll:nav.scrollWidth,navHeight:nav.clientHeight,navDisplay:getComputedStyle(nav).display,artFit:document.querySelector('.is-featured svg')?.getAttribute('preserveAspectRatio')};
+  });
+  assert.ok(storeLayout.featured>=storeLayout.page-4,'Hero spans catalog width: '+JSON.stringify(storeLayout));
+  assert.equal(storeLayout.navDisplay,'flex');
+  assert.ok(storeLayout.navHeight<70,'Categories must remain a single row');
+  if(viewport.width>=850){
+    assert.ok(storeLayout.page<=1122&&storeLayout.heroHeight<=254,'Desktop hero must remain shallow: '+JSON.stringify(storeLayout));
+    assert.ok(storeLayout.heroWidth<storeLayout.cardWidth*.65,'Desktop hero uses artwork and copy side by side');
+  }else{
+    assert.ok(storeLayout.heroWidth>=storeLayout.cardWidth-4,'Mobile hero cover must use full card width');
+    assert.ok(storeLayout.heroHeight<=138,'Mobile hero art must be compact: '+JSON.stringify(storeLayout));
+    assert.ok(storeLayout.thumbWidth<=118&&storeLayout.thumbHeight<=118&&storeLayout.thumbRight<=storeLayout.copyLeft+1,'Mobile products use bounded thumbnails beside details: '+JSON.stringify(storeLayout));
+    assert.ok(storeLayout.regularHeight<=205,'Simple mobile product should be compact: '+JSON.stringify(storeLayout));
+    assert.equal(storeLayout.buttons.length,2);
+    assert.ok(Math.abs(storeLayout.buttons[0].top-storeLayout.buttons[1].top)<2&&storeLayout.buttons.every(b=>b.height>=39),'Purchase currencies should share one accessible row: '+JSON.stringify(storeLayout));
+    assert.ok(storeLayout.navScroll>storeLayout.navWidth,'Mobile categories should scroll horizontally');
+  }
+  assert.equal(storeLayout.artFit,'xMidYMid meet','Fallback artwork must never be cropped');
   assert.match(await page.locator('.bn-wallet-pill.is-free strong').innerText(),/300/);
   assert.equal(await page.locator('.bn-wallet-pills').count(),1,'Store must display only one wallet in the sticky header');
   assert.equal(await page.locator('.bn-store-wallet').count(),0,'Redundant store wallet must be removed');
-  if(viewport.width===375)await page.screenshot({path:'artifacts/figma-responsive/store-375.png',fullPage:true});
+  assert.equal(await page.locator('.bn-wallet-add').count(),2);
+  const connection=page.locator('.bn-topbar [data-socket-status]');
+  await connection.waitFor({state:'visible'});
+  assert.equal(await connection.getAttribute('data-online'),'false');
+  assert.equal(await connection.innerText(),'Reconectando');
+  assert.equal(await connection.locator('.tp-live-dot').evaluate(dot=>getComputedStyle(dot).backgroundColor),'rgb(245, 167, 66)');
+  const headerPositions=await page.evaluate(()=>{
+    const status=document.querySelector('.bn-topbar [data-socket-status]').getBoundingClientRect();
+    const wallet=document.querySelector('.bn-topbar .bn-wallet-pills').getBoundingClientRect();
+    const menu=document.querySelector('.bn-topbar .bn-account-menu summary').getBoundingClientRect();
+    return {statusRight:status.right,statusBottom:status.bottom,statusCenter:(status.top+status.bottom)/2,walletLeft:wallet.left,walletTop:wallet.top,menuLeft:menu.left,menuCenter:(menu.top+menu.bottom)/2};
+  });
+  if(viewport.width<=760){
+    assert.ok(headerPositions.statusBottom<=headerPositions.walletTop+1&&headerPositions.statusRight<=headerPositions.menuLeft+1&&Math.abs(headerPositions.statusCenter-headerPositions.menuCenter)<2,'Mobile connection status must be beside the menu, above the wallet: '+JSON.stringify(headerPositions));
+  }else{
+    assert.ok(headerPositions.statusRight<=headerPositions.walletLeft+1,'Desktop connection status must precede wallet: '+JSON.stringify(headerPositions));
+  }
+  await horizontalFit('wallet with connection warning');
+  await page.locator('.bn-wallet-add[data-item-id="free"]').click();
+  await page.locator('#bn-wallet-dialog[open]').waitFor();
+  assert.match(await page.locator('#bn-wallet-dialog').innerText(),/Ganhe moedas Marinha/);
+  assert.equal(await page.locator('[data-action="store-demo-topup"]').count(),0);
+  await page.locator('[data-action="wallet-currency"][data-item-id="premium"]').click();
+  await page.locator('#bn-wallet-dialog[open]').waitFor();
+  assert.match(await page.locator('#bn-wallet-dialog').innerText(),/moedas Naval/i);
+  assert.equal(await page.locator('#bn-wallet-dialog [data-action="store-demo-topup"]').count(),3);
+  await page.locator('#bn-wallet-dialog [data-item-id="demo_100"]').click();
+  await page.waitForFunction(()=>document.querySelector('.bn-wallet-pill.is-premium strong')?.textContent==='100');
+  assert.equal(topups,1,'Top-up should call the server exactly once');
+  assert.equal(await page.locator('#bn-wallet-dialog[open]').count(),1,'Wallet dialog stays open after purchase');
+  await page.locator('#bn-wallet-dialog [data-action="store-demo-topup"]').first().waitFor({state:'visible'});
+  await page.waitForFunction(()=>!document.querySelector('#bn-wallet-dialog [data-action="store-demo-topup"]')?.disabled);
+  await page.keyboard.press('Escape');
+  await page.locator('#bn-wallet-dialog').waitFor({state:'detached'});
+  assert.equal(await page.locator('#tp-notice-root .tp-notice').count(),0,'Wallet feedback must not block the header after closing');
+  await page.locator('[data-action="store-category"][data-item-id="SKIN"]').click();
+  assert.equal(await page.locator('[data-action="store-category"][data-item-id="SKIN"]').getAttribute('aria-pressed'),'true');
+  await page.locator('[data-action="store-category"][data-item-id="ALL"]').click();
+  if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/store-'+viewport.width+'.png',fullPage:true});
   await page.locator('.bn-header-identity').click();
   await page.locator('.bn-profile-stage').waitFor();
   await horizontalFit('profile');

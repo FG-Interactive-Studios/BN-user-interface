@@ -82,3 +82,18 @@
 
 /* Humorous battle effects and sellable text-only provocation packs. */
 @import './chaos-humor.css';
+
+/* Chaotic finale, ridiculous awards and server-drawn random shot. */
+@import './chaos-finale-v19.css';
+
+/* Distinct combat identities and size-aware grids on desktop and mobile. */
+@import './zip-combat-identity-v20.css';
+
+/* Store wireframe and wallet controls. */
+@import './store-wireframe-v21.css';
+
+/* Shared account header and bounded profile portrait, last in cascade. */
+@import './shared-header-profile-v22.css';
+
+/* Active fleet showcase and category-specific inventory views. */
+@import './fleet-equipment.css';

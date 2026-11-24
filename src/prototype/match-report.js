@@ -34,3 +34,23 @@ export function buildMatchReport(battle,profileId){
     comparable:!draw && player.hits===rival.hits && player.misses===rival.misses,
   };
 }
+
+/** A cosmetic, truthful title derived only from server-backed shot statistics. */
+export function ridiculousAward(report) {
+  const {player,won,draw}=report;
+  if(player.attempts===0)
+    return {title:'Capitão de Água Doce',emoji:'🛟',description:'A batalha acabou antes de você testar o canhão.'};
+  if(player.misses>=5&&player.misses>player.hits*2)
+    return {title:'Terror dos Peixes',emoji:'🐟',description:'Os peixes conhecem sua mira melhor que os navios.'};
+  if(player.hits>=3&&player.accuracy>=80)
+    return {title:'Sniper de Banheira',emoji:'🎯',description:'Você quase esqueceu que tinha água no tabuleiro.'};
+  if(player.sunk>=2)
+    return {title:'Colecionador de Âncoras',emoji:'⚓',description:'Transformou navios em um museu subaquático.'};
+  if(player.misses>player.hits)
+    return {title:'Atirador de Água',emoji:'💦',description:'Foi uma ótima batalha contra o oceano.'};
+  if(draw)
+    return {title:'Rei do Empate',emoji:'🤝',description:'Ninguém venceu, mas a água ficou agitada.'};
+  if(won)
+    return {title:'Almirante do Improviso',emoji:'🏴‍☠️',description:'Ninguém sabe como, mas seu plano funcionou.'};
+  return {title:'Capitão Persistente',emoji:'🚢',description:'O importante é tentar. A frota já discordou.'};
+}

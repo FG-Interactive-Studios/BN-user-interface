@@ -4,19 +4,23 @@ import {AudioEvents} from './audio-events.js';
 import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
-import {tauntControls, equippedTaunts, funnyReaction} from './chaos-humor.js';
-import {walletMarkup} from './figma-wallet.js';
+import {renderFleetEquipment,renderEquipmentSelection,equipmentCategory,ownedEquipment} from './fleet-equipment.js';
+import {selectedExpression,publicExpression,impactAttacker,paidFuneral,paidCommentary} from './expressive-cosmetics.js';
+import {tauntControls, equippedTaunts, funnyReaction, funeralReaction} from './chaos-humor.js';
+import {walletMarkup,walletDialogMarkup} from './figma-wallet.js';
+import {connectionStatusContent,connectionStatusLabel} from './connection-status.js';
 import {RADAR_SWEEP_SECONDS, sonarContactMarkup} from './radar-blips.js';
 import shipEmblem from '../assets/figma/ship-icon.png';
 import cannonIcon from '../assets/figma/cannon.png';
 import { renderFigmaResult } from './figma-result.js';
+import {buildMatchReport,ridiculousAward} from './match-report.js';
 import { renderFigmaProfile } from './figma-profile.js';
 import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
 import { renderFigmaPlacement } from './figma-placement.js';
 import { renderZipBattle } from './zip-battle.js';
 import {renderAdminPanel} from './admin-panel.js';
 import {planAbility, ABILITY_DIRECTIONS, abilityNeedsDirection, directionText} from './ability-targeting.js';
-import { shipArt } from './ship-art.js';
+import { shipArt,equippedId,createCaptainMoodTracker } from './ship-art.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
 import { compactEnemyContacts } from './mobile-presenters.js';
@@ -30,16 +34,18 @@ const state = {
   roomExitNotice: null, leavingRoom: false,
   skillMode: null, skillTargets: [], skillArea: [], skillAnchor: null, skillDirection: 'RIGHT', skillDialog: false,
   adminModes: null, adminLoading: false, adminError: '',
-  store: null, storeLoading: false, storeFilter: 'ALL', profileEditorOpen: false, profileSecurityOpen: false,
+  store: null, demoTopupRequests: new Map(), storeLoading: false, storeFilter: 'ALL', walletDialog:null, profileEditorOpen: false, profileSecurityOpen: false,
   preferences: loadPreferences(),
 };
 const audio=new AudioManager({packs:audioPacks});
 const audioEvents=new AudioEvents();
+const captainMoodTracker=createCaptainMoodTracker();
 let audioRoute='';
 let storeLoadGeneration=0;
 const rewardReceipts=new Map();
 const rewardRequests=new Set();
 const shownTaunts=new Set();
+const celebratedMatches=new Set();
 let chaosToastTimer;
 let activeChaosToast=null;
 function mountChaosToast(){
@@ -50,12 +56,13 @@ function mountChaosToast(){
   toast.className='bn-chaos-toast is-'+activeChaosToast.kind;
   toast.setAttribute('role','status');
   toast.textContent=activeChaosToast.text;
+  if(activeChaosToast.clown){const deco=document.createElement('span');deco.className='bn-impact-clowns';deco.setAttribute('aria-hidden','true');deco.textContent='🤡 🎉 🤡 🎊 🤡';toast.append(deco);}
   root.append(toast);
 }
-function showChaosToast(message,kind='taunt'){
+function showChaosToast(message,kind='taunt',clown=false){
   if(!root||currentRoute()!=='match')return;
   activeChaosToast={text:message,kind:kind==='hit'?'hit':kind==='miss'?'miss':kind==='sunk'?'sunk':'taunt',
-    until:Date.now()+3200};
+    until:Date.now()+3200,clown};
   mountChaosToast();
   clearTimeout(chaosToastTimer);
   chaosToastTimer=setTimeout(()=>{
@@ -99,11 +106,17 @@ function syncAudio(route){
   configureAudio(route);
   // Do not overlap the outcome or combat entry with generic UI transitions.
   if(changedRoute&&!['match','result','placement'].includes(route))audio.play('ui_transition');
+  const before=audioEvents.battle;
   const events=audioEvents.update({room:state.lobby,battle:state.battle,userId:state.profile?.id});
   for(const event of events)audio.play(event);
   if(route==='match'){
-    const reaction=funnyReaction(events,state.battle?.revision||0);
-    if(reaction)showChaosToast(reaction.text,reaction.kind);
+    const rev=state.battle?.revision||0, me=state.profile?.id, rival=state.lobby?.players?.find(p=>p.id!==me)?.id;
+    const victim=events.includes('ship_sunk_ally')?me:events.includes('ship_sunk_enemy')?rival:null;
+    const funeral=victim==null?null:paidFuneral(publicExpression(state.lobby,victim,'FUNERAL'),rev);
+    const reaction=funeral?{kind:'sunk',text:funeral}:funeralReaction(events,rev)||funnyReaction(events,rev);
+    const attacker=impactAttacker(before,state.battle,me,rival);
+    const clown=attacker!=null&&publicExpression(state.lobby,attacker,'ATTACK')==='attack_clown';
+    if(reaction)showChaosToast(paidCommentary(selectedExpression(state.store?.items,'COMMENTATOR'),reaction.kind,rev)||reaction.text,reaction.kind,clown);
   }
 }
 let root;
@@ -115,11 +128,16 @@ let supportsMatchmakingState=true; // Old API builds still use legacy lookups.
 let renderedRoute='';
 function updateNotice() {
   const node=root?.querySelector?.('#tp-notice-root');
-  if (node) node.innerHTML=alertNode();
+  if (node) node.innerHTML=state.walletDialog?'':alertNode();
 }
 function updateConnectionIndicator() {
   const badge=root?.querySelector('[data-socket-status]');
-  if (badge) badge.innerHTML=`<i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}`;
+  if(!badge)return;
+  const online=state.socketOnline;
+  badge.dataset.online=String(online);
+  badge.setAttribute('aria-label',connectionStatusLabel(online));
+  badge.title=connectionStatusLabel(online);
+  badge.innerHTML=connectionStatusContent(online);
 }
 
 
@@ -130,7 +148,7 @@ function go(route) {
   route = resolvedRoute(route, api.isAuthenticated(), state.lobby?.status);
   if (route!=='profile') {state.profileEditorOpen=false;state.profileSecurityOpen=false;}
   if(route==='admin'&&state.profile?.admin!==true)return notice('Área restrita a administradores.',true);
-  if (currentRoute()===route) render(); else location.hash=route;
+  if (currentRoute()===route&&!(route==='fleet'&&fleetCategory())) render(); else location.hash=route;
 }
 function nav(active='play') {
   return `<nav class="bottom-nav bn-bottom-nav" aria-label="Navegação principal">
@@ -142,14 +160,14 @@ function nav(active='play') {
 function header() {
   const nickname=esc(state.profile?.nickname || 'Capitão');
   const showWallet=['lobby','store'].includes(currentRoute());
-  return `<header class="topbar bn-topbar">
+  return `<header class="topbar bn-topbar bn-shared-header ${showWallet?'has-wallet':'without-wallet'}">
     <button type="button" class="bn-header-identity" data-go="profile" aria-label="Abrir meu perfil">
       <span class="bn-header-avatar" aria-hidden="true"><img src="${shipEmblem}" alt="" width="42" height="42"></span>
       <span class="bn-header-player"><strong>${nickname}</strong><small>Conta de jogador</small></span>
     </button>
     <div class="bn-header-actions">
+      <span class="bn-connection-status" data-socket-status data-online="${state.socketOnline}" role="status" aria-label="${connectionStatusLabel(state.socketOnline)}" title="${connectionStatusLabel(state.socketOnline)}">${connectionStatusContent(state.socketOnline)}</span>
       ${showWallet?walletMarkup(state.store,{compact:true}):''}
-      <span class="bn-connection-status" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span>
       <details class="tp-account-menu bn-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary>
         <div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-go="settings">Configurações</button>${state.profile?.admin===true?'<button type="button" data-go="admin">Área administrativa</button>':''}<button type="button" data-action="logout">Sair</button></div>
       </details>
@@ -182,7 +200,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -477,7 +495,7 @@ function placementScreen(){
   if (!directions.includes(state.orientation)) state.orientation=directions[0] || 'HORIZONTAL';
   return renderFigmaPlacement({
     preparation:p,mode,draft:state.draft,selectedShipId:state.placementShip,
-    orientation:state.orientation,
+    orientation:state.orientation,skin:equippedId(state.store?.items,'SKIN','skin_default'),
   });
 }
 
@@ -569,42 +587,37 @@ function battleScreen(){
     skillTargets:state.skillTargets, skillArea:state.skillArea,
     available, sunk, activeAbility, skillControls, activeEffects, radarInfo,
     clockStrip, pausedOverlay, tauntControls:tauntControls(state.store?.items),
+    skin:equippedId(state.store?.items,'SKIN','skin_default'),captain:equippedId(state.store?.items,'CAPTAIN','captain_default'),moods:captainMoodTracker.update(b),
   }) + skillDialogMarkup();
 }
 function resultScreen() {
   const battle=state.battle;
   if(!battle)return mainContent(panel('Resultado','Aguardando dados da partida.'),{noNav:true});
+  const celebrate=!celebratedMatches.has(battle.matchId);
+  if(celebrate)celebratedMatches.add(battle.matchId);
   return renderFigmaResult({battle,profile:state.profile,lobby:state.lobby,
-    reward:rewardReceipts.get(battle.matchId)});
+    reward:rewardReceipts.get(battle.matchId),celebrate});
 }
 
+function fleetCategory(){
+  const category=new URLSearchParams(location.hash.split('?')[1]||'').get('equipment');
+  return equipmentCategory(category)?category:null;
+}
 function fleetScreen(){
   const mode=activeMode()||state.modes[0];
-  const ships=mode?.fleet||[];
-  const catalogue=ships.length
-    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">${shipArt(def.id)?`<img src="${shipArt(def.id)}" class="bn-fleet-thumb" alt="" loading="lazy" />`:'⚓'}</span>
-       <div><strong>${esc(shipName(def.id))}</strong><small>${def.length} casas</small></div>
-       <span class="bn-ship-status">Disponível</span></article>`).join('')
-    : '<p class="bn-available-note">Nenhum modo de jogo habilitado no momento.</p>';
-  return mainContent(`<div class="bn-page bn-fleet-page">
-    <header class="bn-page-heading"><h1>Sua frota</h1><p>Escolha sua estratégia antes de entrar em batalha.</p></header>
-    <section class="bn-surface bn-fleet-catalogue"><div class="bn-section-title"><span>EMBARCAÇÕES</span><strong>${esc(mode?.name||'Clássico')}</strong></div>
-      <div class="bn-ship-list">${catalogue}</div></section>
-    <section class="bn-surface bn-fleet-info"><div class="bn-section-title"><span>PREPARAÇÃO</span><strong>Frota de combate</strong></div>
-      <p>A frota é definida pela API para cada modo. Você posiciona seus navios ao entrar na partida.</p>
-      <button type="button" class="btn btn-primary bn-primary-button" data-go="lobby">Preparar partida</button>
-    </section>
-  </div>`,{active:'fleet'});
+  const category=fleetCategory();
+  const options={catalog:state.store,mode,loading:state.storeLoading||state.busy};
+  return mainContent(category?renderEquipmentSelection(category,options):renderFleetEquipment(options),{active:'fleet',variant:'bn-equipment-screen'});
 }
 function storeScreen(){
-  return mainContent(renderCosmeticStore(state.store,{loading:state.storeLoading,filter:state.storeFilter}),{active:'store'});
+  return mainContent(renderCosmeticStore(state.store,{loading:state.storeLoading||state.busy,filter:state.storeFilter}),{active:'store'});
 }
 async function loadStore({quiet=false}={}){
   if(!api.isAuthenticated() || state.storeLoading) return;
   state.storeLoading=true;
   const generation=++storeLoadGeneration;
   const userId=state.profile?.id;
-  if(currentRoute()==='store') render();
+  if(['store','fleet'].includes(currentRoute())) render();
   try {
     const snapshot=await api.get('/store');
     if(generation!==storeLoadGeneration||!api.isAuthenticated()||state.profile?.id!==userId)return;
@@ -616,12 +629,12 @@ async function loadStore({quiet=false}={}){
   } finally {
     if(generation===storeLoadGeneration){
       state.storeLoading=false;
-      if(['store','lobby','match'].includes(currentRoute())) render();
+      if(['store','lobby','match','placement','profile','fleet'].includes(currentRoute())) render();
     }
   }
 }
 function profileScreen(){
-  return renderFigmaProfile(state.profile);
+  return renderFigmaProfile(state.profile,{title:selectedExpression(state.store?.items,'TITLE'),frame:selectedExpression(state.store?.items,'FRAME'),captain:equippedId(state.store?.items,'CAPTAIN','captain_default')});
 }
 function settingsScreen(){
   return renderFigmaSettings(state.profile,state.preferences);
@@ -677,8 +690,24 @@ function render(){ if (!root) return;
     history.replaceState(null,'',`${location.pathname}${location.search}#lobby`);
     route='lobby';
   }
+  if(!['lobby','store'].includes(route)||renderedRoute&&renderedRoute!==route)state.walletDialog=null;
   const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen,admin:adminScreen};
-  root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
+  const categoryScroll=route==='store'?root.querySelector('.bn-store-categories')?.scrollLeft:0;
+  root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog()+(state.walletDialog?walletDialogMarkup(state.store,{currency:state.walletDialog,loading:state.busy||state.storeLoading,notice:state.notice,error:state.error}):'');
+  if(categoryScroll){const categories=root.querySelector('.bn-store-categories');if(categories)categories.scrollLeft=categoryScroll;}
+  if(state.walletDialog){
+    const dialog=root.querySelector('#bn-wallet-dialog');
+    // Native dialog cancel does not bubble; attach directly to each rendered dialog.
+    dialog?.addEventListener('cancel',event=>{
+      event.preventDefault();
+      const currency=state.walletDialog;
+      state.walletDialog=null;state.notice='';state.error=false;
+      dialog.close();
+      render();
+      root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();
+    });
+    dialog?.showModal();
+  }
   mountChaosToast();
   if(route==='match'){
     const dialog=root.querySelector('#tp-skill-dialog');
@@ -688,6 +717,7 @@ function render(){ if (!root) return;
   updateNotice();
   if (state.busy) root.classList.add('tp-loading'); else root.classList.remove('tp-loading');
   document.body.dataset.route=route;
+  document.body.dataset.boardTheme=selectedExpression(state.store?.items,'BOARD_THEME')==='board_abyss'?'abyss':'default';
   syncAudio(route);
   document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
   if(route==='profile'&&state.profileEditorOpen){
@@ -742,6 +772,39 @@ async function handleForm(form) {
 
 async function runAction(action,itemId=null) {
   switch(action) {
+    case 'open-wallet':
+      if(!['lobby','store'].includes(currentRoute()))break;
+      state.walletDialog=itemId==='free'?'free':'premium';state.notice='';state.error=false;render();
+      if(!state.store)void loadStore();
+      break;
+    case 'wallet-currency':
+      if(state.walletDialog&&['free','premium'].includes(itemId)){state.walletDialog=itemId;render();}
+      break;
+    case 'close-wallet': {
+      const currency=state.walletDialog;state.walletDialog=null;state.notice='';state.error=false;render();
+      root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();break;
+    }
+    case 'fleet-select':
+      if(currentRoute()==='fleet'&&equipmentCategory(itemId)){state.notice='';state.error=false;location.hash='fleet?equipment='+encodeURIComponent(itemId);}
+      break;
+    case 'fleet-back':
+      if(currentRoute()==='fleet'){state.notice='';state.error=false;go('fleet');}
+      break;
+    case 'fleet-reload':
+      if(currentRoute()==='fleet')void loadStore();
+      break;
+    case 'fleet-equip': {
+      const category=fleetCategory();
+      if(currentRoute()!=='fleet'||!category||!ownedEquipment(state.store,category).some(item=>item.id===itemId&&!item.equipped))break;
+      await guard(async()=>{
+        state.store=await api.put('/store/equip/'+encodeURIComponent(itemId));
+        configureAudio(audioRoute||currentRoute());
+      });
+      break;
+    }
+    case 'store-category':
+      if(currentRoute()==='store'&&['ALL','SKIN','SOUND','TAUNT','CAPTAIN','BUNDLE','COSMETICS'].includes(itemId)){state.storeFilter=itemId;render();root.querySelector('.bn-store-category[data-item-id="'+itemId+'"]')?.focus({preventScroll:true});}
+      break;
     case 'admin-refresh':
       if(currentRoute()==='admin'&&state.profile?.admin===true){
         state.adminModes=null;await loadAdminModes();
@@ -842,9 +905,28 @@ async function runAction(action,itemId=null) {
       audio.play('purchase_success');
       notice('Item adquirido. Você pode equipá-lo no catálogo.');
     });break;
+    case 'store-buy-premium':await guard(async()=>{
+      if(!itemId||state.store?.demoPremiumEnabled!==true) return;
+      state.store=await api.post('/store/purchase/'+encodeURIComponent(itemId)+'?premium=true');
+      audio.play('purchase_success');
+      notice('Item adquirido com créditos premium de demonstração.');
+    });break;
+    case 'store-demo-topup':{
+      if(state.walletDialog!=='premium'||!['demo_100','demo_300','demo_700'].includes(itemId)||state.store?.demoPremiumEnabled!==true||state.busy)break;
+      const amount=itemId.split('_')[1];
+      if(!window.confirm('Simular a aquisição de '+amount+' créditos premium? Nenhum dinheiro real será cobrado.'))break;
+      await guard(async()=>{
+        const requestId=state.demoTopupRequests.get(itemId)||crypto.randomUUID();
+        state.demoTopupRequests.set(itemId,requestId);
+        state.store=await api.post('/store/demo-premium',{packId:itemId,requestId});
+        state.demoTopupRequests.delete(itemId);
+        notice('Compra simulada concluída. Nenhum dinheiro real foi usado.');
+      });break;
+    }
     case 'store-equip':await guard(async()=>{
       if(!itemId) return;
       state.store=await api.put('/store/equip/'+encodeURIComponent(itemId));
+      configureAudio(audioRoute||currentRoute());
       document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
       notice('Item equipado com sucesso.');
     });break;
@@ -874,6 +956,14 @@ async function runAction(action,itemId=null) {
       state.queue=null;go('matchmaking');
     });break;
     case 'copy-code':if(state.lobby){try{await navigator.clipboard.writeText(state.lobby.code);notice('Código copiado para a área de transferência.');}catch{notice(`Código da sala: ${state.lobby.code}`);}}break;
+    case 'copy-award':{
+      if(currentRoute()!=='result'||!state.battle)return;
+      const award=ridiculousAward(buildMatchReport(state.battle,state.profile?.id));
+      const share=`🏆 ${award.emoji} ${award.title} — ${award.description} #BatalhaNaval`;
+      try {await navigator.clipboard.writeText(share);notice('Prêmio copiado para compartilhar!');}
+      catch {notice(share);}
+      break;
+    }
     case 'ready':await guard(async()=>{const me=state.lobby?.players.find(p=>p.id===state.profile.id);state.lobby=await api.put('/matchmaking/lobbies/me/ready',{ready:!me?.ready});await reconcile();});break;
     case 'leave-lobby':{
       if (state.lobby?.status==='PLAYING' && !confirm('Sair agora significa desistir e perder a partida. Continuar?')) return;
@@ -982,6 +1072,25 @@ async function runAction(action,itemId=null) {
         notice(`Radar em ${coordLabel(last)}: ${last.contacts} contato(s) no setor 3×3.`);
       await reconcile();
     });break;
+    case 'desperation-shot':{
+      if(state.busy||currentRoute()!=='match'||!state.battle
+        ||state.skillMode||state.battle.status!=='PLAYING'
+        ||state.battle.paused||state.battle.yourDesperationUsed
+        ||state.battle.turnPlayerId!==state.profile?.id)return;
+      if(!confirm('🎲 Aperta e Reza! O servidor escolherá um alvo aleatório. Isso gasta seu turno e só pode ser usado uma vez por partida. Continuar?'))return;
+      await guard(async()=>{
+        const previous=state.battle.shotsFired||[];
+        state.battle=await api.post('/matches/me/shots/desperation');
+        const latest=(state.battle.shotsFired||[]).find(shot=>
+          !previous.some(old=>old.row===shot.row&&old.col===shot.col&&
+            old.hit===shot.hit&&Boolean(old.blocked)===Boolean(shot.blocked)));
+        syncAudio(currentRoute());
+        state.selected=null;
+        await reconcile();
+        if(latest&&currentRoute()==='match')showChaosToast('🎲 Aperta e Reza acertou '+coordLabel(latest)+'!','taunt');
+      });
+      break;
+    }
     case 'fire':await guard(async()=>{
       if(!state.selected||state.skillMode||!state.battle||state.battle.turnPlayerId!==state.profile.id||state.battle.paused)return;
       state.battle=await api.post('/matches/me/shots',state.selected);
@@ -1052,6 +1161,18 @@ function bindEvents() {
   root.addEventListener('keydown',unlock,true);
   document.addEventListener('visibilitychange',()=>audio.setVisible(!document.hidden));
   audio.setVisible(!document.hidden);
+  // Image failures must not display an oversized alt string inside the portrait.
+  root.addEventListener('error',event=>{
+    const image=event.target;
+    if(!image?.matches?.('.bn-gd-profile-captain'))return;
+    if(image.dataset.fallback&&image.getAttribute('src')!==image.dataset.fallback){
+      image.setAttribute('src',image.dataset.fallback);
+      return;
+    }
+    image.hidden=true;
+    const fallback=image.parentElement?.querySelector('.bn-profile-initial');
+    if(fallback)fallback.hidden=false;
+  },true);
   root.addEventListener('cancel', event=>{
     if (event.target?.id==='tp-room-exit-dialog') event.preventDefault();
     if (event.target?.id==='tp-skill-dialog') state.skillDialog=false;
@@ -1091,7 +1212,6 @@ function bindEvents() {
     }
   });
   root.addEventListener('change',event=>{
-    if(event.target.id==='store-filter'){state.storeFilter=event.target.value;render();}
     if(event.target.id==='mode-picker')state.modeId=event.target.value;
     if(event.target.id==='orientation')state.orientation=event.target.value;
     if(event.target.matches('.bn-profile-security'))state.profileSecurityOpen=event.target.open;
@@ -1100,7 +1220,7 @@ function bindEvents() {
     if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();
     if(currentRoute()!=='profile'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
     render();
-    if(currentRoute()==='store' && !state.store && !state.storeLoading) void loadStore();
+    if(['store','fleet'].includes(currentRoute()) && !state.store && !state.storeLoading) void loadStore();
     if(currentRoute()==='admin'&&state.profile?.admin===true&&state.adminModes===null&&!state.adminLoading)void loadAdminModes();
   });
 }

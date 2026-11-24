@@ -76,11 +76,10 @@ try{
   assert.equal(await page.locator('#bn-result-title').innerText(),title);
   assert.equal(await page.locator('.bn-report-summary').count(),1);
   assert.equal(await page.locator('.bn-report-rewards').count(),1);
-  assert.equal(await page.locator('.bn-report-player').count(),2,'Both players must be present');
-  assert.equal(await page.locator('.bn-report-player.is-you .bn-report-player-name').innerText(),'Você');
-  assert.equal(await page.locator('.bn-report-player.is-rival .bn-report-player-name').innerText(),'MarinheiroX');
-  assert.deepEqual(await page.locator('.bn-report-player.is-you .bn-report-player-numbers b').allInnerTexts(),['4','3','57%','1']);
-  assert.deepEqual(await page.locator('.bn-report-player.is-rival .bn-report-player-numbers b').allInnerTexts(),['2','2','50%','1']);
+  assert.equal(await page.locator('.bn-report-player').count(),0,'Opponent comparison must be absent');
+  assert.equal(await page.locator('.bn-report-stat').count(),4);
+  assert.deepEqual(await page.locator('.bn-report-stat strong').allInnerTexts(),['4','3','57%','1/5']);
+  assert.deepEqual(await page.locator('.bn-report-stat span').allInnerTexts(),['Acertos','Erros','Precisão','Navios destruídos']);
   assert.match(await page.locator('.bn-report-verdict').innerText(),/tempo terminou/i);
   assert.match(await page.locator('.bn-report-meta').innerText(),/Duração indisponível.*Clássico/);
   assert.equal(await page.locator('.bn-report-reward-item strong').first().innerText(),'—');

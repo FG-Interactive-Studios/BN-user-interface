@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {impactAttacker,paidFuneral,paidCommentary,expressionTitle} from '../src/prototype/expressive-cosmetics.js';
+import {renderCosmeticStore} from '../src/prototype/store-ui.js';
+import {renderFigmaProfile} from '../src/prototype/figma-profile.js';
+assert.equal(impactAttacker({matchId:'x',revision:1},{matchId:'x',revision:2,shotsReceived:[{row:0,col:1,hit:true}]},1,2),2);
+assert.equal(impactAttacker({matchId:'x',revision:1},{matchId:'x',revision:3,shotsFired:[{row:0,col:1,hit:true}]},1,2),null);
+assert.match(paidFuneral('funeral_pieces',1),/Funeral naval/);
+assert.equal(paidCommentary('commentator_support','sunk',0),null);
+assert.equal(expressionTitle('title_threat'),'Ameaça à Navegação');
+const html=renderCosmeticStore({items:[{id:'attack_clown',category:'ATTACK',name:'Chuva de Palhaços',description:'Ataque',price:150,enabled:true}]},{filter:'ATTACK'});
+assert.match(html,/data-item-id="attack_clown"/);
+assert.match(html,/data-product-cover="true"/);
+assert.match(renderFigmaProfile({id:1,nickname:'Capitão'},{title:'title_threat',frame:'frame_neon'}),/bn-neon-frame/);
+console.log('Cosméticos expressivos: OK');
