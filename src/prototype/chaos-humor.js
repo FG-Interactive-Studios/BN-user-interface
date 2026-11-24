@@ -89,16 +89,68 @@ export function tauntControls(items) {
 }
 
 export const REACTIONS={
-  hit:['A seguradora já bloqueou seu número! 💥','Esse casco virou peneira! 🧀',
-    'Precisamos conversar sobre a garantia desse navio. 🚢'],
-  miss:['O oceano sofreu danos irreparáveis! 🌊','Os peixes estão pedindo trégua. 🐟',
-    'Acertou uma quantidade impressionante de água! 💧'],
-  sunk:['Mais um imóvel disponível no fundo do mar! 🏚️','O navio virou submarino sem querer! 🤿',
-    'A tripulação já está procurando boias! 🛟'],
+  "hit": [
+    "A seguradora já bloqueou seu número! 💥",
+    "Esse casco virou peneira! 🧀",
+    "Precisamos conversar sobre a garantia desse navio. 🚢",
+    "O conserto ficou mais caro que o barco! 💸",
+    "A tripulação abriu chamado no suporte. 📞",
+    "Foi só um arranhão! De 3 metros. 🔨",
+    "Tem um submarino novo, mas sem querer. 🤿",
+    "O oceano acabou de ganhar um aquário. 🐠",
+    "O inimigo está reconsiderando sua carreira. 📋",
+    "Chamem o encanador, estamos vazando! 🚰",
+    "O casco não gostou dessa conversa. 💬",
+    "É pra boiar ou pra virar peneira? 🧽",
+    "Ponto para você, prejuízo para o estaleiro! 🏗️",
+    "O radar do adversário entrou em negação. 📡",
+    "Essa reforma no navio não foi autorizada! 🛠️"
+  ],
+  "miss": [
+    "O oceano sofreu danos irreparáveis! 🌊",
+    "Os peixes estão pedindo trégua. 🐟",
+    "Acertou uma quantidade impressionante de água! 💧",
+    "Parabéns, você encontrou o mar! 🧭",
+    "A mira foi fazer turismo. 🏖️",
+    "O tiro chegou, mas o navio não estava. 🚢",
+    "O peixe que viu isso pediu indenização. 🐡",
+    "Você está perdendo para um tabuleiro. 📉",
+    "O oceano continua invicto contra sua mira. 🌊",
+    "É água! Outra vez! Que surpresa! 💦",
+    "A bússola acabou de pedir demissão. 🧳",
+    "O canhão estava de olhos fechados? 🙈",
+    "Acertar o vento não dá ponto, capitão. 🌪️",
+    "Esse tiro está indo procurar emprego. 💼",
+    "O mapa era do estacionamento? 🅿️"
+  ],
+  "sunk": [
+    "Mais um imóvel disponível no fundo do mar! 🏚️",
+    "O navio virou submarino sem querer! 🤿",
+    "A tripulação já está procurando boias! 🛟",
+    "O navio foi promovido a atração turística! 🪸",
+    "O fundo do mar ganhou um novo condomínio. 🏘️",
+    "Foi de navio para aquário em segundos! 🐠",
+    "O capitão saiu nadando e sem currículo. 🏊",
+    "A seguradora desligou na sua cara! ☎️",
+    "Era porta-aviões, agora é porta-peixes. 🐟",
+    "Sacanagem, o barco tinha acabado de lavar. 🧼",
+    "O estaleiro vai precisar de terapia. 🛠️",
+    "A equipe de resgate pediu folga. 🛟",
+    "O oceano ganhou mais um hóspede permanente. 🌊",
+    "Mais uma frota matriculada na escola de natação. 🎓",
+    "O barco decidiu morar embaixo d’água. 🫧"
+  ],
+  "blocked": [
+    "O escudo disse NÃO, OBRIGADO! 🛡️",
+    "O tiro bateu na portaria e voltou. 🚪",
+    "Essa armadura está no plano premium! 💎",
+    "Recusado: danos fora do horário comercial. 🕐",
+    "Seu disparo caiu no spam do navio. 📧"
+  ]
 };
 export function funnyReaction(events=[],seed=0) {
   const category=events.includes('ship_sunk_enemy')||events.includes('ship_sunk_ally')
-    ? 'sunk':events.includes('hit')?'hit':events.includes('miss')?'miss':null;
+    ? 'sunk':events.includes('attack_blocked')?'blocked':events.includes('hit')?'hit':events.includes('miss')?'miss':null;
   if(!category)return null;
   const phrases=REACTIONS[category];
   return {kind:category,text:phrases[Math.abs(seed)%phrases.length]};
