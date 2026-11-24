@@ -24,8 +24,11 @@ export function activeEquipment(catalog,category){return ownedEquipment(catalog,
 const btn=(category,label='Alterar')=>`<button class="bn-equipment-change" type="button" data-action="fleet-select" data-item-id="${category}" aria-label="${esc(label+' '+equipmentCategory(category).label)}">${esc(label)} <span aria-hidden="true">›</span></button>`;
 const name=(catalog,category)=>esc(activeEquipment(catalog,category)?.name||'Nenhum confirmado');
 const info=(catalog,loading)=>!catalog?`<div class="bn-equipment-message" role="status">${loading?'Carregando seu inventário…':'Não foi possível consultar seu inventário.'}${loading?'':' <button type="button" data-action="fleet-reload">Tentar novamente</button>'}</div>`:'';
+export function renderCaptainExpressions(id){
+ return `<div class="bn-captain-expressions" aria-label="Expressões do capitão">${[['neutral','Neutra'],['hit','Acerto'],['damage','Dano recebido']].map(([mood,label])=>`<figure class="bn-captain-expression is-${mood}" data-mood="${mood}"><div class="bn-captain-expression-art"><img src="${captainArt(id,mood)}" alt="" loading="lazy"></div><figcaption>${label}</figcaption></figure>`).join('')}</div>`;
+}
 function art(item,category){
- if(category==='CAPTAIN')return `<div class="bn-equipment-portrait-art"><img src="${captainArt(item.id)}" alt="" loading="lazy"></div>`;
+ if(category==='CAPTAIN')return renderCaptainExpressions(item.id);
  return renderProductCover(item);
 }
 export function renderFleetEquipment({catalog,mode,loading=false}={}){
@@ -46,7 +49,7 @@ export function renderFleetEquipment({catalog,mode,loading=false}={}){
    </section>
    <section class="bn-equipment-captain" aria-label="Capitão ativo">
     <div class="bn-equipment-section-heading"><div><span class="bn-equipment-kicker">CAPITÃO ATIVO</span><h2>${name(catalog,'CAPTAIN')}</h2></div>${btn('CAPTAIN','Alterar')}</div>
-    <div class="bn-equipment-hero-portrait"><img src="${captainArt(captain?.id||'captain_default')}" alt="Retrato do capitão" loading="lazy"></div>
+    ${renderCaptainExpressions(captain?.id||'captain_default')}
     <p class="bn-equipment-mode">Expressões durante o combate</p>
    </section>
   </div>
@@ -63,10 +66,10 @@ export function renderEquipmentSelection(category,{catalog,mode,loading=false}={
  if(!c)return renderFleetEquipment({catalog,mode,loading});
  const items=ownedEquipment(catalog,category),active=activeEquipment(catalog,category);
  const others=items.filter(i=>i.id!==active?.id);
- const card=(item,selected)=>`<article class="bn-inventory-card ${selected?'is-active':''}" data-equipment-id="${esc(item.id)}">
+ const card=(item,selected)=>`<article class="bn-inventory-card ${category==='CAPTAIN'?'is-captain':''} ${selected?'is-active':''}" data-equipment-id="${esc(item.id)}">
    ${art(item,category)}
-   <div class="bn-inventory-copy"><h3>${esc(item.name)}</h3><p>${esc(item.description||'')}</p>
-   ${selected?'<span class="bn-inventory-equipped">✓ Equipado</span>':`<button type="button" class="bn-equipment-equip" data-action="fleet-equip" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Equipar</button>`}</div>
+   <div class="bn-inventory-copy">${selected?'<span class="bn-inventory-equipped">✓ Equipado agora</span>':''}<h3>${esc(item.name)}</h3><p>${esc(item.description||'')}</p>
+   ${selected?'':`<button type="button" class="bn-equipment-equip" data-action="fleet-equip" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Equipar</button>`}</div>
  </article>`;
  return `<div class="bn-page bn-fleet-page bn-equipment-page bn-equipment-selection" data-equipment-category="${category}">
   <header class="bn-page-heading bn-equipment-heading"><button type="button" class="bn-equipment-back" data-action="fleet-back" aria-label="Voltar para sua frota">‹</button><div><h1>${esc(c.label)}</h1><p>Escolha entre os itens que você possui.</p></div></header>

@@ -103,3 +103,9 @@ assert.match(selection,/bn-inventory-active[\s\S]*data-equipment-id="skin_defaul
 assert.match(selection,/data-action="fleet-equip" data-item-id="skin_pirate"/);
 assert.ok(!selection.includes('skin_space')&&!selection.includes('skin_magnate')&&!selection.includes('bundle_space'));
 assert.match(renderFleetEquipment({catalog:equipFixture,mode:{fleet:[{id:'SEARCH',length:1}]}}),/skin_default\/search-intact/);
+
+const {renderCaptainExpressions}=await import('../src/prototype/fleet-equipment.js');
+for(const mood of ['neutral','hit','damage']){
+ assert.ok(renderCaptainExpressions('captain_corsair').includes('data-mood="'+mood+'"'));
+ assert.ok(renderCaptainExpressions('captain_corsair').includes('/captain_corsair/'+mood+'.'));
+}

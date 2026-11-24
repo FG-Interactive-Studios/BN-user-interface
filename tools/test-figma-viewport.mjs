@@ -46,7 +46,9 @@ try {
        {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Visual padrão',price:0,enabled:true,owned:true,equipped:equippedFleet==='skin_default'},
        {id:'skin_pirate',category:'SKIN',name:'Frota Pirata',description:'Frota adquirida',price:100,enabled:true,owned:true,equipped:equippedFleet==='skin_pirate'},
        {id:'skin_coral',category:'SKIN',name:'Coral',description:'Personalização',price:90,premiumPrice:30,enabled:true,owned:false,equipped:false},
-       {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Em breve',price:90,enabled:false,owned:false,equipped:false}
+       {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Em breve',price:90,enabled:false,owned:false,equipped:false},
+       {id:'captain_default',category:'CAPTAIN',name:'Capitão Padrão',description:'Três expressões',price:0,enabled:true,owned:true,equipped:true},
+       {id:'captain_corsair',category:'CAPTAIN',name:'Harthorne',description:'Três expressões',price:200,enabled:true,owned:true,equipped:false}
      ]}:null;
    if(path==='/api/store')lastWallet=body;
    if(body!==null)return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
@@ -155,6 +157,30 @@ try {
   assert.equal(await page.locator('.bn-ship-item').count(),5,'fleet should follow API');
   assert.equal(await page.locator('.bn-fleet-info').count(),0);
   assert.equal(await page.locator('.bn-equipment-slot').count(),9);
+  async function verifyArtBounds(selector,frameSelector){
+    const images=page.locator(selector);
+    assert.ok(await images.count()>0,'Missing artwork: '+selector);
+    for(const img of await images.all()){
+      const result=await img.evaluate(async (el,frameSelector)=>{
+        try{await el.decode()}catch{return {decoded:false}};
+        const b=el.getBoundingClientRect(),f=el.closest(frameSelector).getBoundingClientRect();
+        return {decoded:el.naturalWidth>0,inside:b.left>=f.left-1&&b.right<=f.right+1&&b.top>=f.top-1&&b.bottom<=f.bottom+1,fit:getComputedStyle(el).objectFit};
+      },frameSelector);
+      assert.ok(result.decoded&&result.inside&&result.fit==='contain','Artwork escaped frame: '+JSON.stringify(result)+' at '+viewport.width);
+    }
+  }
+  await verifyArtBounds('.bn-equipment-ship-art img','.bn-equipment-ship-art');
+  assert.deepEqual(await page.locator('.bn-equipment-captain [data-mood]').evaluateAll(nodes=>nodes.map(n=>n.dataset.mood)),['neutral','hit','damage']);
+  await verifyArtBounds('.bn-equipment-captain .bn-captain-expression img','.bn-captain-expression-art');
+  await page.locator('[data-action="fleet-select"][data-item-id="CAPTAIN"]').click();
+  await page.locator('.bn-equipment-selection[data-equipment-category="CAPTAIN"]').waitFor();
+  assert.equal(await page.locator('.bn-inventory-active .bn-captain-expression').count(),3);
+  assert.equal(await page.locator('.bn-inventory-grid [data-equipment-id="captain_corsair"] .bn-captain-expression').count(),3);
+  await verifyArtBounds('.bn-inventory-card .bn-captain-expression img','.bn-captain-expression-art');
+  await horizontalFit('captain selection');
+  if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/captains-'+viewport.width+'.png',fullPage:true});
+  await page.locator('[data-action="fleet-back"]').click();
+  await page.locator('.bn-equipment-showcase').waitFor();
   await page.locator('[data-action="fleet-select"][data-item-id="SKIN"]').click();
   await page.locator('.bn-equipment-selection[data-equipment-category="SKIN"]').waitFor();
   assert.equal(await page.locator('.bn-inventory-active [data-equipment-id="skin_default"]').count(),1);
@@ -166,6 +192,7 @@ try {
   await page.locator('.bn-equipment-showcase').waitFor();
   assert.match(await page.locator('.bn-equipment-fleet h2').innerText(),/Frota Pirata/);
   assert.ok(await page.locator('.bn-equipment-ships img[src*="/skin_pirate/"]').count()>0);
+  await verifyArtBounds('.bn-equipment-ship-art img','.bn-equipment-ship-art');
   await page.locator('[data-action="fleet-select"][data-item-id="SKIN"]').click();
   await page.locator('[data-action="fleet-equip"][data-item-id="skin_default"]').click();
   await page.locator('.bn-inventory-active [data-equipment-id="skin_default"]').waitFor();
@@ -180,7 +207,7 @@ try {
   await assertStickyAccountHeader('store');
   await assertSameHeader('store');
   await page.locator('.tp-store-card').first().waitFor();
-  assert.equal(await page.locator('.tp-store-card').count(),4,'store must display live API items');
+  assert.equal(await page.locator('.tp-store-card').count(),6,'store must display live API items');
   const storeLayout=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector).getBoundingClientRect();
     const nav=document.querySelector('.bn-store-categories');

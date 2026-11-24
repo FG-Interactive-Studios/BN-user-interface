@@ -71,3 +71,80 @@ body[data-route="fleet"] .bn-equipment-ship small{font:400 10px/1.2 'Lexend',san
  .bn-inventory-grid{grid-template-columns:minmax(0,1fr)}
  .bn-inventory-card,.bn-inventory-card.is-active{grid-template-columns:100px minmax(0,1fr);padding:8px}
 }
+
+/* Keep intrinsic sprite dimensions out of grid sizing. Absolute image boxes
+ * and clipped, explicit-height frames protect labels even for tall art. */
+body[data-route="fleet"] .bn-equipment-ship{overflow:hidden;min-height:0}
+body[data-route="fleet"] .bn-equipment-ship-art{
+ position:relative;display:block;flex:0 0 auto;min-height:0;min-width:0;
+ height:clamp(110px,25dvh,220px);overflow:hidden;width:100%;isolation:isolate;
+}
+body[data-route="fleet"] .bn-equipment-ship-art>img{
+ position:absolute!important;inset:5px!important;display:block!important;
+ width:calc(100% - 10px)!important;height:calc(100% - 10px)!important;
+ min-width:0!important;min-height:0!important;max-width:calc(100% - 10px)!important;
+ max-height:calc(100% - 10px)!important;object-fit:contain!important;
+ object-position:center!important;margin:0!important;transform:none!important;
+}
+body[data-route="fleet"] .bn-equipment-ship-art>span{position:absolute;inset:0;display:grid;place-items:center}
+body[data-route="fleet"] .bn-equipment-showcase{grid-template-columns:minmax(0,1.65fr) minmax(0,1fr)}
+body[data-route="fleet"] .bn-equipment-captain{display:flex;flex-direction:column;align-items:stretch}
+.bn-captain-expressions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;min-width:0;width:100%;align-items:start}
+.bn-captain-expression{min-width:0;margin:0;padding:4px;border-radius:9px;border:1px solid #395968;background:#091a24;overflow:hidden;text-align:center}
+.bn-captain-expression.is-neutral{border-color:#a88c50}
+.bn-captain-expression.is-hit{border-color:#397f73}
+.bn-captain-expression.is-damage{border-color:#98645e}
+.bn-captain-expression-art{position:relative;width:100%;height:clamp(82px,18dvh,170px);overflow:hidden;isolation:isolate}
+body[data-route="fleet"] .bn-captain-expression-art>img{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+ min-width:0!important;min-height:0!important;max-width:100%!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center!important;display:block!important;margin:0!important;transform:none!important
+}
+.bn-captain-expression figcaption{font:500 10px/1.2 'Lexend',sans-serif;color:#cce0e9;padding:4px 0 1px;overflow-wrap:anywhere}
+.bn-captain-expression.is-hit figcaption{color:#9ae6ce}
+.bn-captain-expression.is-damage figcaption{color:#ffb4a7}
+body[data-route="fleet"] .bn-equipment-captain .bn-equipment-mode{margin-top:auto}
+body[data-route="fleet"] .bn-inventory-active{justify-items:center}
+body[data-route="fleet"] .bn-inventory-active>h2{justify-self:start}
+body[data-route="fleet"] .bn-inventory-card{overflow:hidden;grid-template-columns:minmax(0,112px) minmax(0,1fr);min-height:0}
+body[data-route="fleet"] .bn-inventory-card.is-active{
+ width:min(100%,660px);box-sizing:border-box;grid-template-columns:minmax(0,210px) minmax(0,1fr);
+ padding:12px;border:1px solid #6fe1bb;box-shadow:0 0 0 1px #6fe1bb33,0 8px 24px #0006;
+ background:radial-gradient(ellipse at 0% 50%,#175348,#0b202c 80%);
+}
+body[data-route="fleet"] .bn-inventory-equipped{
+ align-self:flex-start;color:#abf7ce;background:#153c34;border:1px solid #63cba6;
+ padding:5px 8px;border-radius:999px;font-size:10px;
+}
+body[data-route="fleet"] .bn-inventory-card .tp-store-preview{
+ position:relative!important;display:flex;align-items:center;justify-content:center;
+ width:100%!important;height:92px!important;min-height:0!important;max-height:92px!important;
+ aspect-ratio:auto;overflow:hidden;isolation:isolate;
+}
+body[data-route="fleet"] .bn-inventory-card.is-active .tp-store-preview{height:130px!important;max-height:130px!important}
+body[data-route="fleet"] .bn-inventory-card .tp-store-preview>img{
+ display:block!important;width:100%!important;height:100%!important;max-width:100%!important;
+ max-height:100%!important;min-width:0!important;min-height:0!important;object-fit:contain!important;
+ margin:0!important;transform:none!important;
+}
+body[data-route="fleet"] .bn-inventory-card .tp-store-preview.is-fleet>img{width:29%!important;height:90%!important}
+body[data-route="fleet"] .bn-inventory-card.is-captain{grid-template-columns:minmax(0,1fr);gap:8px;align-content:start}
+body[data-route="fleet"] .bn-inventory-card.is-captain .bn-captain-expression-art{height:clamp(70px,12dvh,106px)}
+body[data-route="fleet"] .bn-inventory-card.is-captain.is-active{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}
+body[data-route="fleet"] .bn-inventory-card.is-captain.is-active .bn-captain-expression-art{height:clamp(90px,18dvh,144px)}
+body[data-route="fleet"] .bn-inventory-card.is-active h3{font-size:28px}
+@media(max-width:1099px) and (min-width:850px){
+ body[data-route="fleet"] .bn-inventory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:849px){
+ body[data-route="fleet"] .bn-equipment-showcase{grid-template-columns:minmax(0,1fr)}
+ body[data-route="fleet"] .bn-equipment-ship-art{height:clamp(70px,23vw,120px)}
+ body[data-route="fleet"] .bn-equipment-captain .bn-captain-expression-art{height:clamp(82px,24vw,140px)}
+ body[data-route="fleet"] .bn-inventory-card{grid-template-columns:100px minmax(0,1fr)}
+ body[data-route="fleet"] .bn-inventory-card.is-active{grid-template-columns:clamp(100px,34vw,150px) minmax(0,1fr);padding:9px}
+ body[data-route="fleet"] .bn-inventory-card.is-active .tp-store-preview{height:112px!important;max-height:112px!important}
+ body[data-route="fleet"] .bn-inventory-card.is-captain.is-active{grid-template-columns:minmax(0,1fr)}
+ body[data-route="fleet"] .bn-inventory-card.is-captain.is-active .bn-captain-expression-art{height:clamp(85px,27vw,130px)}
+ body[data-route="fleet"] .bn-inventory-card.is-captain .bn-captain-expression-art{height:clamp(65px,21vw,100px)}
+ body[data-route="fleet"] .bn-inventory-card.is-active h3{font-size:25px}
+}
