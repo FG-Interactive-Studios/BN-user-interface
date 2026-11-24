@@ -2,6 +2,18 @@ import { esc, coordLabel, renderBoard } from './board.js';
 import {captainArt} from './ship-art.js';
 import {expressionTitle} from './expressive-cosmetics.js';
 
+/** Positions in the official 4×4 GD icon atlas; unknown powers retain a neutral symbol. */
+const GD_POWER_ICONS=Object.freeze({
+  'air-strike':'0% 0%',
+  'line-barrage':'33.333% 0%',
+  'double-shot':'66.667% 0%',
+  'hull-shield':'100% 0%',
+  radar:'0% 33.333%',
+  interference:'33.333% 33.333%',
+  retreat:'66.667% 33.333%',
+  'last-chance':'100% 33.333%'
+});
+
 /** ZIP reference: visual composition only. The backend still controls all battle rules. */
 export function renderZipBattle({
   battle, mode, opponent, own, enemy, myTurn, finished, canAct,
@@ -28,9 +40,10 @@ export function renderZipBattle({
     ? abilities.map(ability => {
       const disabled = !canAct || ability.locked || ability.usesRemaining <= 0;
       const chosen = activeAbility?.id === ability.id;
+      const powerIcon=Object.hasOwn(GD_POWER_ICONS,ability.id)?GD_POWER_ICONS[ability.id]:null;
       return `<button type="button" class="zip-ability ${chosen ? 'is-active' : ''}" data-action="pick-ability" data-ability-id="${esc(ability.id)}"
         title="${esc(ability.description || ability.name)}" ${disabled ? 'disabled' : ''} aria-pressed="${chosen}">
-        <span class="zip-ability-emblem" aria-hidden="true">✦</span>
+        <span class="zip-ability-emblem${powerIcon?' gd-power-icon':''}" ${powerIcon?`style="background-position:${powerIcon}"`:''} aria-hidden="true">${powerIcon?'':'✦'}</span>
         <span class="zip-ability-name">${esc(ability.name)}</span>
         <small>${ability.usesRemaining} uso(s) · ${['radar','double-shot'].includes(ability.id)?'Grátis':'1 ponto'}${ability.locked?' · Bloqueado':''}</small>
       </button>`;
