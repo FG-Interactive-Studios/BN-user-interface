@@ -161,10 +161,15 @@ try {
    assert.equal(await page.locator('.placement-preview-valid').count(),3);
    await clickCell(5,8);
    assert.equal(await shipCells(),8);
+   assert.equal(await page.locator('.bn-placement-ship.is-selected').getAttribute('data-item-id'),'BATTLESHIP');
 
    // Selecting the already placed submarine preserves its orientation.
    await page.locator('[data-item-id="SUBMARINE"]').click();
+   assert.equal(await shipCells(),5,'Original submarine disappears during repositioning');
+   await cell(5,8).hover();
+   assert.equal(await page.locator('.placement-preview-valid').count(),3);
    await page.locator('[data-action="rotate-placement"]').click();
+   assert.match(await page.locator('[data-action="rotate-placement"]').innerText(),/Girar/);
    await clickCell(6,0);
    assert.equal(await shipCells(),8);
    assert.equal(await page.locator('.bn-placement-board-wrap [data-coord="5,8"].ship').count(),0);
@@ -180,12 +185,51 @@ try {
    assert.equal(calls.random,1);
    assert.equal(await shipCells(),17);
    assert.equal(await page.locator('.bn-placement-confirm').isEnabled(),true);
+   assert.equal(await page.locator('.bn-placement-ship.is-selected').count(),0);
+   assert.equal(await page.locator('.bn-placement-board-wrap [data-coord]').count(),0);
    await page.screenshot({path:'artifacts/figma-placement/fleet-random-'+viewport.width+'.png',fullPage:true});
 
    // Replace the server's random layout by manually editing all five ships.
    await page.locator('[data-action="clear-draft"]').click();
-   for(let row=0;row<5;row++)await clickCell(row,0);
+   // Touch input uses real Chromium touch events, not a synthetic mouse click.
+   if(viewport.width===375){
+     const session=await page.context().newCDPSession(page);
+     await session.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+     const point=async(r,c)=>{const b=await cell(r,c).boundingBox();return {x:b.x+b.width/2,y:b.y+b.height/2};};
+     const touch=async(type,points=[])=>session.send('Input.dispatchTouchEvent',{type,touchPoints:points});
+     await touch('touchStart',[await point(0,0)]);
+     assert.equal(await page.locator('.placement-preview-valid').count(),5);
+     assert.equal(await shipCells(),0);
+     await touch('touchMove',[await point(1,0)]);
+     assert.equal(await page.locator('[data-coord="1,4"].placement-preview-valid').count(),1);
+     assert.equal(await shipCells(),0);
+     await touch('touchEnd');
+     assert.equal(await shipCells(),5);
+     assert.equal(await page.locator('[data-coord="1,4"].ship').count(),1);
+     assert.equal(await page.locator('.bn-placement-ship.is-selected').getAttribute('data-item-id'),'BATTLESHIP');
+     await touch('touchStart',[await point(2,0)]);
+     await touch('touchCancel');
+     assert.equal(await shipCells(),5);
+     assert.equal(await page.locator('.placement-preview-valid').count(),0);
+     await session.send('Emulation.setTouchEmulationEnabled',{enabled:false});
+     await session.detach();
+     await clickCell(0,0);
+     for(let row=2;row<5;row++)await clickCell(row,0);
+   }else{
+     for(let row=0;row<5;row++)await clickCell(row,0);
+   }
    assert.equal(await shipCells(),17);
+   assert.equal(await page.locator('.bn-placement-ship.is-selected').count(),0);
+   assert.equal(await page.locator('.bn-placement-board-wrap [data-coord]').count(),0);
+   assert.equal(await page.locator('.bn-placement-confirm').isEnabled(),true);
+   await page.locator('[data-item-id="DESTROYER"]').click();
+   assert.equal(await shipCells(),15);
+   assert.equal(await page.locator('.bn-placement-confirm').isDisabled(),true);
+   await cell(9,0).hover();
+   assert.equal(await page.locator('.placement-preview-valid').count(),2);
+   await clickCell(9,0);
+   assert.equal(await shipCells(),17);
+   assert.equal(await page.locator('.bn-placement-ship.is-selected').count(),0);
    assert.equal(await page.locator('.bn-placement-confirm').isEnabled(),true);
    await page.locator('.bn-placement-confirm').click();
    await page.waitForFunction(()=>document.querySelector('.bn-placement-confirm')?.disabled

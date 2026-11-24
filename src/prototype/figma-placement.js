@@ -9,10 +9,14 @@ const iconClear = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 /** Display-name exception within this approved Figma screen only. */
 const displayShipName = (id) => id === 'DESTROYER' ? 'Destróier' : shipName(id);
 
+/** Prefer explicit selection, otherwise the first unplaced ship in mode order. */
+export function chosenPlacementShip(mode,ships,selectedShipId){
+  return mode?.fleet?.find(s=>s.id===selectedShipId)||mode?.fleet?.find(s=>!ships.some(p=>p.type===s.id))||null;
+}
 /** One pure plan for the ghost preview AND the actual placement click. */
 export function planPlacement({mode,ships=[],selectedShipId,orientation,anchor}){
   if(!anchor||mode?.geometry?.kind!=='RECTANGULAR'||!mode.placementDirections?.includes(orientation))return null;
-  const chosen=mode.fleet.find(s=>s.id===selectedShipId)||mode.fleet.find(s=>!ships.some(p=>p.type===s.id));
+  const chosen=chosenPlacementShip(mode,ships,selectedShipId);
   if(!chosen)return null;
   const candidate={type:chosen.id,row:anchor.row,col:anchor.col,orientation};
   const rest=ships.filter(s=>s.type!==chosen.id);
@@ -27,17 +31,19 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
   const ships = draft ?? (preparation.yourShips || []);
   const editable = !preparation.fleetConfirmed;
   const placed = new Set(ships.map(ship => ship.type));
-  const next = mode.fleet.find(ship => !placed.has(ship.id));
-  const chosenId = mode.fleet.some(ship => ship.id === selectedShipId) ? selectedShipId : next?.id || null;
+  const chosenId = chosenPlacementShip(mode,ships,selectedShipId)?.id||null;
   const directions = mode.placementDirections || [];
   const canManual = editable && mode.geometry.kind === 'RECTANGULAR' && directions.includes(orientation);
-  const canRotate = canManual && directions.includes('VERTICAL') && directions.includes('HORIZONTAL');
+  const repositioning = canManual && chosenId!==null && placed.has(chosenId);
+  // Retain original draft coordinates until a valid release/click; render only the other ships.
+  const visibleShips = repositioning ? ships.filter(s=>s.type!==chosenId) : ships;
+  const canRotate = canManual && chosenId!==null && directions.includes('VERTICAL') && directions.includes('HORIZONTAL');
   const complete = mode.fleet.every(ship => placed.has(ship.id));
   const progress = `${ships.length} de ${mode.fleet.length} posicionados`;
   const hint = preparation.fleetConfirmed
     ? 'Sua frota está confirmada. Aguarde a confirmação do adversário.'
     : canManual
-      ? 'Passe o mouse para prever. Clique ou toque para posicionar.'
+      ? chosenId ? 'Passe o mouse ou arraste o dedo. Clique ou solte para posicionar.' : 'Frota posicionada. Selecione um navio para reposicionar.'
       : 'Use Aleatório para posicionar a frota neste modo de jogo.';
 
   const cards = mode.fleet.map(def => {
@@ -75,7 +81,7 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
         <div class="bn-placement-board-wrap board-wrap board-wrap-primary combat-board-wrap placement-board-wrap tp-board"
         aria-label="Tabuleiro para posicionamento da frota">
         <div class="tactical-board-frame setup-board-frame">
-          ${renderBoard(mode, { ships, interactive: canManual,skin })}
+          ${renderBoard(mode, { ships:visibleShips, interactive: canManual&&chosenId!==null,skin })}
         </div>
       </div>
         <div class="bn-placement-side">
@@ -86,7 +92,7 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
       <div class="bn-placement-tools" aria-label="Ferramentas de posicionamento">
         <button type="button" class="bn-placement-tool" data-action="rotate-placement"
           ${!canRotate?'disabled':''} aria-label="Girar embarcação selecionada" title="Girar (R) · ${orientation==='VERTICAL'?'Vertical':'Horizontal'}" aria-keyshortcuts="R">
-          <span class="bn-placement-tool-icon">${iconRotate}</span><span>Girar <span class="bn-placement-orientation">(${orientation==='VERTICAL'?'V':'H'})</span></span>
+          <span class="bn-placement-tool-icon">${iconRotate}</span><span>Girar <span class="bn-placement-orientation">(R)</span></span>
         </button>
         <button type="button" class="bn-placement-tool" data-action="random-placement"
           ${!editable?'disabled':''} aria-label="Gerar posições aleatórias">
@@ -104,7 +110,7 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
       </p>
       <div class="bn-placement-actions">
         <button type="button" class="bn-placement-confirm" data-action="confirm-placement"
-          ${!editable||!complete?'disabled':''}>
+          ${!editable||!complete||repositioning?'disabled':''}>
           ${preparation.fleetConfirmed ? 'Posições confirmadas' : 'Confirmar posições'}
         </button>
       </div>

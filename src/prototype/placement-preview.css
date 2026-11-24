@@ -13,6 +13,18 @@ body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost{
 body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost *{pointer-events:none!important}
 body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost.is-invalid{opacity:.42;filter:sepia(.8) saturate(4) hue-rotate(325deg)}
 .bn-placement-orientation{font-size:.8em;color:#a5d5da}
+@media(pointer:coarse){.bn-placement-orientation{display:none}}
+body[data-route="placement"] .bn-placement-board-wrap .board-main,
+body[data-route="placement"] .bn-placement-board-wrap [data-coord]{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+body[data-route="placement"] .bn-placement-board-wrap .cell.placement-preview-valid{
+  background:#14825d!important;background-image:none!important;border-color:#8dffd1!important;
+  box-shadow:inset 0 0 0 2px #8dffd1!important;
+}
+body[data-route="placement"] .bn-placement-board-wrap .cell.placement-preview-invalid{
+  background:#8f3038!important;background-image:none!important;border-color:#ff9696!important;
+}
+body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost{opacity:.48}
+
 
 /* Original GD ship artwork is vertical. Bound it to the ghost's exact grid area. */
 body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost>img{
