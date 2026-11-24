@@ -116,3 +116,24 @@ for(const [event,file] of Object.entries(retroManifest.sounds)){
  assert.equal(bytes.subarray(0,4).toString(),'OggS');
  assert.ok(bytes.length>10000);
 }
+
+// Approved Pirate V3: all six exact OGG blobs, with fixed music/UI fallback.
+const pirateDir=new URL('../src/assets/audio/pirate/',import.meta.url);
+const pirateManifest=JSON.parse(readFileSync(new URL('manifest.json',pirateDir),'utf8'));
+assert.equal(pirateManifest.id,'sound_pirate');
+assert.deepEqual(Object.keys(pirateManifest.sounds).sort(),['hit','miss','ship_sunk_ally','ship_sunk_enemy','shot','victory']);
+const {createHash}=await import('node:crypto');
+const approved={"miss":"1484856aa8116ee22049e1e0a2faf5b688d72480","hit":"f4d02266e06831633ca2c443e710731c7658ceee","ship_sunk_ally":"ba48805f53d8b44b0ae9b388da4b1e54be44227c","ship_sunk_enemy":"e8259d445648f09f02c9d709b4542366e424a864","shot":"583fa560dfc488b79aaeb6427fb475f112426d1e","victory":"b29053a02d4ecbf8e5670f838add99f86fce6bf6"};
+for(const [event,file] of Object.entries(pirateManifest.sounds)){
+ assert.ok(isCustomizableSoundEvent(event));
+ const bytes=readFileSync(new URL(file,pirateDir));
+ assert.equal(bytes.subarray(0,4).toString(),'OggS');
+ assert.ok(bytes.subarray(0,100).includes(Buffer.from('vorbis')));
+ assert.equal(createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex'),approved[event]);
+}
+const piratePacks={sound_default:completeDefault,sound_pirate:pirateManifest.sounds};
+for(const event of Object.keys(EVENTS)){
+ const expected=[pirateManifest.sounds[event],completeDefault[event]].filter(Boolean);
+ if(event==='ship_sunk_ally'||event==='ship_sunk_enemy')expected.push('default-ship_sunk');
+ assert.deepEqual(resolveSounds(piratePacks,'sound_pirate',event),expected);
+}

@@ -16,6 +16,7 @@ const coverThemes = {
   skin_magnate:['#242019','#a87929','#ffe09a','MAGNATA'],
   sound_default:['#102d39','#327387','#b9f3fc','SONS PADRÃO'],
   sound_sonar:['#09291e','#21894f','#92ffba','SONAR RETRÔ'],
+  sound_pirate:['#291b12','#976230','#ffcf7d','CANHÕES PIRATAS'],
   sound_deep:['#09172b','#244b9b','#8bbcff','MAR PROFUNDO'],
   captain_default:['#12253b','#497a9d','#d6e8ff','CAPITÃO PADRÃO'],
   captain_corsair:['#382515','#977145','#ffe0a0','CAPITÃO CORSÁRIO'],
@@ -41,6 +42,7 @@ const collectionArt={
 };
 const productHighlights={
   sound_sonar:'4 efeitos de combate em 8 bits',
+  sound_pirate:'6 efeitos · canhões e tripulação',
   skin_default:'3 embarcações originais',
   skin_corsair:'3 navios · estética corsária',
   skin_space:'3 navios · frota futurista',
@@ -66,7 +68,7 @@ export function renderProductCover(item){
   if(isOfficialCaptain(item.id))return `<div class="tp-store-preview bn-gd-cover is-portrait" data-product-cover="true" aria-hidden="true"><img src="${captainArt(item.id)}" alt="" loading="lazy"></div>`;
   if(isOfficialFleet(item.id))return `<div class="tp-store-preview bn-gd-cover is-fleet" data-product-cover="true" aria-hidden="true">${['SEARCH','DESTROYER','CARRIER'].map(id=>`<img src="${shipArt(id,item.id)}" alt="" loading="lazy">`).join('')}</div>`;
   const [dark,mid,accent,label]=Object.hasOwn(coverThemes,item.id)?coverThemes[item.id]:Object.hasOwn(expressionThemes,item.category)&&Object.hasOwn(EXPRESSION_ITEMS,item.id)?[...expressionThemes[item.category],EXPRESSION_ITEMS[item.id][0].toLocaleUpperCase('pt-BR')]:genericTheme;
-  const art=EXPRESSIVE_CATEGORIES.includes(item.category)&&Object.hasOwn(EXPRESSION_ITEMS,item.id)?'<text text-anchor="middle" y="25" font-size="74" font-family="system-ui,sans-serif">'+EXPRESSION_ITEMS[item.id][1]+'</text>':item.category==='SKIN'?ship:item.category==='SOUND'?sonar:item.category==='CAPTAIN'?captain:item.category==='BUNDLE'?'<g transform="translate(-48 8) scale(.65)">'+ship+'</g><g transform="translate(56 -4) scale(.7)">'+captain+'</g>':speech;
+  const art=EXPRESSIVE_CATEGORIES.includes(item.category)&&Object.hasOwn(EXPRESSION_ITEMS,item.id)?'<text text-anchor="middle" y="25" font-size="74" font-family="system-ui,sans-serif">'+EXPRESSION_ITEMS[item.id][1]+'</text>':item.category==='SKIN'?ship:item.category==='SOUND'?(item.id==='sound_pirate'?'<g stroke="#ffcf7d" stroke-width="4" fill="#93643d"><path d="M-63 7 L42 -30 L48 -12 L-54 26 Z"/><path d="M-42 28 L24 28 L32 42 L-49 42Z"/><circle cx="-26" cy="39" r="13" fill="#3b281e"/><circle cx="16" cy="39" r="13" fill="#3b281e"/></g><path d="M54 -25 L67 -38 L70 -25 L89 -28 L79 -12 L89 1 L67 -4 L57 7 L57 -9 L46 -14Z" fill="#ffcc67"/>':sonar):item.category==='CAPTAIN'?captain:item.category==='BUNDLE'?'<g transform="translate(-48 8) scale(.65)">'+ship+'</g><g transform="translate(56 -4) scale(.7)">'+captain+'</g>':speech;
   return `<div class="tp-store-preview" aria-hidden="true" style="position:relative;overflow:hidden"><svg data-product-cover="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;width:100%;height:100%;display:block">
   <rect width="320" height="180" fill="${dark}"/><circle cx="160" cy="65" r="113" fill="${mid}" opacity=".34"/><circle cx="160" cy="65" r="82" fill="${mid}" opacity=".45"/>
   <g stroke="${accent}" opacity=".16" fill="none"><circle cx="160" cy="65" r="100"/><circle cx="160" cy="65" r="72"/><path d="M0 20 H320 M0 55 H320 M0 90 H320 M0 125 H320 M40 0 V180 M100 0 V180 M220 0 V180 M280 0 V180"/></g>
