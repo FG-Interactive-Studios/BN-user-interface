@@ -215,9 +215,9 @@ try {
      assert.ok(metrics.defenseHeading.bottom<=metrics.ownBoard.top+3,'Own heading overlaps defense: '+explain);
      assert.ok(metrics.board.width>=metrics.ownBoard.width&&metrics.ownBoard.width>=metrics.board.width*.8,'Mobile grids should be similarly sized, with attack slightly larger: '+explain);
    } else {
-     assert.ok(metrics.board.right<=metrics.turn.left+4,'Desktop: enemy grid must be LEFT of turn panel: '+explain);
-     assert.ok(metrics.turn.right<=metrics.ownBoard.left+4,'Desktop: own fleet must be RIGHT of turn panel: '+explain);
-     assert.ok(metrics.enemyPortrait.right<=metrics.board.left+2&&metrics.ownBoard.right<=metrics.ownPortrait.left+2,'Desktop portraits must be on the outer edges: '+explain);
+     assert.ok(metrics.ownBoard.right<=metrics.turn.left+4,'Desktop: own fleet must be LEFT of turn panel: '+explain);
+     assert.ok(metrics.turn.right<=metrics.board.left+4,'Desktop: enemy grid must be RIGHT of turn panel: '+explain);
+     assert.ok(metrics.ownPortrait.right<=metrics.ownBoard.left+2&&metrics.board.right<=metrics.enemyPortrait.left+2,'Desktop portraits must be on the outer edges: '+explain);
      assert.ok(metrics.board.width>=Math.min(300,viewport.width*.26,viewport.height*.42),'Desktop boards must use the available space: '+explain);
    }
    assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);

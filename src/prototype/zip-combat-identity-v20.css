@@ -145,12 +145,12 @@ body[data-route="match"] .bn-zip-battle .zip-captain-portrait[data-mood="damage"
     padding-inline:clamp(6px,1vw,14px)!important;
   }
   body[data-route="match"] .bn-zip-battle .zip-scoreboard>.zip-score-side:first-child {
-    grid-column:3;grid-row:1;text-align:right;
-  }
-  body[data-route="match"] .bn-zip-battle .zip-scoreboard>.zip-score-opponent {
     grid-column:1;grid-row:1;text-align:left;
   }
-  body[data-route="match"] .bn-zip-battle .zip-score-value {grid-column:2;grid-row:1;flex-direction:row-reverse;}
+  body[data-route="match"] .bn-zip-battle .zip-scoreboard>.zip-score-opponent {
+    grid-column:3;grid-row:1;text-align:right;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-score-value {grid-column:2;grid-row:1;flex-direction:row;}
   body[data-route="match"] .bn-zip-battle .zip-battle-center {
     --zip-portrait-side:clamp(64px,10cqw,144px);
     --zip-turn-side:clamp(112px,10.5cqw,146px);
@@ -167,13 +167,13 @@ body[data-route="match"] .bn-zip-battle .zip-captain-portrait[data-mood="damage"
     column-gap:6px!important;row-gap:4px!important;
     align-content:center!important;
   }
-  body[data-route="match"] .bn-zip-battle .zip-enemy-section {grid-column:1!important;}
-  body[data-route="match"] .bn-zip-battle .zip-own-section {
+  body[data-route="match"] .bn-zip-battle .zip-own-section {grid-column:1!important;}
+  body[data-route="match"] .bn-zip-battle .zip-enemy-section {
     grid-column:3!important;
     grid-template-columns:minmax(0,1fr) var(--zip-portrait-side)!important;
     grid-template-areas:"heading heading" "board portrait" "target target";
   }
-  body[data-route="match"] .bn-zip-battle .zip-own-section .zip-board-heading {align-items:flex-end;text-align:right!important;}
+  body[data-route="match"] .bn-zip-battle .zip-enemy-section .zip-board-heading {align-items:flex-end;text-align:right!important;}
   body[data-route="match"] .bn-zip-battle .zip-captain-portrait {
     width:var(--zip-portrait-side);max-width:none;
     height:min(calc(var(--zip-portrait-side)*1.5),var(--zip-stack-board-side));
