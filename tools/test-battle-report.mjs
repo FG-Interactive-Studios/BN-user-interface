@@ -23,7 +23,9 @@ assert.ok(design.includes('left bottom/auto 100%'),'Wide-screen backdrop must re
 assert.ok(markup.includes('Resumo da partida'));
 assert.ok(markup.includes('Recompensas'));
 assert.ok(markup.includes('Navios'));
-assert.ok(markup.includes('Comparação dos jogadores'));
+assert.ok(markup.includes('Suas estatísticas da partida'));
+assert.ok(markup.includes('report.player'));
+assert.ok(!markup.includes('Comparação dos jogadores')&&!markup.includes('report.rival'));
 assert.ok(markup.includes('bn-report-verdict'));
 assert.ok(markup.includes('data-action="${rematchAction}"'));
 assert.ok(markup.includes('Aceitar revanche'));
@@ -43,4 +45,4 @@ assert.ok(app.includes('function radarMarkup()'));
 assert.ok(app.includes('radarMarkup()'));
 assert.ok(app.includes('bn-feature-card'));
 assert.ok(!app.includes('home-radar-disc'));
-console.log('Figma: post-battle comparative report from both server histories and official ending; legacy radar preserved: OK');
+console.log('Figma: individual post-battle report from the local server history and official ending; legacy radar preserved: OK');
