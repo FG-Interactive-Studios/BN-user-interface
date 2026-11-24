@@ -142,6 +142,8 @@ try {
    }
 
 
+   await page.locator('.zip-battle-header').waitFor({timeout:15000});
+   await page.locator('.zip-primary-board .board-main .cell').first().waitFor({timeout:15000});
    const metrics=await page.evaluate(()=>{
      const rect=selector=>{
        const element=document.querySelector(selector);
@@ -191,9 +193,9 @@ try {
    assert.equal(await page.locator('.zip-scoreboard img').count(),0,'Portraits must not resize the score row');
    for(const [portrait,section,board] of [['enemyPortrait','enemy','board'],['ownPortrait','defense','ownBoard']]) {
      const p=metrics[portrait],s=metrics[section],b=metrics[board];
-     assert.ok(p.width>=24&&p.height>=24&&p.width<=115&&p.height<=132,'Captain portrait not bounded: '+explain);
+     assert.ok(p.width>=24&&p.height>=24&&p.width<=(viewport.width>=850?145:115)&&p.height<=(viewport.width>=850?218:132),'Captain portrait not bounded: '+explain);
      assert.ok(p.left>=s.left-2&&p.right<=s.right+2&&p.top>=s.top-2&&p.bottom<=s.bottom+2,'Captain escaped panel: '+explain);
-     assert.ok(p.right<=b.left+2||p.bottom<=b.top+2,'Portrait overlaps grid: '+explain);
+     assert.ok(p.right<=b.left+2||p.left>=b.right-2||p.bottom<=b.top+2,'Portrait overlaps grid: '+explain);
    }
    for(const selector of ['.zip-enemy-section .zip-combat-captain','.zip-own-section .zip-combat-captain']) {
      assert.ok(await page.locator(selector).evaluate(async img=>{try{await img.decode();return img.naturalWidth>0;}catch{return false;}}),'Broken captain artwork: '+explain);
@@ -207,9 +209,10 @@ try {
      assert.ok(metrics.defenseHeading.bottom<=metrics.ownBoard.top+3,'Own heading overlaps defense: '+explain);
      assert.ok(metrics.board.width>=metrics.ownBoard.width&&metrics.ownBoard.width>=metrics.board.width*.8,'Mobile grids should be similarly sized, with attack slightly larger: '+explain);
    } else {
-     assert.ok(metrics.ownBoard.right<=metrics.turn.left+4,'Desktop: own fleet must be LEFT of turn panel: '+explain);
-     assert.ok(metrics.turn.right<=metrics.board.left+4,'Desktop: enemy grid must be RIGHT of turn panel: '+explain);
-     assert.ok(metrics.board.width>=Math.min(300,viewport.width*.31,viewport.height*.46),'Desktop boards must use the available space: '+explain);
+     assert.ok(metrics.board.right<=metrics.turn.left+4,'Desktop: enemy grid must be LEFT of turn panel: '+explain);
+     assert.ok(metrics.turn.right<=metrics.ownBoard.left+4,'Desktop: own fleet must be RIGHT of turn panel: '+explain);
+     assert.ok(metrics.enemyPortrait.right<=metrics.board.left+2&&metrics.ownBoard.right<=metrics.ownPortrait.left+2,'Desktop portraits must be on the outer edges: '+explain);
+     assert.ok(metrics.board.width>=Math.min(300,viewport.width*.26,viewport.height*.42),'Desktop boards must use the available space: '+explain);
    }
    assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);
    assert.ok(metrics.powers.right<=metrics.fire.left+5,'Powers and fire must sit side-by-side: '+explain);
@@ -218,6 +221,8 @@ try {
    assert.ok(Math.abs(metrics.ownBoard.height-metrics.ownBoard.width)<=3,'Defense board distorted: '+explain);
    assert.equal(await page.locator('.zip-primary-board .board-main .cell').count(),64);
    assert.equal(await page.locator('.zip-own-board .board-preview .cell').count(),64);
+   assert.equal(await page.locator('.zip-own-board .bn-gd-ship-overlay img[src*="/skin_default/"]').count(),3,'Base fleet must render even without store cosmetics');
+   assert.equal(await page.locator('.zip-primary-board .bn-gd-ship-overlay').count(),0,'Enemy fleet must remain hidden');
    assert.ok(Math.abs(metrics.cell.width-metrics.cell.height)<=2,'Target cell distorted: '+explain);
    assert.ok(Math.abs(metrics.previewCell.width-metrics.previewCell.height)<=2,'Own cell distorted: '+explain);
    assert.ok(metrics.ownBoard.width>=Math.min(85,viewport.width*.27),'Defense board collapsed: '+explain);
