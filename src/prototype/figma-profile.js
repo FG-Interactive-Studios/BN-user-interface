@@ -3,10 +3,10 @@ import {captainArt} from './ship-art.js';
 import {expressionTitle} from './expressive-cosmetics.js';
 
 /** Approved Figma player-profile artboard.
- * Data from /api/users/me only. No invented rank, XP, record or achievements.
+ * Identity and authoritative /api/users/me/statistics. No invented XP or achievements.
  * The existing account editor and password forms remain functional in a modal.
  */
-export function renderFigmaProfile(profile,{title,frame,captain}={}) {
+export function renderFigmaProfile(profile,{title,frame,captain,statistics,statisticsLoading=false,statisticsError=false}={}) {
   const p=profile||{};
   const nickname=esc(p.nickname||'Capitão');
   const initial=esc(Array.from(String(p.nickname||'C').trim())[0]?.toLocaleUpperCase('pt-BR')||'C');
@@ -19,8 +19,22 @@ export function renderFigmaProfile(profile,{title,frame,captain}={}) {
     {title:'Frota completa',kind:'ship'},
     {title:'Mira perfeita',kind:'cannon'}
   ];
-  const stat=(title,kind)=>`<div class="bn-profile-stat ${kind}">
-    <strong aria-label="Dado indisponível">—</strong><span>${title}</span></div>`;
+  const stat=(title,kind,value)=>`<div class="bn-profile-stat ${kind}">
+    <strong ${value==null?'aria-label="Dado indisponível"':''}>${value==null?'—':esc(value)}</strong><span>${title}</span></div>`;
+  const n=value=>Number.isFinite(value)?value.toLocaleString('pt-BR'):null;
+  const rate=statistics?((statistics.totalMatches?100*statistics.wins/statistics.totalMatches:0).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%'):null;
+  const reasons={ALL_SHIPS_SUNK:'Frota afundada',ABANDONED:'Desistência',BOTH_DISCONNECTED:'Ambos desconectados',DISCONNECT_TIMEOUT:'Desconexão',TIME_LIMIT:'Tempo encerrado',TIME_LIMIT_DRAW:'Tempo encerrado',TURN_TIMEOUT_FORFEIT:'Turnos expirados'};
+  const date=value=>{const d=new Date(value);return value&&!Number.isNaN(d.getTime())?d.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Data indisponível';};
+  const recent=Array.isArray(statistics?.recentMatches)?statistics.recentMatches.slice(0,10):[];
+  const history=recent.map(m=>{
+    const result=m.result==='WIN'?'Vitória':m.result==='LOSS'?'Derrota':'Empate';
+    return `<article class="bn-profile-match" data-result="${esc(m.result)}">
+      <span class="bn-profile-match-result">${result}</span>
+      <div class="bn-profile-match-info"><strong>${esc(m.opponentNickname||'Adversário')}</strong><small>${esc(m.modeName||'Modo de jogo')} · ${esc(date(m.finishedAt))}</small></div>
+      <div class="bn-profile-match-score"><strong>${esc(n(m.hits)??'—')} × ${esc(n(m.hitsReceived)??'—')}</strong><small>Acertos · ${esc(reasons[m.finishReason]||'Encerrada')}</small></div>
+    </article>`;
+  }).join('');
+  const unavailable=statisticsLoading?'Carregando histórico…':statisticsError?'Não foi possível carregar as estatísticas.':statistics?'Nenhuma partida concluída ainda.':'Histórico de partidas indisponível.';
   return `<div class="screen bn-profile-stage">
     <main class="bn-profile-layout" aria-labelledby="bn-profile-title">
       <header class="bn-profile-heading">
@@ -47,12 +61,15 @@ export function renderFigmaProfile(profile,{title,frame,captain}={}) {
         <section class="bn-profile-card bn-profile-statistics" aria-labelledby="bn-profile-stats-heading">
           <h2 id="bn-profile-stats-heading">Estatísticas</h2>
           <div class="bn-profile-stat-grid">
-            ${stat('Vitórias','victories')}
-            ${stat('Derrotas','defeats')}
-            ${stat('Taxa de vitória','rate')}
-            ${stat('Melhor sequência','streak')}
+            ${stat('Partidas','total',n(statistics?.totalMatches))}
+            ${stat('Vitórias','victories',n(statistics?.wins))}
+            ${stat('Derrotas','defeats',n(statistics?.losses))}
+            ${stat('Empates','draws',n(statistics?.draws))}
+            ${stat('Taxa de vitória','rate',rate)}
+            ${stat('Sequência atual','current-streak',n(statistics?.currentWinStreak))}
+            ${stat('Melhor sequência','streak',n(statistics?.bestWinStreak))}
           </div>
-          <p class="bn-profile-availability">As estatísticas aparecerão quando a API disponibilizar o histórico de partidas.</p>
+          <p class="bn-profile-availability">${statistics?'Totais de todas as partidas registradas.':esc(unavailable)}</p>
         </section>
         <section class="bn-profile-card bn-profile-achievements" aria-labelledby="bn-profile-achievements-heading">
           <div class="bn-profile-panel-heading"><h2 id="bn-profile-achievements-heading">Conquistas</h2><span>Em breve</span></div>
@@ -65,11 +82,12 @@ export function renderFigmaProfile(profile,{title,frame,captain}={}) {
           <p class="bn-profile-availability">Prévia das conquistas. Nenhuma conclusão é informada pela API.</p>
         </section>
         <section class="bn-profile-card bn-profile-history" aria-labelledby="bn-profile-history-heading">
-          <h2 id="bn-profile-history-heading">Histórico recente</h2>
-          <div class="bn-profile-history-empty">
+          <div class="bn-profile-panel-heading"><h2 id="bn-profile-history-heading">Histórico recente</h2><span>Últimas 10 partidas</span></div>
+          ${recent.length?`<div class="bn-profile-match-list">${history}</div>`:`<div class="bn-profile-history-empty">
             <span class="bn-profile-history-mark" aria-hidden="true">⚓</span>
-            <p>Histórico de partidas ainda indisponível.</p>
-          </div>
+            <p>${esc(unavailable)}</p>
+          </div>`}
+          ${statisticsError?'<button type="button" class="bn-profile-retry" data-action="reload-profile-statistics">Tentar novamente</button>':''}
         </section>
       </div>
     </main>

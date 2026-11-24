@@ -29,7 +29,7 @@ import { compactEnemyContacts } from './mobile-presenters.js';
 const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20l-3-6H5l-3 6zM8 12V8h4v4M12 6V4"/></svg>`;
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">Batalha Naval</div><div class="brand-sub">Duelo 1v1 em alto-mar</div></div></div>`;
 const state = {
-  profile: null, modes: [], lobby: null, queue: null, queueStartedAt: null, preparation: null, battle: null,
+  profile: null, profileStatistics:null, profileStatisticsLoading:false, profileStatisticsError:false, modes: [], lobby: null, queue: null, queueStartedAt: null, preparation: null, battle: null,
   modeId: 'classic', selected: null, draft: null, placementShip: null, placementHover:null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
@@ -46,6 +46,7 @@ let audioRoute='';
 let placementTouch=null;
 let lastPlacementTouch=null;
 let storeLoadGeneration=0;
+let profileStatisticsGeneration=0;
 const rewardReceipts=new Map();
 const rewardRequests=new Set();
 const shownTaunts=new Set();
@@ -221,9 +222,10 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;clearTimeout(powerToastTimer);powerToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.placementHover=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.adminTab='modes';state.adminProducts=null;state.adminStoreLoading=false;state.adminStoreError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){profileStatisticsGeneration++;state.profileStatistics=null;state.profileStatisticsLoading=false;state.profileStatisticsError=false;storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;clearTimeout(powerToastTimer);powerToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.placementHover=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.adminTab='modes';state.adminProducts=null;state.adminStoreLoading=false;state.adminStoreError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
+  if(currentRoute()==='profile')void loadProfileStatistics();
   state.modes=await api.get('/game-modes');
   if (!state.modes.some(m=>m.id===state.modeId)) state.modeId=state.modes[0]?.id||'';
   void loadStore({quiet:true});
@@ -701,8 +703,21 @@ async function loadStore({quiet=false}={}){
     }
   }
 }
+async function loadProfileStatistics(){
+  if(!api.isAuthenticated()||!state.profile||state.profileStatisticsLoading)return;
+  const generation=++profileStatisticsGeneration;
+  state.profileStatisticsLoading=true;state.profileStatisticsError=false;
+  try{
+    const data=await api.get('/users/me/statistics');
+    if(generation===profileStatisticsGeneration)state.profileStatistics=data;
+  }catch(error){
+    if(generation===profileStatisticsGeneration){state.profileStatisticsError=true;state.profileStatistics=null;}
+  }finally{
+    if(generation===profileStatisticsGeneration){state.profileStatisticsLoading=false;if(currentRoute()==='profile'&&!state.profileEditorOpen&&!state.busy)render();}
+  }
+}
 function profileScreen(){
-  return renderFigmaProfile(state.profile,{title:selectedExpression(state.store?.items,'TITLE'),frame:selectedExpression(state.store?.items,'FRAME'),captain:equippedId(state.store?.items,'CAPTAIN','captain_default')});
+  return renderFigmaProfile(state.profile,{statistics:state.profileStatistics,statisticsLoading:state.profileStatisticsLoading,statisticsError:state.profileStatisticsError,title:selectedExpression(state.store?.items,'TITLE'),frame:selectedExpression(state.store?.items,'FRAME'),captain:equippedId(state.store?.items,'CAPTAIN','captain_default')});
 }
 function settingsScreen(){
   return renderFigmaSettings(state.profile,state.preferences);
@@ -946,6 +961,7 @@ async function runAction(action,itemId=null) {
       // Audio preferences are applied immediately by syncAudio; notifications remain a local preference.
       break;
     }
+    case 'reload-profile-statistics':if(currentRoute()==='profile')void loadProfileStatistics();break;
     case 'settings-manage-account':{
       state.profileEditorOpen=true;
       state.profileSecurityOpen=false;
@@ -1384,6 +1400,7 @@ function bindEvents() {
   window.addEventListener('hashchange',()=>{
     if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();
     if(currentRoute()!=='profile'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
+    if(currentRoute()==='profile')void loadProfileStatistics();
     render();
     if((currentRoute()==='store'||(currentRoute()==='fleet'&&!state.store))&&!state.storeLoading) void loadStore({quiet:true});
     if(currentRoute()==='admin'&&state.profile?.admin===true){if(state.adminTab==='store')void loadAdminStore();else if(state.adminModes===null&&!state.adminLoading)void loadAdminModes();}
