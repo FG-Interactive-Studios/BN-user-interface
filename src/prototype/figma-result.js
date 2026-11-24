@@ -1,14 +1,15 @@
 import {esc} from './board.js';
-import {buildMatchReport} from './match-report.js';
+import {buildMatchReport,ridiculousAward} from './match-report.js';
 
 /**
  * Post-battle artboard from the approved Figma PDF.
  * All competitive numbers come from BattleResponse (never fabricated rewards).
  * Leaves the battle board, lobby and other pages unchanged.
  */
-export function renderFigmaResult({battle,profile,lobby,reward=null}) {
+export function renderFigmaResult({battle,profile,lobby,reward=null,celebrate=false}) {
   const report=buildMatchReport(battle,profile?.id);
   const {won,draw}=report;
+  const award=ridiculousAward(report);
   const earned=Number.isSafeInteger(reward?.earned)?reward.earned:null;
   const rewardShown=earned===null?'—':earned>0?'+'+earned:'Já recebido';
   const rewardText=earned===null
@@ -54,10 +55,15 @@ export function renderFigmaResult({battle,profile,lobby,reward=null}) {
     :myAccepted?'Aguardando a confirmação do adversário…'
     :opponentAccepted?'O adversário quer jogar novamente com você!'
     : '';
+  const celebration=celebrate
+    ? '<div class="bn-finale-effects" aria-hidden="true">'
+      + Array.from({length:12},(_,index)=>'<span class="bn-finale-particle" style="--i:'+index+'">'+(won?'🎉':draw?'✨':'💧')+'</span>').join('')
+      + '</div>'
+    : '';
   const sharedNote=report.comparable
     ? '<span class="bn-report-equal-stats"> Os acertos e erros foram iguais, mas a condição de encerramento definiu o vencedor.</span>'
     : '';
-  return `<div class="screen bn-result-stage is-${outcome}">
+  return `<div class="screen bn-result-stage is-${outcome}">${celebration}
     <main class="bn-result-viewport" aria-label="Resultado da partida">
       <header class="bn-report-hero">
         <span class="bn-report-emblem" aria-hidden="true"></span>
@@ -73,6 +79,11 @@ export function renderFigmaResult({battle,profile,lobby,reward=null}) {
             ${playerRow(opponent||'Adversário',report.rival,false)}
           </div>
           <p class="bn-report-verdict" aria-live="polite">${esc(report.reason)}${sharedNote}</p>
+          <div class="bn-report-award" role="group" aria-label="Prêmio engraçado desta batalha">
+            <span class="bn-report-award-icon" aria-hidden="true">${esc(award.emoji)}</span>
+            <span class="bn-report-award-copy"><strong>${esc(award.title)}</strong><small>${esc(award.description)}</small></span>
+            <button type="button" class="bn-report-award-share" data-action="copy-award" aria-label="Copiar prêmio ${esc(award.title)}" title="Copiar prêmio">⧉</button>
+          </div>
           <p class="bn-report-meta">Duração indisponível <span aria-hidden="true">·</span> ${gameMode}</p>
         </section>
 
