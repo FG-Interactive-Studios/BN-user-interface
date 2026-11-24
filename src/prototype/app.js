@@ -811,10 +811,34 @@ async function runAction(action,itemId=null) {
       try {await guard(async()=>{await api.remove('/matchmaking/lobbies/me');state.lobby=null;state.queue=null;state.battle=null;state.preparation=null;state.draft=null;go('lobby');});}
       finally {state.leavingRoom=false;}
       break;}
+    case 'cancel-rematch':
     case 'play-again': {
-      // A finished battle retains room membership until each player leaves.
-      // Release it server-side before opening the existing create-room flow.
       if(state.lobby?.status!=='FINISHED'||state.busy)break;
+      if(state.lobby.rematch) {
+        if(!state.lobby.rematch.available) {
+          notice('O adversário saiu. Volte ao lobby para jogar novamente.',true);
+          break;
+        }
+        await guard(async()=>{
+          try {
+            state.lobby=await api.put('/matchmaking/lobbies/me/rematch',{
+              accepted:action==='play-again'
+            });
+          } catch(error) {
+            if(error instanceof api.ApiError && error.status===409) {
+              // The other player may have accepted/left during the request.
+              await reconcile();
+              return;
+            }
+            throw error;
+          }
+          // The second acceptance creates a new code and preparation instantly.
+          // Otherwise retain the final score while waiting for the opponent.
+          await reconcile();
+        });
+        break;
+      }
+      // Backwards compatibility with an older API that does not expose rematch.
       state.leavingRoom=true;
       try {
         await guard(async()=>{

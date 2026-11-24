@@ -11,6 +11,7 @@ on:
       - 'src/main.ts'
       - 'tools/test-figma-placement.mjs'
       - 'tools/test-figma-result.mjs'
+      - 'tools/test-rematch.mjs'
       - 'tools/test-figma-profile.mjs'
       - 'tools/test-figma-settings.mjs'
       - '.github/workflows/figma-responsive-browser.yml'
@@ -46,6 +47,8 @@ jobs:
         run: node tools/test-figma-placement.mjs
       - name: Check approved Figma result panels and storm framing
         run: node tools/test-figma-result.mjs
+      - name: Check consensual rematch between two players
+        run: node tools/test-rematch.mjs
       - name: Check approved Figma player profile and edit forms
         run: node tools/test-figma-profile.mjs
       - name: Check approved Figma settings layout and real account actions
@@ -61,6 +64,7 @@ jobs:
             artifacts/public-matchmaking/
             artifacts/figma-placement/
             artifacts/figma-result/
+            artifacts/rematch/
             artifacts/figma-profile/
             artifacts/figma-settings/
           if-no-files-found: ignore

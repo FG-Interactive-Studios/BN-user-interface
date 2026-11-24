@@ -76,3 +76,6 @@
 
 /* Approved lobby assets, API-backed dual wallet and green radar. */
 @import './figma-home-radar-final-v17.css';
+
+/* Consent-based rematch, with responsive result-screen feedback. */
+@import './figma-rematch-v9.css';
