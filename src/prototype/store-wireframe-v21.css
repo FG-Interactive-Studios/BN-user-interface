@@ -45,9 +45,29 @@ body[data-route="store"] .tp-store-card .tp-store-price{font-size:12px;overflow-
 body[data-route="store"] .tp-store-card.is-featured{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);border-color:#ae8a42}
 body[data-route="store"] .tp-store-card.is-featured .tp-store-preview{min-height:165px!important}
 body[data-route="store"] .tp-store-card.is-featured h3{font-size:clamp(23px,5vw,32px)}
+/* Desktop catalog: bounded merchandise, not a full-width hero banner. */
 @media(min-width:850px){
+ body[data-route="store"] .tp-content{max-width:1040px!important}
+ body[data-route="store"] .tp-store-page{gap:14px!important}
+ body[data-route="store"] .tp-store-header h1{font-size:clamp(38px,3.2vw,48px)}
+ body[data-route="store"] .bn-store-featured{width:100%;max-width:640px;justify-self:start}
+ body[data-route="store"] .bn-store-featured h2{font-size:23px}
  body[data-route="store"] .bn-store-categories{grid-template-columns:repeat(8,minmax(0,1fr))}
- body[data-route="store"] .tp-store-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
- body[data-route="store"] .tp-store-card.is-featured{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
- body[data-route="store"] .tp-store-card.is-featured .tp-store-preview{min-height:210px!important}
+ body[data-route="store"] .bn-store-category{font-size:17px;min-height:36px}
+ body[data-route="store"] .tp-store-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+ body[data-route="store"] .tp-store-card{grid-template-columns:clamp(112px,13vw,160px) minmax(0,1fr);grid-template-rows:auto auto;align-content:start}
+ body[data-route="store"] .tp-store-card .tp-store-preview{
+   width:100%;height:auto!important;min-height:0!important;max-height:140px;
+   aspect-ratio:4/3;align-self:start;margin-top:0;border-right:1px solid #293946;
+   border-bottom:1px solid #293946;border-radius:0 0 9px 0;
+ }
+ body[data-route="store"] .tp-store-card .tp-store-card-text{padding:10px!important;gap:4px}
+ body[data-route="store"] .tp-store-card h3{font-size:23px}
+ body[data-route="store"] .tp-store-card .tp-store-card-footer{padding:8px 10px!important}
+ body[data-route="store"] .tp-store-card .tp-store-card-footer .btn{font-size:16px;min-height:33px}
+ body[data-route="store"] .tp-store-card.is-featured{grid-template-columns:clamp(180px,22vw,240px) minmax(0,1fr)}
+ body[data-route="store"] .tp-store-card.is-featured .tp-store-preview{
+   min-height:0!important;max-height:150px;aspect-ratio:16/10;
+ }
+ body[data-route="store"] .tp-store-card.is-featured h3{font-size:27px}
 }

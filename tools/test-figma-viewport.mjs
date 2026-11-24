@@ -134,6 +134,17 @@ try {
   await assertStickyAccountHeader('store');
   await page.locator('.tp-store-card').first().waitFor();
   assert.equal(await page.locator('.tp-store-card').count(),3,'store must display live API items');
+  const storeLayout=await page.evaluate(()=>{
+    const rect=selector=>document.querySelector(selector).getBoundingClientRect();
+    return {page:rect('.tp-store-page').width,featured:rect('.bn-store-featured').width,hero:rect('.is-featured .tp-store-preview').width,heroHeight:rect('.is-featured .tp-store-preview').height,cover:rect('.tp-store-grid .tp-store-preview').width};
+  });
+  if(viewport.width>=850){
+    assert.ok(storeLayout.page<=1042&&storeLayout.featured<=642,'Desktop feature must not fill the store: '+JSON.stringify(storeLayout));
+    assert.ok(storeLayout.hero<=242&&storeLayout.heroHeight<=152&&storeLayout.cover<=162,'Desktop artwork must be bounded: '+JSON.stringify(storeLayout));
+  }else{
+    assert.ok(storeLayout.featured>=storeLayout.page-4,'Mobile feature keeps the original full-width composition');
+    assert.ok(storeLayout.heroHeight>=163,'Mobile featured artwork must remain prominent');
+  }
   assert.match(await page.locator('.bn-wallet-pill.is-free strong').innerText(),/300/);
   assert.equal(await page.locator('.bn-wallet-pills').count(),1,'Store must display only one wallet in the sticky header');
   assert.equal(await page.locator('.bn-store-wallet').count(),0,'Redundant store wallet must be removed');
@@ -150,8 +161,10 @@ try {
   await page.waitForFunction(()=>document.querySelector('.bn-wallet-pill.is-premium strong')?.textContent==='100');
   assert.equal(topups,1,'Top-up should call the server exactly once');
   assert.equal(await page.locator('#bn-wallet-dialog[open]').count(),1,'Wallet dialog stays open after purchase');
+  await page.locator('#bn-wallet-dialog [data-action="store-demo-topup"]').first().waitFor({state:'visible'});
+  await page.waitForFunction(()=>!document.querySelector('#bn-wallet-dialog [data-action="store-demo-topup"]')?.disabled);
   await page.keyboard.press('Escape');
-  assert.equal(await page.locator('#bn-wallet-dialog[open]').count(),0);
+  await page.locator('#bn-wallet-dialog').waitFor({state:'detached'});
   await page.locator('[data-action="store-category"][data-item-id="SKIN"]').click();
   assert.equal(await page.locator('[data-action="store-category"][data-item-id="SKIN"]').getAttribute('aria-pressed'),'true');
   await page.locator('[data-action="store-category"][data-item-id="ALL"]').click();

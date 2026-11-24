@@ -694,7 +694,19 @@ function render(){ if (!root) return;
   if(!['lobby','store'].includes(route)||renderedRoute&&renderedRoute!==route)state.walletDialog=null;
   const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen,admin:adminScreen};
   root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog()+(state.walletDialog?walletDialogMarkup(state.store,{currency:state.walletDialog,loading:state.busy||state.storeLoading,notice:state.notice,error:state.error}):'');
-  if(state.walletDialog)root.querySelector('#bn-wallet-dialog')?.showModal();
+  if(state.walletDialog){
+    const dialog=root.querySelector('#bn-wallet-dialog');
+    // Native dialog cancel does not bubble; attach directly to each rendered dialog.
+    dialog?.addEventListener('cancel',event=>{
+      event.preventDefault();
+      const currency=state.walletDialog;
+      state.walletDialog=null;
+      dialog.close();
+      render();
+      root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();
+    });
+    dialog?.showModal();
+  }
   mountChaosToast();
   if(route==='match'){
     const dialog=root.querySelector('#tp-skill-dialog');
@@ -1130,7 +1142,6 @@ function bindEvents() {
   document.addEventListener('visibilitychange',()=>audio.setVisible(!document.hidden));
   audio.setVisible(!document.hidden);
   root.addEventListener('cancel', event=>{
-    if(event.target?.id==='bn-wallet-dialog'){state.walletDialog=null;event.preventDefault();render();root.querySelector('.bn-wallet-add[data-item-id="premium"]')?.focus();}
     if (event.target?.id==='tp-room-exit-dialog') event.preventDefault();
     if (event.target?.id==='tp-skill-dialog') state.skillDialog=false;
     if (event.target?.id==='bn-profile-editor'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
