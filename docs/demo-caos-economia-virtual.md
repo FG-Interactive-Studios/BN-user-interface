@@ -11,9 +11,12 @@ nem venda de vantagens competitivas.
    300 créditos virtuais no primeiro uso da loja. O saldo é persistente.
 3. Na **Loja**, selecione **Provocações**. A conta já possui o pack **Provocações
    Gratuitas**. Compre **Tio do Pavê Naval** por **90 créditos de teste**
-   ou **Surto Marítimo** por **140 créditos**, depois clique em **Equipar**.
+   ou **Surto Marítimo** por **140 créditos**. Também há **Atendimento Naval**
+   por **120 créditos** e **Almirante dos Memes** por **180 créditos**.
+   Todos os cinco pacotes contêm **10 frases**, e o gratuito já vem equipado.
+   Após comprar um pacote pago, clique em **Equipar**.
 4. Inicie uma partida. Na tela de combate, abra **💬 Provocar** e escolha uma
-   das quatro frases disponíveis. A frase será enviada ao outro jogador em
+   das dez frases disponíveis no pacote equipado. A frase será enviada ao outro jogador em
    tempo real via WebSocket. Apenas um pack **comprado e equipado** pode ser
    usado; não existe chat livre nem envio de frases arbitrárias.
 5. Faça um disparo: acertos, erros e navios afundados podem exibir
