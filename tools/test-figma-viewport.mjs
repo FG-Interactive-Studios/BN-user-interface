@@ -21,10 +21,19 @@ try {
  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:1361,height:597},{width:1366,height:768}]){
   const page=await browser.newPage({viewport,deviceScaleFactor:1});
   let premiumCredits=0,topups=0,lastWallet=null;
+  const equips=[];
+  let equippedFleet='skin_default';
   page.on('dialog',dialog=>dialog.accept());
   page.on('pageerror',error=>errors.push(String(viewport.width)+': '+error.message));
   await page.route('**/api/**',async route=>{
    const path=new URL(route.request().url()).pathname;
+   if(path.startsWith('/api/store/equip/')&&route.request().method()==='PUT'){
+    const id=path.split('/').at(-1);
+    assert.ok(['skin_default','skin_pirate'].includes(id),'Only owned fleet may be equipped');
+    equips.push(id);equippedFleet=id;
+    lastWallet={...lastWallet,items:lastWallet.items.map(i=>i.category==='SKIN'?{...i,equipped:i.id===id}:i)};
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(lastWallet)});
+   }
    if(path==='/api/store/demo-premium'&&route.request().method()==='POST'){
     const payload=route.request().postDataJSON();assert.equal(payload.packId,'demo_100');assert.ok(payload.requestId);
     topups++;premiumCredits+=100;lastWallet={...lastWallet,premiumCredits};
@@ -34,7 +43,8 @@ try {
      path==='/api/users/me'?player:
      path==='/api/game-modes'?modes:
      path==='/api/store'?{credits:300,premiumCredits,demoPremiumEnabled:true,items:[
-       {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Visual padrão',price:0,enabled:true,owned:true,equipped:true},
+       {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Visual padrão',price:0,enabled:true,owned:true,equipped:equippedFleet==='skin_default'},
+       {id:'skin_pirate',category:'SKIN',name:'Frota Pirata',description:'Frota adquirida',price:100,enabled:true,owned:true,equipped:equippedFleet==='skin_pirate'},
        {id:'skin_coral',category:'SKIN',name:'Coral',description:'Personalização',price:90,premiumPrice:30,enabled:true,owned:false,equipped:false},
        {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Em breve',price:90,enabled:false,owned:false,equipped:false}
      ]}:null;
@@ -149,6 +159,17 @@ try {
   await page.locator('.bn-equipment-selection[data-equipment-category="SKIN"]').waitFor();
   assert.equal(await page.locator('.bn-inventory-active [data-equipment-id="skin_default"]').count(),1);
   assert.equal(await page.locator('.bn-inventory-grid [data-equipment-id="skin_coral"]').count(),0,'Unowned product must not appear in inventory');
+  await page.locator('[data-action="fleet-equip"][data-item-id="skin_pirate"]').click();
+  await page.locator('.bn-inventory-active [data-equipment-id="skin_pirate"]').waitFor();
+  assert.deepEqual(equips,['skin_pirate']);
+  await page.locator('[data-action="fleet-back"]').click();
+  await page.locator('.bn-equipment-showcase').waitFor();
+  assert.match(await page.locator('.bn-equipment-fleet h2').innerText(),/Frota Pirata/);
+  assert.ok(await page.locator('.bn-equipment-ships img[src*="/skin_pirate/"]').count()>0);
+  await page.locator('[data-action="fleet-select"][data-item-id="SKIN"]').click();
+  await page.locator('[data-action="fleet-equip"][data-item-id="skin_default"]').click();
+  await page.locator('.bn-inventory-active [data-equipment-id="skin_default"]').waitFor();
+  assert.deepEqual(equips,['skin_pirate','skin_default']);
   await page.locator('[data-action="fleet-back"]').click();
   await page.locator('.bn-equipment-showcase').waitFor();
   await horizontalFit('fleet after selection');
@@ -159,7 +180,7 @@ try {
   await assertStickyAccountHeader('store');
   await assertSameHeader('store');
   await page.locator('.tp-store-card').first().waitFor();
-  assert.equal(await page.locator('.tp-store-card').count(),3,'store must display live API items');
+  assert.equal(await page.locator('.tp-store-card').count(),4,'store must display live API items');
   const storeLayout=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector).getBoundingClientRect();
     const nav=document.querySelector('.bn-store-categories');
