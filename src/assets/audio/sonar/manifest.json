@@ -1,0 +1,11 @@
+{
+  "id": "sound_sonar",
+  "version": 1,
+  "name": "Sonar Retrô",
+  "sounds": {
+    "ship_sunk_enemy": "sfx/ship_sunk_enemy.ogg",
+    "hit": "sfx/hit.ogg",
+    "ship_sunk_ally": "sfx/ship_sunk_ally.ogg",
+    "miss": "sfx/miss.ogg"
+  }
+}

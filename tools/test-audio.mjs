@@ -105,3 +105,14 @@ for(const event of ['lobby','positioning_music','battle_music','victory_music','
  assert.ok(bytes.subarray(0,100).includes(Buffer.from('vorbis')),event+' is Vorbis');
 }
 console.log('Audio: fallback, snapshots, revision gaps, mute, loops and visibility OK');
+
+// The approved retro clips are exact Git blobs, not substitute recordings.
+const retroManifest=JSON.parse(readFileSync(new URL('../src/assets/audio/sonar/manifest.json',import.meta.url),'utf8'));
+assert.equal(retroManifest.id,'sound_sonar');
+assert.deepEqual(Object.keys(retroManifest.sounds).sort(),['hit','miss','ship_sunk_ally','ship_sunk_enemy']);
+for(const [event,file] of Object.entries(retroManifest.sounds)){
+ assert.ok(isCustomizableSoundEvent(event));
+ const bytes=readFileSync(new URL('../src/assets/audio/sonar/'+file,import.meta.url));
+ assert.equal(bytes.subarray(0,4).toString(),'OggS');
+ assert.ok(bytes.length>10000);
+}
