@@ -9,7 +9,7 @@ const iconClear = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 /** Display-name exception within this approved Figma screen only. */
 const displayShipName = (id) => id === 'DESTROYER' ? 'Destróier' : shipName(id);
 
-export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId, orientation }) {
+export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId, orientation, skin }) {
   const ships = draft ?? (preparation.yourShips || []);
   const editable = !preparation.fleetConfirmed;
   const placed = new Set(ships.map(ship => ship.type));
@@ -32,7 +32,7 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
     const state = isChosen ? 'Selecionado' : isPlaced ? 'Posicionado' : 'Pendente';
     const stateClass = isChosen ? 'selected' : isPlaced ? 'positioned' : 'pending';
     const segments = Array.from({ length: def.length }, () => '<i></i>').join('');
-    const artwork = shipArt(def.id);
+    const artwork = shipArt(def.id,skin);
     const preview = artwork ? `<span class="bn-placement-art-preview"><img src="${artwork}" alt="" aria-hidden="true" loading="lazy" /></span>` : `<span class="bn-placement-segments" aria-hidden="true">${segments}</span>`;
     return `<button type="button" class="bn-placement-ship ${isChosen?'is-selected':''}"
       data-action="select-placement-ship" data-item-id="${esc(def.id)}"
@@ -61,7 +61,7 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
         <div class="bn-placement-board-wrap board-wrap board-wrap-primary combat-board-wrap placement-board-wrap tp-board"
         aria-label="Tabuleiro para posicionamento da frota">
         <div class="tactical-board-frame setup-board-frame">
-          ${renderBoard(mode, { ships, interactive: canManual })}
+          ${renderBoard(mode, { ships, interactive: canManual,skin })}
         </div>
       </div>
         <div class="bn-placement-side">

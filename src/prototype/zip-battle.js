@@ -1,11 +1,12 @@
 import { esc, coordLabel, renderBoard } from './board.js';
+import {captainArt} from './ship-art.js';
 import {expressionTitle} from './expressive-cosmetics.js';
 
 /** ZIP reference: visual composition only. The backend still controls all battle rules. */
 export function renderZipBattle({
   battle, mode, opponent, own, enemy, myTurn, finished, canAct,
   selected, skillTargets=[], skillArea=[], available, sunk, activeAbility, skillControls,
-  activeEffects, radarInfo, clockStrip, pausedOverlay, tauntControls=''
+  activeEffects, radarInfo, clockStrip, pausedOverlay, tauntControls='', skin=null, captain=null, moods={mine:'neutral',rival:'neutral'}
 }) {
   const ownLost = new Set((battle.shotsReceived || []).filter(shot => shot.sunkShip).map(shot => shot.sunkShip)).size;
   const enemyLost = new Set(sunk.map(shot => shot.sunkShip)).size;
@@ -52,12 +53,12 @@ export function renderZipBattle({
 
       <section class="zip-scoreboard" aria-label="Placar da partida">
         <div class="zip-score-side">
-          <strong>Você</strong>
+          <strong><img class="bn-gd-captain" src="${captainArt(captain,moods.mine)}" alt="" aria-hidden="true">Você</strong>
           <small>Navios: ${remainingOwn}/${totalShips} · Acertos: ${enemy.hits.length}</small>
         </div>
         <div class="zip-score-value" aria-label="Acertos ${enemy.hits.length} a ${own.hits.length}">${enemy.hits.length} × ${own.hits.length}</div>
         <div class="zip-score-side zip-score-opponent">
-          <strong>${esc(opponent?.nickname || 'Oponente')}${expressionTitle(opponent?.cosmetics?.TITLE)?` · ${esc(expressionTitle(opponent.cosmetics.TITLE))}`:''}</strong>
+          <strong><img class="bn-gd-captain" src="${captainArt(opponent?.cosmetics?.CAPTAIN,moods.rival)}" alt="" aria-hidden="true">${esc(opponent?.nickname || 'Oponente')}${expressionTitle(opponent?.cosmetics?.TITLE)?` · ${esc(expressionTitle(opponent.cosmetics.TITLE))}`:''}</strong>
           <small>Navios: ${remainingEnemy}/${totalShips} · Acertos: ${own.hits.length}</small>
         </div>
       </section>
@@ -89,7 +90,7 @@ export function renderZipBattle({
           <div class="zip-board-heading">SUA FROTA · ${remainingOwn} navios operacionais</div>
           <div class="zip-own-board">
             ${renderBoard(mode, {
-              ships: battle.yourShips, hits: own.hits, misses: own.misses,
+              ships: battle.yourShips, hits: own.hits, misses: own.misses, skin,
               markers: battle.yourAbilityPointCells || [], small: true,
               highlights: activeAbility && aimingForOwnBoard ? skillArea : [],
               interactive: canAct && Boolean(activeAbility) && aimingForOwnBoard

@@ -1,4 +1,5 @@
 import { esc } from './board.js';
+import {coverArt,captainArt,shipArt,isOfficialFleet,isOfficialCaptain} from './ship-art.js';
 import {TAUNT_PACKS} from './chaos-humor.js';
 import {EXPRESSIVE_CATEGORIES,EXPRESSIVE_LABELS,EXPRESSION_ITEMS,expressionPreview} from './expressive-cosmetics.js';
 
@@ -35,6 +36,10 @@ const speech='<path d="M-77 -40 H40 Q62 -40 62 -18 V9 Q62 30 40 30 H-10 L-40 52 
 const sonar='<g fill="none" stroke="currentColor" stroke-width="2"><circle r="60"/><circle r="42"/><circle r="24"/><path d="M-65 0 H65 M0 -65 V65 M0 0 L50 -37"/></g><path d="M0 0 L60 -10 A60 60 0 0 0 35 -49Z" fill="currentColor" opacity=".25"/><g fill="currentColor"><circle cx="36" cy="-26" r="5"/><circle cx="-25" cy="15" r="4"/><circle cx="10" cy="38" r="3"/></g>';
 const captain='<path d="M-59 47 Q-58 10 -29 1 L29 1 Q58 10 59 47Z" fill="#b8cdda" stroke="currentColor" stroke-width="2"/><circle cy="-20" r="29" fill="#b8cdda"/><path d="M-36 -30 Q-40 -60 0 -61 Q40 -60 36 -30Z" fill="#23354e" stroke="currentColor" stroke-width="3"/><path d="M-39 -29 H39" stroke="currentColor" stroke-width="6"/><path d="M-16 7 L0 26 L16 7 M0 26 V45" fill="none" stroke="#38546b" stroke-width="4"/>';
 export function renderProductCover(item){
+  const cover=coverArt(item.id);
+  if(cover)return `<div class="tp-store-preview bn-gd-cover" data-product-cover="true" aria-hidden="true"><img src="${cover}" alt="" loading="lazy"></div>`;
+  if(isOfficialCaptain(item.id))return `<div class="tp-store-preview bn-gd-cover is-portrait" data-product-cover="true" aria-hidden="true"><img src="${captainArt(item.id)}" alt="" loading="lazy"></div>`;
+  if(isOfficialFleet(item.id))return `<div class="tp-store-preview bn-gd-cover is-fleet" data-product-cover="true" aria-hidden="true">${['SEARCH','DESTROYER','CARRIER'].map(id=>`<img src="${shipArt(id,item.id)}" alt="" loading="lazy">`).join('')}</div>`;
   const [dark,mid,accent,label]=Object.hasOwn(coverThemes,item.id)?coverThemes[item.id]:Object.hasOwn(expressionThemes,item.category)&&Object.hasOwn(EXPRESSION_ITEMS,item.id)?[...expressionThemes[item.category],EXPRESSION_ITEMS[item.id][0].toLocaleUpperCase('pt-BR')]:genericTheme;
   const art=EXPRESSIVE_CATEGORIES.includes(item.category)&&Object.hasOwn(EXPRESSION_ITEMS,item.id)?'<text text-anchor="middle" y="25" font-size="74" font-family="system-ui,sans-serif">'+EXPRESSION_ITEMS[item.id][1]+'</text>':item.category==='SKIN'?ship:item.category==='SOUND'?sonar:item.category==='CAPTAIN'?captain:item.category==='BUNDLE'?'<g transform="translate(-48 8) scale(.65)">'+ship+'</g><g transform="translate(56 -4) scale(.7)">'+captain+'</g>':speech;
   return `<div class="tp-store-preview" aria-hidden="true" style="position:relative;overflow:hidden"><svg data-product-cover="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;display:block">
@@ -57,9 +62,9 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
     // Bundle components are provided by the server; never equip a bundle itself.
     const isBundle=item.category==='BUNDLE';
     const components=isBundle&&Array.isArray(item.components)?item.components.map(id=>catalog?.items?.find(x=>x.id===id)):[]; 
-    const validBundle=isBundle&&components.length>0&&components.every(x=>x&&x.enabled&&['SKIN','SOUND','TAUNT',...EXPRESSIVE_CATEGORIES].includes(x.category));
+    const validBundle=isBundle&&components.length>0&&components.every(x=>x&&x.enabled&&['SKIN','SOUND','TAUNT','CAPTAIN',...EXPRESSIVE_CATEGORIES].includes(x.category));
     const owned=Boolean(item.owned)||(validBundle&&components.every(x=>x.owned)),equipped=Boolean(item.equipped);
-    const available=Boolean(item.enabled)&&(['SKIN','SOUND','TAUNT',...EXPRESSIVE_CATEGORIES].includes(item.category)||validBundle);
+    const available=Boolean(item.enabled)&&(item.category!=='CAPTAIN'||isOfficialCaptain(item.id))&&(['SKIN','SOUND','TAUNT','CAPTAIN',...EXPRESSIVE_CATEGORIES].includes(item.category)||validBundle);
     const bundlePreview=isBundle&&components.length?`<div class="bn-bundle-items"><strong>Inclui:</strong>${components.map(x=>x?`<span class="bn-taunt-phrase">${x.owned?'✓ ':''}${esc(x.name)}</span>`:'').join('')}${validBundle&&!owned&&components.some(x=>x.owned)?'<small>O preço da coleção permanece o mesmo para itens já adquiridos.</small>':''}</div>`:'';
     const cls=['tp-store-card',item.category==='SOUND'?'is-sound':item.category==='TAUNT'?'is-taunt':item.category==='CAPTAIN'?'is-captain':item.category==='BUNDLE'?'is-bundle':'is-skin',
       item.id==='skin_coral'?'is-coral':'',item.id==='skin_abyss'?'is-abyss':''].filter(Boolean).join(' ');

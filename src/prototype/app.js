@@ -18,7 +18,7 @@ import { renderFigmaPlacement } from './figma-placement.js';
 import { renderZipBattle } from './zip-battle.js';
 import {renderAdminPanel} from './admin-panel.js';
 import {planAbility, ABILITY_DIRECTIONS, abilityNeedsDirection, directionText} from './ability-targeting.js';
-import { shipArt } from './ship-art.js';
+import { shipArt,equippedId,captainMoods } from './ship-art.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
 import { compactEnemyContacts } from './mobile-presenters.js';
@@ -487,7 +487,7 @@ function placementScreen(){
   if (!directions.includes(state.orientation)) state.orientation=directions[0] || 'HORIZONTAL';
   return renderFigmaPlacement({
     preparation:p,mode,draft:state.draft,selectedShipId:state.placementShip,
-    orientation:state.orientation,
+    orientation:state.orientation,skin:equippedId(state.store?.items,'SKIN','skin_default'),
   });
 }
 
@@ -579,6 +579,7 @@ function battleScreen(){
     skillTargets:state.skillTargets, skillArea:state.skillArea,
     available, sunk, activeAbility, skillControls, activeEffects, radarInfo,
     clockStrip, pausedOverlay, tauntControls:tauntControls(state.store?.items),
+    skin:equippedId(state.store?.items,'SKIN','skin_default'),captain:equippedId(state.store?.items,'CAPTAIN','captain_default'),moods:captainMoods(b,audioEvents.battle),
   }) + skillDialogMarkup();
 }
 function resultScreen() {
@@ -594,7 +595,7 @@ function fleetScreen(){
   const mode=activeMode()||state.modes[0];
   const ships=mode?.fleet||[];
   const catalogue=ships.length
-    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">${shipArt(def.id)?`<img src="${shipArt(def.id)}" class="bn-fleet-thumb" alt="" loading="lazy" />`:'⚓'}</span>
+    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">${shipArt(def.id,equippedId(state.store?.items,'SKIN','skin_default'))?`<img src="${shipArt(def.id)}" class="bn-fleet-thumb" alt="" loading="lazy" />`:'⚓'}</span>
        <div><strong>${esc(shipName(def.id))}</strong><small>${def.length} casas</small></div>
        <span class="bn-ship-status">Disponível</span></article>`).join('')
     : '<p class="bn-available-note">Nenhum modo de jogo habilitado no momento.</p>';
@@ -628,12 +629,12 @@ async function loadStore({quiet=false}={}){
   } finally {
     if(generation===storeLoadGeneration){
       state.storeLoading=false;
-      if(['store','lobby','match'].includes(currentRoute())) render();
+      if(['store','lobby','match','placement','profile','fleet'].includes(currentRoute())) render();
     }
   }
 }
 function profileScreen(){
-  return renderFigmaProfile(state.profile,{title:selectedExpression(state.store?.items,'TITLE'),frame:selectedExpression(state.store?.items,'FRAME')});
+  return renderFigmaProfile(state.profile,{title:selectedExpression(state.store?.items,'TITLE'),frame:selectedExpression(state.store?.items,'FRAME'),captain:equippedId(state.store?.items,'CAPTAIN','captain_default')});
 }
 function settingsScreen(){
   return renderFigmaSettings(state.profile,state.preferences);

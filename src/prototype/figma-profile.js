@@ -1,11 +1,12 @@
 import { esc, shipName } from './board.js';
+import {captainArt} from './ship-art.js';
 import {expressionTitle} from './expressive-cosmetics.js';
 
 /** Approved Figma player-profile artboard.
  * Data from /api/users/me only. No invented rank, XP, record or achievements.
  * The existing account editor and password forms remain functional in a modal.
  */
-export function renderFigmaProfile(profile,{title,frame}={}) {
+export function renderFigmaProfile(profile,{title,frame,captain}={}) {
   const p=profile||{};
   const nickname=esc(p.nickname||'Capitão');
   const initial=esc(Array.from(String(p.nickname||'C').trim())[0]?.toLocaleUpperCase('pt-BR')||'C');
@@ -28,7 +29,7 @@ export function renderFigmaProfile(profile,{title,frame}={}) {
       </header>
       <section class="bn-profile-card bn-profile-captain" aria-labelledby="bn-profile-name">
         <div class="bn-profile-portrait ${frame==='frame_neon'?'bn-neon-frame':''}">
-          <div class="bn-profile-portrait-inner" aria-label="Avatar selecionado: ${esc(avatar)}"><span>${initial}</span></div>
+          <div class="bn-profile-portrait-inner" aria-label="Avatar selecionado: ${esc(avatar)}">${captain?`<img class="bn-gd-profile-captain" src="${captainArt(captain)}" alt="Capitão equipado">`:`<span>${initial}</span>`}</div>
           <span class="bn-profile-level">Nível —</span>
         </div>
         <div class="bn-profile-identity">
