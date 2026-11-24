@@ -5,7 +5,9 @@ const items=[
  {id:'skin_coral',category:'SKIN',name:'Coral',description:'Cosmético',price:90,enabled:true,owned:false,equipped:false},
  {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Em breve',price:90,enabled:false,owned:false,equipped:false},
  {id:'captain_corsair',category:'CAPTAIN',name:'Capitão Corsário',description:'Piloto',price:0,enabled:false,owned:false,equipped:false},
- {id:'bundle_corsair',category:'BUNDLE',name:'Coleção Corsária',description:'Pacote planejado',price:0,enabled:false,owned:false,equipped:false}
+ {id:'bundle_corsair',category:'BUNDLE',name:'Coleção Corsária',description:'Pacote planejado',price:0,enabled:false,owned:false,equipped:false},
+ {id:'taunt_default',category:'TAUNT',name:'Provocações Gratuitas',description:'Base',price:0,enabled:true,owned:true,equipped:true},
+ {id:'taunt_banter',category:'TAUNT',name:'Tio do Pavê Naval',description:'Piadas ruins',price:90,enabled:true,owned:false,equipped:false}
 ];
 const html=renderCosmeticStore({credits:300,premiumCredits:0,items});
 assert.ok(!html.includes('bn-store-wallet'),'Store must not repeat the currency display from sticky header');
@@ -20,6 +22,11 @@ assert.match(html,/Capitão em preparação/);assert.match(html,/Coleção em pr
 assert.ok(!html.includes('Comprar · 0 créditos'),'draft sentinel price must not look like a free offer');
 assert.ok(!renderCosmeticStore({credits:0,items},{filter:'CAPTAIN'}).includes('skin_default'));
 assert.ok(!renderCosmeticStore({credits:0,items},{filter:'BUNDLE'}).includes('captain_corsair'));
+const taunts=renderCosmeticStore({credits:300,items},{filter:'TAUNT'});
+assert.match(taunts,/Tio do Pavê Naval/);
+assert.match(taunts,/É pavê ou pra afundar/);
+assert.match(taunts,/data-item-id="taunt_banter"/);
+assert.ok(!taunts.includes('skin_coral'),'Taunt filter must exclude unrelated cosmetics');
 assert.ok(!renderCosmeticStore({credits:0,items:[{...items[3],enabled:true}]})
     .includes('data-action="store-buy"'),'unsupported category cannot be purchased even if enabled');
 const escaped=renderCosmeticStore({credits:0,items:[{...items[1],name:'<script>',description:'<img src=x onerror=alert(1)>'}]});
