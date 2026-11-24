@@ -181,9 +181,14 @@ try {
   const headerPositions=await page.evaluate(()=>{
     const status=document.querySelector('.bn-topbar [data-socket-status]').getBoundingClientRect();
     const wallet=document.querySelector('.bn-topbar .bn-wallet-pills').getBoundingClientRect();
-    return {statusRight:status.right,walletLeft:wallet.left};
+    const menu=document.querySelector('.bn-topbar .bn-account-menu summary').getBoundingClientRect();
+    return {statusRight:status.right,statusBottom:status.bottom,statusCenter:(status.top+status.bottom)/2,walletLeft:wallet.left,walletTop:wallet.top,menuLeft:menu.left,menuCenter:(menu.top+menu.bottom)/2};
   });
-  assert.ok(headerPositions.statusRight<=headerPositions.walletLeft+1,'Connection status must precede wallet: '+JSON.stringify(headerPositions));
+  if(viewport.width<=760){
+    assert.ok(headerPositions.statusBottom<=headerPositions.walletTop+1&&headerPositions.statusRight<=headerPositions.menuLeft+1&&Math.abs(headerPositions.statusCenter-headerPositions.menuCenter)<2,'Mobile connection status must be beside the menu, above the wallet: '+JSON.stringify(headerPositions));
+  }else{
+    assert.ok(headerPositions.statusRight<=headerPositions.walletLeft+1,'Desktop connection status must precede wallet: '+JSON.stringify(headerPositions));
+  }
   await horizontalFit('wallet with connection warning');
   await page.locator('.bn-wallet-add[data-item-id="free"]').click();
   await page.locator('#bn-wallet-dialog[open]').waitFor();

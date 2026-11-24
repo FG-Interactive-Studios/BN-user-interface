@@ -43,8 +43,8 @@ body[data-route] .screen .bn-shared-header .bn-account-menu summary{
 body[data-route] .screen .bn-shared-header .bn-connection-status{display:flex!important}
 @media(max-width:760px){
   body[data-route] .screen .bn-shared-header{
-    display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;
-    grid-template-areas:"profile profile menu" "connection wallet wallet";
+    display:grid!important;grid-template-columns:minmax(0,1fr) auto auto;
+    grid-template-areas:"profile connection menu" "wallet wallet wallet";
     min-height:0!important;padding:8px 10px!important;gap:6px!important;
   }
   body[data-route] .screen .bn-shared-header.without-wallet{
@@ -58,8 +58,8 @@ body[data-route] .screen .bn-shared-header .bn-connection-status{display:flex!im
   body[data-route] .screen .bn-shared-header .bn-header-actions{display:contents!important}
   body[data-route] .screen .bn-shared-header .bn-account-menu{grid-area:menu;justify-self:end}
   body[data-route] .screen .bn-shared-header .bn-account-menu summary{width:36px!important;height:36px!important;min-width:36px!important;font-size:21px!important}
-  body[data-route] .screen .bn-shared-header .bn-connection-status{grid-area:connection;justify-self:start;font-size:10px}
-  body[data-route] .screen .bn-shared-header .bn-wallet-pills{grid-area:wallet;justify-content:flex-end;min-width:0;gap:5px}
+  body[data-route] .screen .bn-shared-header .bn-connection-status{grid-area:connection;justify-self:end;font-size:10px}
+  body[data-route] .screen .bn-shared-header .bn-wallet-pills{grid-area:wallet;justify-content:center;min-width:0;gap:5px}
 }
 /* Keep the profile art in a fixed square, even on image loading errors.
  * The circular frame and level label remain in their own reserved column. */
