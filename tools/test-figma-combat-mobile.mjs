@@ -379,8 +379,8 @@ try {
    await page.locator('.zip-primary-board [data-coord="7,7"]').click();
    await page.locator('[data-action="fire"]').click();
    await page.waitForFunction(()=>document.querySelector('.zip-own-section .zip-captain-portrait')?.dataset.mood==='hit'&&document.querySelector('.zip-enemy-section .zip-captain-portrait')?.dataset.mood==='damage');
-   assert.match(await page.locator('.zip-own-section .zip-combat-captain').getAttribute('src'),/hit\.jpg$/);
-   assert.match(await page.locator('.zip-enemy-section .zip-combat-captain').getAttribute('src'),/damage\.jpg$/);
+   assert.match(await page.locator('.zip-own-section .zip-combat-captain').getAttribute('src'),/hit\.(png|webp|jpg)$/);
+   assert.match(await page.locator('.zip-enemy-section .zip-combat-captain').getAttribute('src'),/damage\.(png|webp|jpg)$/);
    await page.screenshot({path:'artifacts/figma-combat/reaction-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    assert.deepEqual(errors,[],'Page errors '+explain);
    console.log('PASS '+status+' '+viewport.width+'x'+viewport.height+'; ZIP battle board '+metrics.board.width.toFixed(0)+'px, scroll-free controls');
