@@ -35,8 +35,10 @@ assert.match(taunts,/Achei que fosse batalha naval/);
 assert.match(taunts,/Comprar · 120 créditos/);
 assert.match(taunts,/Comprar · 180 créditos/);
 assert.ok(!taunts.includes('skin_coral'),'Taunt filter must exclude unrelated cosmetics');
-assert.ok(!renderCosmeticStore({credits:0,items:[{...items[3],enabled:true}]})
-    .includes('data-action="store-buy"'),'unsupported category cannot be purchased even if enabled');
+assert.ok(!renderCosmeticStore({credits:0,items:[{...items[3],id:'captain_unknown',enabled:true}]})
+    .includes('data-action="store-buy"'),'captain without official art cannot be purchased even if enabled');
+assert.ok(renderCosmeticStore({credits:0,items:[{...items[3],enabled:true,price:120}]})
+    .includes('data-action="store-buy"'),'captain with official art can be purchased when server enables it');
 const escaped=renderCosmeticStore({credits:0,items:[{...items[1],name:'<script>',description:'<img src=x onerror=alert(1)>'}]});
 assert.ok(!escaped.includes('<script>'));assert.ok(!escaped.includes('<img src=x'));
 assert.ok(!renderCosmeticStore({credits:0,items},{filter:'SOUND'}).includes('skin_default'));
