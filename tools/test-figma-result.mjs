@@ -84,7 +84,8 @@ try{
   assert.match(await page.locator('.bn-report-verdict').innerText(),/tempo terminou/i);
   assert.match(await page.locator('.bn-report-meta').innerText(),/Duração indisponível.*Clássico/);
   assert.equal(await page.locator('.bn-report-reward-item strong').first().innerText(),'—');
-  assert.equal(await page.locator('.bn-report-reward-item strong').last().innerText(),'—');
+  assert.equal(await page.locator('.bn-report-reward-item strong').last().innerText(),'0',
+    'Premium currency has no rewards; only earned fake credits are issued');
   assert.equal(await page.locator('.topbar').count(),0,'Figma result has no account topbar');
   assert.equal(await page.locator('.bn-bottom-nav').count(),0,'Figma result has no navigation dock');
 
