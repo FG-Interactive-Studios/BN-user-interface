@@ -4,7 +4,7 @@ import {AudioEvents} from './audio-events.js';
 import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
-import {tauntControls, funnyReaction} from './chaos-humor.js';
+import {tauntControls, equippedTaunts, funnyReaction} from './chaos-humor.js';
 import {walletMarkup} from './figma-wallet.js';
 import {RADAR_SWEEP_SECONDS, sonarContactMarkup} from './radar-blips.js';
 import shipEmblem from '../assets/figma/ship-icon.png';
@@ -831,7 +831,8 @@ async function runAction(action,itemId=null) {
     case 'send-taunt':await guard(async()=>{
       const index=Number(itemId);
       if(currentRoute()!=='match'||state.battle?.status!=='PLAYING'
-          ||!Number.isInteger(index)||index<0||index>3)return;
+          ||!Number.isInteger(index)||index<0
+          ||index>=(equippedTaunts(state.store?.items)?.phrases.length??0))return;
       const sent=await api.post('/matches/me/taunts',{index});
       showTauntMessage(sent);
     });break;

@@ -16,7 +16,9 @@ const items=[
  {id:'sound_default',category:'SOUND',name:'Sons Padrão',description:'Padrão',price:0,enabled:true,owned:true,equipped:true},
  {id:'taunt_default',category:'TAUNT',name:'Provocações Gratuitas',description:'Base',price:0,enabled:true,owned:true,equipped:true},
  {id:'taunt_banter',category:'TAUNT',name:'Tio do Pavê Naval',description:'Piadas marítimas',price:90,enabled:true,owned:false,equipped:false},
- {id:'taunt_panic',category:'TAUNT',name:'Surto Marítimo',description:'Dramas',price:140,enabled:true,owned:false,equipped:false}
+ {id:'taunt_panic',category:'TAUNT',name:'Surto Marítimo',description:'Dramas',price:140,enabled:true,owned:false,equipped:false},
+ {id:'taunt_support',category:'TAUNT',name:'Atendimento Naval',description:'Suporte',price:120,enabled:true,owned:false,equipped:false},
+ {id:'taunt_meme',category:'TAUNT',name:'Almirante dos Memes',description:'Memes',price:180,enabled:true,owned:false,equipped:false}
 ];
 const wallet={credits:300,premiumCredits:0,items};
 const room={code:'CHAOS1',status:'PLAYING',revision:4,mode,publicMatch:true,
@@ -63,9 +65,11 @@ async function openPage(viewport) {
     return respond(route,battle);
   if(path==='/api/matches/me/taunts'&&method==='POST'){
     taunts++;
-    assert.equal(route.request().postDataJSON().index,0);
+    const index=route.request().postDataJSON().index;
+    assert.ok(index===0||index===9,'Only requested phrase indexes are submitted');
     return respond(route,{id:'taunt-'+taunts,roomCode:'CHAOS1',packId:'taunt_banter',
-      message:'É pavê ou pra afundar? 🍮',senderId:13,sentAt:new Date().toISOString()});
+      message:index===0?'É pavê ou pra afundar? 🍮':'Meu radar tá de férias no litoral. 🏖️',
+      senderId:13,sentAt:new Date().toISOString()});
   }
   if(path==='/api/matches/me/shots'&&method==='POST'){
     shots++;battle.revision++;battle.turnPlayerId=17;
@@ -98,6 +102,9 @@ try {
  await shop.locator('.bn-lobby').waitFor({timeout:12000});
  await shop.locator('[data-go="store"]').click();
  await shop.locator('#store-filter').selectOption('TAUNT');
+ assert.equal(await shop.locator('.tp-store-card.is-taunt').count(),5);
+ assert.match(await shop.locator('.tp-store-grid').innerText(),/Atendimento Naval/);
+ assert.match(await shop.locator('.tp-store-grid').innerText(),/Almirante dos Memes/);
  await shop.locator('[data-action="store-buy"][data-item-id="taunt_banter"]').click();
  await shop.waitForFunction(()=>document.querySelector('.bn-wallet-pill.is-free strong')?.textContent==='210');
  assert.equal(wallet.credits,210,'Fake currency must be deducted by purchase');
@@ -114,12 +121,17 @@ try {
  await play.locator('body[data-route="match"] .bn-zip-battle').waitFor({timeout:12000});
  await play.locator('.bn-taunt-menu summary').click();
  const options=play.locator('[data-action="send-taunt"]');
- assert.equal(await options.count(),4);
+ assert.equal(await options.count(),10,'The equipped pack must expose ten phrases');
  assert.match(await options.first().innerText(),/pavê ou pra afundar/);
  await options.first().click();
  await play.locator('.bn-chaos-toast').waitFor({timeout:10000});
  assert.match(await play.locator('.bn-chaos-toast').innerText(),/É pavê ou pra afundar/);
  assert.equal(taunts,1,'Taunt request must reach server mock exactly once');
+ await play.locator('.bn-taunt-menu summary').click();
+ assert.match(await options.last().innerText(),/radar tá de férias/);
+ await options.last().click();
+ await play.waitForFunction(()=>document.querySelector('.bn-chaos-toast')?.textContent?.includes('radar tá de férias'));
+ assert.equal(taunts,2,'The tenth phrase must submit index 9 to the API');
  // A normal shot triggers a text-only humorous reaction.
  await play.locator('.zip-primary-board [data-coord]').first().click();
  await play.locator('[data-action="fire"]').click();
@@ -138,7 +150,7 @@ try {
  await play.screenshot({path:'artifacts/chaos-economy/result-mobile.png',fullPage:true});
  await play.close();
  assert.deepEqual(errors,[],'No JavaScript errors in shop or battle');
- console.log('PASS fun fake-currency loop: shop -90 / equip / 4 taunts / funny hit / loss +25, no real payments');
+ console.log('PASS fun fake-currency loop: shop -90 / equip / 10 taunts / funny hit / loss +25, no real payments');
 } finally {
  await browser.close();
  await server.close();
