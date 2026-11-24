@@ -2,16 +2,27 @@
 # https://github.com/firebase/firebase-tools
 
 name: Deploy to Firebase Hosting on merge
-# Production release is intentionally a manual action.
-# Merging feature PRs must not deploy the public live website.
+# Publish production on main updates; allow manual redeploys from main.
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
+concurrency:
+  group: firebase-hosting-live
+  cancel-in-progress: false
 jobs:
   build_and_deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm ci && npm run build
+      - name: Build with production API configuration
+        run: |
+          test -n "$VITE_API_URL" || { echo 'Missing VITE_API_URL repository variable'; exit 1; }
+          test -n "$VITE_WS_URL" || { echo 'Missing VITE_WS_URL repository variable'; exit 1; }
+          npm ci
+          npm run build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
           VITE_WS_URL: ${{ vars.VITE_WS_URL }}
