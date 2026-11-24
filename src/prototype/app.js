@@ -4,6 +4,7 @@ import {AudioEvents} from './audio-events.js';
 import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
+import {tauntControls, funnyReaction} from './chaos-humor.js';
 import {walletMarkup} from './figma-wallet.js';
 import {RADAR_SWEEP_SECONDS, sonarContactMarkup} from './radar-blips.js';
 import shipEmblem from '../assets/figma/ship-icon.png';
@@ -36,6 +37,58 @@ const audio=new AudioManager({packs:audioPacks});
 const audioEvents=new AudioEvents();
 let audioRoute='';
 let storeLoadGeneration=0;
+const rewardReceipts=new Map();
+const rewardRequests=new Set();
+const shownTaunts=new Set();
+let chaosToastTimer;
+let activeChaosToast=null;
+function mountChaosToast(){
+  if(!root || currentRoute()!=='match'||!activeChaosToast
+      ||Date.now()>activeChaosToast.until)return;
+  root.querySelector('.bn-chaos-toast')?.remove();
+  const toast=document.createElement('div');
+  toast.className='bn-chaos-toast is-'+activeChaosToast.kind;
+  toast.setAttribute('role','status');
+  toast.textContent=activeChaosToast.text;
+  root.append(toast);
+}
+function showChaosToast(message,kind='taunt'){
+  if(!root||currentRoute()!=='match')return;
+  activeChaosToast={text:message,kind:kind==='hit'?'hit':kind==='miss'?'miss':kind==='sunk'?'sunk':'taunt',
+    until:Date.now()+3200};
+  mountChaosToast();
+  clearTimeout(chaosToastTimer);
+  chaosToastTimer=setTimeout(()=>{
+    activeChaosToast=null;root?.querySelector('.bn-chaos-toast')?.remove();
+  },3200);
+}
+function showTauntMessage(data){
+  if(!data || data.roomCode!==state.lobby?.code||typeof data.message!=='string'
+     || typeof data.id!=='string'||shownTaunts.has(data.id))return;
+  shownTaunts.add(data.id);
+  if(shownTaunts.size>40)shownTaunts.delete(shownTaunts.values().next().value);
+  const sender=state.lobby?.players?.find(p=>p.id===data.senderId);
+  const who=data.senderId===state.profile?.id?'Você':sender?.nickname||'O adversário';
+  showChaosToast(who+': '+data.message);
+}
+function claimVirtualRewardIfFinished(){
+  const b=state.battle,uid=state.profile?.id;
+  if(!b||b.status!=='FINISHED'||!b.matchId||!uid
+     ||rewardRequests.has(b.matchId)||rewardReceipts.has(b.matchId))return;
+  const matchId=b.matchId;
+  rewardRequests.add(matchId);
+  void api.post('/store/rewards/claim').then(receipt=>{
+    if(!api.isAuthenticated()||state.profile?.id!==uid)return;
+    rewardReceipts.set(matchId,receipt);
+    if(receipt.wallet)state.store=receipt.wallet;
+    if(currentRoute()==='result')render();
+  }).catch(error=>{
+    if(error instanceof api.ApiError && [404,409].includes(error.status))
+      rewardReceipts.set(matchId,{unsupported:true});
+    // Retry transient errors only when another authenticated room snapshot arrives.
+    else rewardRequests.delete(matchId);
+  }).finally(()=>rewardRequests.delete(matchId));
+}
 function configureAudio(route){
   audio.setState({packId:state.store?.items?.find(item=>item.category==='SOUND'&&item.equipped&&item.owned)?.id||'sound_default',preferences:state.preferences,scene:sceneEvent(route,state.lobby?.status,{battle:state.battle,userId:state.profile?.id})});
 }
@@ -46,7 +99,12 @@ function syncAudio(route){
   configureAudio(route);
   // Do not overlap the outcome or combat entry with generic UI transitions.
   if(changedRoute&&!['match','result','placement'].includes(route))audio.play('ui_transition');
-  for(const event of audioEvents.update({room:state.lobby,battle:state.battle,userId:state.profile?.id}))audio.play(event);
+  const events=audioEvents.update({room:state.lobby,battle:state.battle,userId:state.profile?.id});
+  for(const event of events)audio.play(event);
+  if(route==='match'){
+    const reaction=funnyReaction(events,state.battle?.revision||0);
+    if(reaction)showChaosToast(reaction.text,reaction.kind);
+  }
 }
 let root;
 let refreshTimer;
@@ -124,7 +182,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -132,6 +190,7 @@ async function sessionInit() {
   void loadStore({quiet:true});
   await reconcile();
   await api.connectRealtime((message)=>{
+    if(message.type==='TAUNT_SENT') {showTauntMessage(message.data);return;}
     if (['LOBBY_UPDATED','LOBBY_CLOSED','LOBBY_LEFT','MATCH_FOUND','MATCH_SEARCHING','PREPARATION_UPDATED','BATTLE_UPDATED'].includes(message.type)) {
       // REST always recovers an authoritative personalized snapshot, including after reconnection.
       void reconcile();
@@ -235,6 +294,7 @@ async function reconcile() {
       state.preparation=null;state.battle=null;
     }
     synchronizeRoute();
+    claimVirtualRewardIfFinished();
     // Avoid replacing a 100-cell DOM board every 7 s when nothing changed.
     if (changed || currentRoute()!==renderedRoute) render();
   } catch(error) {
@@ -508,13 +568,14 @@ function battleScreen(){
     battle:b, mode, opponent, own, enemy, myTurn, finished, canAct, selected,
     skillTargets:state.skillTargets, skillArea:state.skillArea,
     available, sunk, activeAbility, skillControls, activeEffects, radarInfo,
-    clockStrip, pausedOverlay,
+    clockStrip, pausedOverlay, tauntControls:tauntControls(state.store?.items),
   }) + skillDialogMarkup();
 }
 function resultScreen() {
   const battle=state.battle;
   if(!battle)return mainContent(panel('Resultado','Aguardando dados da partida.'),{noNav:true});
-  return renderFigmaResult({battle,profile:state.profile,lobby:state.lobby});
+  return renderFigmaResult({battle,profile:state.profile,lobby:state.lobby,
+    reward:rewardReceipts.get(battle.matchId)});
 }
 
 function fleetScreen(){
@@ -555,7 +616,7 @@ async function loadStore({quiet=false}={}){
   } finally {
     if(generation===storeLoadGeneration){
       state.storeLoading=false;
-      if(['store','lobby'].includes(currentRoute())) render();
+      if(['store','lobby','match'].includes(currentRoute())) render();
     }
   }
 }
@@ -618,6 +679,7 @@ function render(){ if (!root) return;
   }
   const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen,admin:adminScreen};
   root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
+  mountChaosToast();
   if(route==='match'){
     const dialog=root.querySelector('#tp-skill-dialog');
     if(state.skillDialog&&dialog&&!dialog.open)dialog.showModal();
@@ -766,6 +828,13 @@ async function runAction(action,itemId=null) {
       render();
       break;
     }
+    case 'send-taunt':await guard(async()=>{
+      const index=Number(itemId);
+      if(currentRoute()!=='match'||state.battle?.status!=='PLAYING'
+          ||!Number.isInteger(index)||index<0||index>3)return;
+      const sent=await api.post('/matches/me/taunts',{index});
+      showTauntMessage(sent);
+    });break;
     case 'store-buy':await guard(async()=>{
       if(!itemId) return;
       state.store=await api.post('/store/purchase/'+encodeURIComponent(itemId));

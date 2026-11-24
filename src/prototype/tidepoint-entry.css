@@ -79,3 +79,6 @@
 
 /* Consent-based rematch, with responsive result-screen feedback. */
 @import './figma-rematch-v9.css';
+
+/* Humorous battle effects and sellable text-only provocation packs. */
+@import './chaos-humor.css';

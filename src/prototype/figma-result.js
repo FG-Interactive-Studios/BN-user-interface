@@ -6,9 +6,17 @@ import {buildMatchReport} from './match-report.js';
  * All competitive numbers come from BattleResponse (never fabricated rewards).
  * Leaves the battle board, lobby and other pages unchanged.
  */
-export function renderFigmaResult({battle,profile,lobby}) {
+export function renderFigmaResult({battle,profile,lobby,reward=null}) {
   const report=buildMatchReport(battle,profile?.id);
   const {won,draw}=report;
+  const earned=Number.isSafeInteger(reward?.earned)?reward.earned:null;
+  const rewardShown=earned===null?'—':earned>0?'+'+earned:'Já recebido';
+  const rewardText=earned===null
+    ? 'Moedas virtuais são creditadas automaticamente ao terminar a partida.'
+    : earned>0
+      ? 'Moedas de teste recebidas por concluir a batalha. Use na loja!'
+      : 'Recompensa desta partida já creditada anteriormente.';
+
   const outcome=draw?'draw':won?'victory':'defeat';
   const title=draw?'Empate!':won?'Vitória!':'Derrota';
   const opponent=lobby?.players?.find(player=>player.id!==profile?.id)?.nickname;
@@ -75,10 +83,10 @@ export function renderFigmaResult({battle,profile,lobby}) {
             <div class="bn-report-xp-track" role="img" aria-label="Progresso de XP não disponível na API"></div>
           </div>
           <div class="bn-report-reward-items">
-            <div class="bn-report-reward-item"><span class="bn-report-currency gold" aria-hidden="true"></span><span><strong>—</strong><small>Moedas</small></span></div>
-            <div class="bn-report-reward-item"><span class="bn-report-currency blue" aria-hidden="true"></span><span><strong>—</strong><small>Recompensa</small></span></div>
+            <div class="bn-report-reward-item"><span class="bn-report-currency gold" aria-hidden="true"></span><span><strong>${esc(rewardShown)}</strong><small>Moedas de teste</small></span></div>
+            <div class="bn-report-reward-item"><span class="bn-report-currency blue" aria-hidden="true"></span><span><strong>0</strong><small>Moedas premium</small></span></div>
           </div>
-          <p class="bn-report-reward-note">As recompensas serão exibidas quando estiverem disponíveis no jogo.</p>
+          <p class="bn-report-reward-note">${esc(rewardText)}</p>
         </section>
       </div>
 
