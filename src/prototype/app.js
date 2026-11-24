@@ -41,16 +41,26 @@ const rewardReceipts=new Map();
 const rewardRequests=new Set();
 const shownTaunts=new Set();
 let chaosToastTimer;
-function showChaosToast(message,kind='taunt'){
-  if(!root||currentRoute()!=='match')return;
+let activeChaosToast=null;
+function mountChaosToast(){
+  if(!root || currentRoute()!=='match'||!activeChaosToast
+      ||Date.now()>activeChaosToast.until)return;
   root.querySelector('.bn-chaos-toast')?.remove();
   const toast=document.createElement('div');
-  toast.className='bn-chaos-toast is-'+(kind==='hit'?'hit':kind==='miss'?'miss':kind==='sunk'?'sunk':'taunt');
+  toast.className='bn-chaos-toast is-'+activeChaosToast.kind;
   toast.setAttribute('role','status');
-  toast.textContent=message;
+  toast.textContent=activeChaosToast.text;
   root.append(toast);
+}
+function showChaosToast(message,kind='taunt'){
+  if(!root||currentRoute()!=='match')return;
+  activeChaosToast={text:message,kind:kind==='hit'?'hit':kind==='miss'?'miss':kind==='sunk'?'sunk':'taunt',
+    until:Date.now()+3200};
+  mountChaosToast();
   clearTimeout(chaosToastTimer);
-  chaosToastTimer=setTimeout(()=>toast.remove(),3200);
+  chaosToastTimer=setTimeout(()=>{
+    activeChaosToast=null;root?.querySelector('.bn-chaos-toast')?.remove();
+  },3200);
 }
 function showTauntMessage(data){
   if(!data || data.roomCode!==state.lobby?.code||typeof data.message!=='string'
@@ -172,7 +182,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();clearTimeout(chaosToastTimer);audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -669,6 +679,7 @@ function render(){ if (!root) return;
   }
   const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen,admin:adminScreen};
   root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
+  mountChaosToast();
   if(route==='match'){
     const dialog=root.querySelector('#tp-skill-dialog');
     if(state.skillDialog&&dialog&&!dialog.open)dialog.showModal();
