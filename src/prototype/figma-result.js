@@ -39,6 +39,16 @@ export function renderFigmaResult({battle,profile,lobby,reward=null,celebrate=fa
     </div>
   </div>`;
   const rematch=lobby?.rematch||null;
+  const series=lobby?.rivalry;
+  const host=lobby?.players?.[0]?.id===profile?.id;
+  const valid=series&&lobby?.players?.some(p=>p.id===profile?.id)&&
+    [series.hostWins,series.guestWins,series.draws].every(n=>Number.isSafeInteger(n)&&n>=0);
+  const myWins=valid?(host?series.hostWins:series.guestWins):0;
+  const rivalWins=valid?(host?series.guestWins:series.hostWins):0;
+  const rivalry=valid?`<div class="bn-rivalry-score" role="group" aria-label="Placar de rivalidade">
+    <span><strong>Rivalidade</strong><small>${myWins+rivalWins+series.draws>1?'A essa altura já virou pessoal.':'A revanche está chamando.'}</small></span>
+    <span class="bn-rivalry-numbers">Você <b>${myWins} × ${rivalWins}</b> Rival${series.draws?' · '+series.draws+' E':''}</span>
+  </div>`:'';
   const meIndex=lobby?.players?.findIndex(p=>p.id===profile?.id)??-1;
   const myAccepted=meIndex===0?rematch?.hostAccepted
     :meIndex===1?rematch?.guestAccepted:false;
@@ -102,6 +112,7 @@ export function renderFigmaResult({battle,profile,lobby,reward=null,celebrate=fa
       </div>
 
       <div class="bn-report-actions">
+        ${rivalry}
         ${rematchHint?`<p class="bn-rematch-status" role="status" aria-live="polite">${esc(rematchHint)}</p>`:''}
         <button type="button" class="bn-report-replay" data-action="${rematchAction}"
           ${rematchAvailable?'':'disabled'}>${rematchText}</button>

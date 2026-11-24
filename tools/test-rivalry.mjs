@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {funeralReaction} from '../src/prototype/chaos-humor.js';
+import {renderFigmaResult} from '../src/prototype/figma-result.js';
+assert.equal(funeralReaction(['miss'],1),null);
+assert.deepEqual(funeralReaction(['ship_sunk_enemy'],8),funeralReaction(['ship_sunk_ally'],8));
+const battle={winnerId:1,status:'FINISHED',shotsFired:[],shotsReceived:[]};
+const lobby={players:[{id:1,nickname:'A'},{id:2,nickname:'B'}],rivalry:{hostWins:3,guestWins:1,draws:1}};
+assert.match(renderFigmaResult({battle,lobby,profile:{id:1}}),/3 × 1/);
+assert.match(renderFigmaResult({battle,lobby,profile:{id:2}}),/1 × 3/);
+assert.ok(!renderFigmaResult({battle,lobby:{players:lobby.players},profile:{id:1}}).includes('bn-rivalry-score'));
+console.log('Funeral e rivalidade: OK');

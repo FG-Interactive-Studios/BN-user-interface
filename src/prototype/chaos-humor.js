@@ -155,3 +155,19 @@ export function funnyReaction(events=[],seed=0) {
   const phrases=REACTIONS[category];
   return {kind:category,text:phrases[Math.abs(seed)%phrases.length]};
 }
+
+export const FUNERALS=Object.freeze([
+  'Aqui jaz um navio. A boia chegou atrasada.',
+  'O casco pediu demissão. O oceano aceitou.',
+  'Foi promovido a submarino, sem treinamento.',
+  'A seguradora encerrou o chamado por naufrágio.',
+  'Descanse em pedaços, nobre embarcação.',
+  'O estaleiro envia condolências e um boleto.',
+  'O fundo do mar ganhou mais um imóvel.',
+  'Homenagem póstuma: boiava muito bem até agora.'
+]);
+export function funeralReaction(events=[],revision=0) {
+  if(!events.includes('ship_sunk_enemy')&&!events.includes('ship_sunk_ally'))return null;
+  const index=Number.isSafeInteger(revision)?Math.abs(revision)%FUNERALS.length:0;
+  return {kind:'sunk',text:'⚰️ Funeral naval — '+FUNERALS[index]};
+}

@@ -74,3 +74,7 @@ body[data-route="store"] .bn-taunt-phrase {
 @media(prefers-reduced-motion:reduce){
   .bn-chaos-toast{animation:none!important;}
 }
+
+.bn-rivalry-score{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px;padding:6px 10px;border:1px solid #81c6bf80;border-radius:8px;background:#0b293ad9;color:#f4e9c7;font-size:clamp(11px,2.5vw,14px);width:100%;box-sizing:border-box}
+.bn-rivalry-score small{display:block;color:#b7d9df;font-size:.8em}
+.bn-rivalry-numbers{white-space:nowrap}.bn-rivalry-numbers b{font-variant-numeric:tabular-nums;font-size:1.3em;color:#ffe299}

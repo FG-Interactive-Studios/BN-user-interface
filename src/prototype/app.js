@@ -4,7 +4,7 @@ import {AudioEvents} from './audio-events.js';
 import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
-import {tauntControls, equippedTaunts, funnyReaction} from './chaos-humor.js';
+import {tauntControls, equippedTaunts, funnyReaction, funeralReaction} from './chaos-humor.js';
 import {walletMarkup} from './figma-wallet.js';
 import {RADAR_SWEEP_SECONDS, sonarContactMarkup} from './radar-blips.js';
 import shipEmblem from '../assets/figma/ship-icon.png';
@@ -104,7 +104,7 @@ function syncAudio(route){
   const events=audioEvents.update({room:state.lobby,battle:state.battle,userId:state.profile?.id});
   for(const event of events)audio.play(event);
   if(route==='match'){
-    const reaction=funnyReaction(events,state.battle?.revision||0);
+    const reaction=funeralReaction(events,state.battle?.revision||0)||funnyReaction(events,state.battle?.revision||0);
     if(reaction)showChaosToast(reaction.text,reaction.kind);
   }
 }
