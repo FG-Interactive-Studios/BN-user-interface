@@ -98,7 +98,7 @@ function claimVirtualRewardIfFinished(){
   }).finally(()=>rewardRequests.delete(matchId));
 }
 function configureAudio(route){
-  audio.setState({packId:state.store?.items?.find(item=>item.category==='SOUND'&&item.equipped&&item.owned)?.id||'sound_default',preferences:state.preferences,scene:sceneEvent(route,state.lobby?.status,{battle:state.battle,userId:state.profile?.id})});
+  audio.setState({packId:state.store?.items?.find(item=>item.category==='SOUND'&&item.equipped&&item.owned)?.id||'sound_default',preferences:state.preferences,scene:sceneEvent(route,state.lobby?.status,{battle:state.battle,userId:state.profile?.id,queueStatus:state.queue?.status})});
 }
 function syncAudio(route){
   if((audioRoute==='match'||audioRoute==='result')&&route!==audioRoute&&!(audioRoute==='match'&&route==='result'))audio.stopEffects();
@@ -765,7 +765,6 @@ async function joinFromModal(form, code) {
   try {
     state.lobby=await api.post('/matchmaking/lobbies/join',{code:code.trim().toUpperCase()});
     state.queue=null;
-    if((state.lobby?.players||[]).length>=2)audio.play('game_found');
     root.querySelector('#tp-join-dialog')?.close();
     go('matchmaking');
   } catch(error) {
@@ -984,7 +983,6 @@ async function runAction(action,itemId=null) {
       state.queue=search.status==='SEARCHING'?search:null;
       state.queueStartedAt=search.status==='SEARCHING'?Date.now():null;
       state.lobby=search.status==='MATCHED'?search.room:null;
-      if(state.lobby?.players?.length===2)audio.play('game_found');
       go('matchmaking');
     });break;
     case 'cancel-public-search':await guard(async()=>{

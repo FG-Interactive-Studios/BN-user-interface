@@ -96,7 +96,24 @@ await mkdir('artifacts/public-matchmaking',{recursive:true});
 try {
  const a=await browser.newPage({viewport:{width:375,height:667}});
  const b=await browser.newPage({viewport:{width:1366,height:768}});
+ // Observe real SPA audio routing without relying on headless autoplay/codec support.
+ for(const page of [a,b])await page.addInitScript(()=>{
+   window.__loopAudio={active:'',starts:[],stops:[]};
+   HTMLMediaElement.prototype.play=function(){
+     if(this.loop){const src=this.getAttribute('src')||'';window.__loopAudio.active=src;window.__loopAudio.starts.push(src);}
+     return Promise.resolve();
+   };
+   HTMLMediaElement.prototype.pause=function(){
+     if(this.loop&&window.__loopAudio.active){window.__loopAudio.stops.push(window.__loopAudio.active);window.__loopAudio.active='';}
+   };
+   HTMLMediaElement.prototype.load=function(){};
+ });
  await mock(a,profiles[0]);await mock(b,profiles[1]);
+ const loop=page=>page.evaluate(()=>window.__loopAudio);
+ const expectLoop=async(page,file)=>{
+   await page.waitForFunction(file=>window.__loopAudio.active.includes(file),file);
+ };
+
  async function login(page,email){
    await page.goto('http://127.0.0.1:4191/',{waitUntil:'domcontentloaded'});
    await page.locator('#email').fill(email);
@@ -180,6 +197,8 @@ try {
  assert.ok(await a.locator('[data-action="create-lobby"]').isVisible());
  await a.locator('[data-action="find-public-match"]').click();
  await a.locator('.bn-queue-search').waitFor();
+ await expectLoop(a,'waiting_radar.ogg');
+ assert.ok((await loop(a)).stops.some(src=>src.includes('lobby.ogg')));
  assert.equal(await a.locator('.bn-search-radar .bn-radar-ring').count(),4,
    'Figma radar requires concentric green rings');
  assert.equal(await a.locator('.bn-search-radar .bn-radar-contact').count(),12,
@@ -229,11 +248,13 @@ try {
  await a.locator('[data-action="cancel-public-search"]').click();
  await a.locator('.bn-lobby').waitFor();
  assert.equal(queue.size,0,'Cancel must remove queue entry');
+ await expectLoop(a,'lobby.ogg');
  // The old invitation path remains selectable and produces a private code.
  await a.locator('[data-go="matchmaking"]').click();
  await a.locator('[data-action="create-lobby"]').click();
  await a.locator('.bn-waiting-room').waitFor();
  assert.equal(room.publicMatch,false);
+ await expectLoop(a,'positioning.ogg');
  assert.equal(await a.locator('.bn-room-invite strong').innerText(),'ABC234');
  await a.locator('[data-action="leave-lobby"]').first().click();
  await a.locator('.bn-lobby').waitFor();
@@ -247,8 +268,11 @@ try {
  await b.locator('.bn-waiting-room').waitFor();
  assert.equal(room.publicMatch,true);
  assert.equal(room.players.length,2);
+ await expectLoop(b,'positioning.ogg');
  assert.equal(await b.locator('.bn-room-invite').count(),0,'Code must be hidden in public match');
  await a.locator('.bn-waiting-room').waitFor({timeout:18000}); // REST polling without socket
+ await expectLoop(a,'positioning.ogg');
+ const positioningStarts=await Promise.all([a,b].map(async page=>(await loop(page)).starts.filter(src=>src.includes('positioning.ogg')).length));
  assert.equal(await a.locator('.bn-room-invite').count(),0);
  assert.match(await a.locator('.bn-queue-found').innerText(),/adversário encontrado/i);
  await a.screenshot({path:'artifacts/public-matchmaking/paired-mobile.png',fullPage:true});
@@ -261,6 +285,10 @@ try {
  assert.equal(room.status,'PREPARING');
  await b.locator('body[data-route="placement"]').waitFor({timeout:10000});
  await a.locator('body[data-route="placement"]').waitFor({timeout:18000});
+ for(const [i,page] of [a,b].entries()){
+   await expectLoop(page,'positioning.ogg');
+   assert.equal((await loop(page)).starts.filter(src=>src.includes('positioning.ogg')).length,positioningStarts[i],'Ready -> placement must not restart music');
+ }
  assert.ok(lookups.unified>=2,'Snapshot must serve both players');
  assert.equal(lookups.legacy,0,'No expected 404 lookups of empty room/queue');
  assert.deepEqual(errors,[]);

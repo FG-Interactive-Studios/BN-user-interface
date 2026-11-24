@@ -15,12 +15,17 @@ export class AudioEvents {
   update({room,battle,userId}) {
     const out=[];
     if(userId==null){this.reset();return out;}
-    if(this.userId!==userId){this.reset();this.userId=userId;}
+    const sameUser=this.userId===userId;
+    if(!sameUser){this.reset();this.userId=userId;}
     const prevRoom=this.room;
     if(room&&prevRoom?.code===room.code&&Number(room.revision)<Number(prevRoom.revision))return out;
+    // The found cue is for automatic pairing, not private code invitations.
+    // Derive it once from the accepted snapshot rather than both HTTP actions
+    // and realtime reconciliation. Do not replay when restoring a session.
+    if(sameUser&&room?.publicMatch===true&&['WAITING','PREPARING'].includes(room.status)&&
+      (room.players||[]).length>=2&&(prevRoom?.code!==room.code||
+        (prevRoom.status==='WAITING'&&(prevRoom.players||[]).length<2)))out.push('game_found');
     if(room&&prevRoom?.code===room.code){
-      if(prevRoom.status==='WAITING'&&['WAITING','PREPARING'].includes(room.status)&&
-        (prevRoom.players||[]).length<2&&(room.players||[]).length>=2)out.push('game_found');
       for(const p of room.players||[]){
         const previous=prevRoom.players?.find(x=>x.id===p.id);
         if(!previous)continue;

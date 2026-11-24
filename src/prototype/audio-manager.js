@@ -33,14 +33,19 @@ export function resolveSounds(packs,packId,event) {
     candidates.push(standard?.ship_sunk);
   return [...new Set(candidates.filter(Boolean))];
 }
-export function sceneEvent(route,roomStatus,{battle,userId}={}) {
+export function sceneEvent(route,roomStatus,{battle,userId,queueStatus}={}) {
   if(route==='result'){
     if(battle?.status!=='FINISHED'||battle.winnerId==null||userId==null)return null;
     return battle.winnerId===userId?'victory_music':'defeat_music';
   }
   if(route==='match')return 'battle_music';
   if(route==='placement')return 'positioning_music';
-  if(route==='matchmaking'&&roomStatus==='WAITING')return 'waiting_radar';
+  if(route==='matchmaking'){
+    // A real room takes precedence over a stale queue snapshot. One shared loop
+    // spans waiting and placement; the radar belongs exclusively to active search.
+    if(roomStatus==='WAITING'||roomStatus==='PREPARING')return 'positioning_music';
+    if(!roomStatus&&queueStatus==='SEARCHING')return 'waiting_radar';
+  }
   if(['auth','register','lobby','store','fleet','profile','settings','matchmaking'].includes(route))return 'lobby';
   return null;
 }
