@@ -91,3 +91,6 @@
 
 /* Store wireframe and wallet controls. */
 @import './store-wireframe-v21.css';
+
+/* Shared account header and bounded profile portrait, last in cascade. */
+@import './shared-header-profile-v22.css';

@@ -1,0 +1,89 @@
+/* One account header, independent of route. Only the wallet changes. */
+body[data-route] .screen .bn-shared-header {
+  box-sizing:border-box!important;width:100%!important;max-width:none!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  flex-wrap:nowrap!important;gap:10px!important;min-height:72px!important;height:auto!important;
+  padding:10px clamp(14px,3.5vw,50px)!important;
+  position:sticky!important;top:0;z-index:80;flex-shrink:0!important;
+  background:#0b151cf5!important;border:0!important;border-bottom:1px solid #ffffff1c!important;
+  box-shadow:0 4px 14px #0004;
+}
+body[data-route] .screen .bn-shared-header .bn-header-identity{
+  display:flex!important;align-items:center!important;min-width:0;max-width:none!important;
+  flex:1 1 auto;gap:9px!important;padding:0!important;
+}
+body[data-route] .screen .bn-shared-header .bn-header-avatar{
+  display:grid!important;place-items:center;box-sizing:border-box;
+  width:44px!important;height:44px!important;flex:0 0 44px!important;
+  border:2px solid #ffbf24!important;border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 50% 40%,#174956,#07151c 82%)!important;
+}
+body[data-route] .screen .bn-shared-header .bn-header-avatar img{
+  display:block!important;width:72%!important;height:72%!important;
+  max-width:72%!important;max-height:72%!important;object-fit:contain!important;
+  filter:drop-shadow(0 0 5px #fbbf2444);
+}
+body[data-route] .screen .bn-shared-header .bn-header-player{min-width:0;gap:3px!important}
+body[data-route] .screen .bn-shared-header .bn-header-player strong{
+  font:400 25px/1 'Pirata One',Georgia,serif!important;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+body[data-route] .screen .bn-shared-header .bn-header-player small{
+  font:400 10px/1.15 'Lexend',sans-serif!important;
+}
+body[data-route] .screen .bn-shared-header .bn-header-actions{
+  display:flex!important;align-items:center!important;gap:9px!important;flex:0 0 auto;
+}
+body[data-route] .screen .bn-shared-header .bn-account-menu summary{
+  display:grid!important;place-items:center;box-sizing:border-box;
+  width:38px!important;height:38px!important;min-width:38px!important;
+  padding:0!important;border:2px solid #bed9e5!important;border-radius:11px!important;
+  font:400 22px/1 system-ui,sans-serif!important;background:#071119!important;
+}
+body[data-route] .screen .bn-shared-header .bn-connection-status{display:flex!important}
+@media(max-width:760px){
+  body[data-route] .screen .bn-shared-header{
+    display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:"profile profile menu" "connection wallet wallet";
+    min-height:0!important;padding:8px 10px!important;gap:6px!important;
+  }
+  body[data-route] .screen .bn-shared-header.without-wallet{
+    grid-template-areas:"profile connection menu";
+    grid-template-columns:minmax(0,1fr) auto auto;
+  }
+  body[data-route] .screen .bn-shared-header .bn-header-identity{grid-area:profile;gap:7px!important}
+  body[data-route] .screen .bn-shared-header .bn-header-avatar{width:42px!important;height:42px!important;flex-basis:42px!important}
+  body[data-route] .screen .bn-shared-header .bn-header-player strong{font-size:21px!important}
+  body[data-route] .screen .bn-shared-header .bn-header-player small{font-size:9px!important}
+  body[data-route] .screen .bn-shared-header .bn-header-actions{display:contents!important}
+  body[data-route] .screen .bn-shared-header .bn-account-menu{grid-area:menu;justify-self:end}
+  body[data-route] .screen .bn-shared-header .bn-account-menu summary{width:36px!important;height:36px!important;min-width:36px!important;font-size:21px!important}
+  body[data-route] .screen .bn-shared-header .bn-connection-status{grid-area:connection;justify-self:start;font-size:10px}
+  body[data-route] .screen .bn-shared-header .bn-wallet-pills{grid-area:wallet;justify-content:flex-end;min-width:0;gap:5px}
+}
+/* Keep the profile art in a fixed square, even on image loading errors.
+ * The circular frame and level label remain in their own reserved column. */
+body[data-route="profile"] .bn-profile-captain{
+  grid-template-columns:minmax(0,clamp(94px,13vw,132px)) minmax(0,1fr)!important;
+  align-items:center;gap:clamp(10px,2vw,22px)!important;
+}
+body[data-route="profile"] .bn-profile-portrait{min-width:0;width:100%;padding-bottom:18px}
+body[data-route="profile"] .bn-profile-portrait-inner{
+  position:relative;box-sizing:border-box;isolation:isolate;overflow:hidden;
+  display:grid;place-items:center;width:100%!important;max-width:132px!important;
+  height:auto!important;aspect-ratio:1;min-width:0;min-height:0;max-height:132px;
+  font:400 40px/1 'Pirata One',Georgia,serif!important;
+}
+body[data-route="profile"] .bn-profile-portrait-inner .bn-gd-profile-captain{
+  position:absolute!important;inset:0!important;display:block;width:100%!important;height:100%!important;
+  max-width:100%!important;max-height:100%!important;min-width:0!important;min-height:0!important;
+  margin:0!important;padding:0!important;object-fit:cover!important;object-position:center 23%!important;
+  border:0!important;font-size:0!important;
+}
+body[data-route="profile"] .bn-profile-portrait-inner [hidden]{display:none!important}
+body[data-route="profile"] .bn-profile-identity{min-width:0;max-width:100%}
+body[data-route="profile"] .bn-profile-identity h2{overflow-wrap:anywhere}
+@media(max-width:849px){
+  body[data-route="profile"] .bn-profile-captain{grid-template-columns:minmax(0,clamp(76px,24vw,100px)) minmax(0,1fr)!important}
+  body[data-route="profile"] .bn-profile-portrait-inner{max-width:100px!important;max-height:100px}
+}

@@ -159,7 +159,7 @@ function nav(active='play') {
 function header() {
   const nickname=esc(state.profile?.nickname || 'Capitão');
   const showWallet=['lobby','store'].includes(currentRoute());
-  return `<header class="topbar bn-topbar">
+  return `<header class="topbar bn-topbar bn-shared-header ${showWallet?'has-wallet':'without-wallet'}">
     <button type="button" class="bn-header-identity" data-go="profile" aria-label="Abrir meu perfil">
       <span class="bn-header-avatar" aria-hidden="true"><img src="${shipEmblem}" alt="" width="42" height="42"></span>
       <span class="bn-header-player"><strong>${nickname}</strong><small>Conta de jogador</small></span>
@@ -1149,6 +1149,18 @@ function bindEvents() {
   root.addEventListener('keydown',unlock,true);
   document.addEventListener('visibilitychange',()=>audio.setVisible(!document.hidden));
   audio.setVisible(!document.hidden);
+  // Image failures must not display an oversized alt string inside the portrait.
+  root.addEventListener('error',event=>{
+    const image=event.target;
+    if(!image?.matches?.('.bn-gd-profile-captain'))return;
+    if(image.dataset.fallback&&image.getAttribute('src')!==image.dataset.fallback){
+      image.setAttribute('src',image.dataset.fallback);
+      return;
+    }
+    image.hidden=true;
+    const fallback=image.parentElement?.querySelector('.bn-profile-initial');
+    if(fallback)fallback.hidden=false;
+  },true);
   root.addEventListener('cancel', event=>{
     if (event.target?.id==='tp-room-exit-dialog') event.preventDefault();
     if (event.target?.id==='tp-skill-dialog') state.skillDialog=false;

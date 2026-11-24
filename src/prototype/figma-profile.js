@@ -29,7 +29,10 @@ export function renderFigmaProfile(profile,{title,frame,captain}={}) {
       </header>
       <section class="bn-profile-card bn-profile-captain" aria-labelledby="bn-profile-name">
         <div class="bn-profile-portrait ${frame==='frame_neon'?'bn-neon-frame':''}">
-          <div class="bn-profile-portrait-inner" aria-label="Avatar selecionado: ${esc(avatar)}">${captain?`<img class="bn-gd-profile-captain" src="${captainArt(captain)}" alt="Capitão equipado">`:`<span>${initial}</span>`}</div>
+          <div class="bn-profile-portrait-inner" role="img" aria-label="Capitão equipado">
+            <img class="bn-gd-profile-captain" src="${captainArt(captain||'captain_default')}" data-fallback="${captainArt('captain_default')}" alt="" width="128" height="128">
+            <span class="bn-profile-initial" hidden aria-hidden="true">${initial}</span>
+          </div>
           <span class="bn-profile-level">Nível —</span>
         </div>
         <div class="bn-profile-identity">

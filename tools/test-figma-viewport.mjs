@@ -85,6 +85,20 @@ try {
   await page.locator('[data-form="login"] button[type="submit"]').click();
   await page.locator('.bn-lobby').waitFor({timeout:18000});
   await horizontalFit('lobby');
+  const measureHeader=()=>page.evaluate(()=>{
+    const header=document.querySelector('.bn-shared-header');
+    const measure=sel=>{const el=header.querySelector(sel),box=el.getBoundingClientRect(),style=getComputedStyle(el);return {width:box.width,height:box.height,font:style.fontSize,family:style.fontFamily};};
+    return {avatar:measure('.bn-header-avatar'),image:measure('.bn-header-avatar img'),name:measure('.bn-header-player strong'),menu:measure('.bn-account-menu summary')};
+  });
+  const lobbyHeader=await measureHeader();
+  const assertSameHeader=async route=>{
+    const actual=await measureHeader();
+    for(const key of ['avatar','image','menu']){
+      assert.ok(Math.abs(actual[key].width-lobbyHeader[key].width)<1&&Math.abs(actual[key].height-lobbyHeader[key].height)<1,route+' header asset mismatch '+key);
+    }
+    assert.equal(actual.name.font,lobbyHeader.name.font,route+' nickname size mismatch');
+    assert.equal(actual.name.family,lobbyHeader.name.family,route+' nickname font mismatch');
+  };
   // Desktop is a real responsive composition, not the 540px portrait shell
   // stretched into a PC screenshot. Retain the approved mobile layout.
   if (viewport.width>=900) {
@@ -126,12 +140,15 @@ try {
   await page.locator('.bn-fleet-page').waitFor();
   await horizontalFit('fleet');
   await assertStickyAccountHeader('fleet');
+  await assertSameHeader('fleet');
+  assert.equal(await page.locator('.bn-wallet-pills').count(),0);
   assert.equal(await page.locator('.bn-ship-item').count(),5,'fleet should follow API');
   if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/fleet-'+viewport.width+'.png',fullPage:true});
   await page.locator('.bn-nav-store').click();
   await page.locator('.bn-store-page').waitFor();
   await horizontalFit('store');
   await assertStickyAccountHeader('store');
+  await assertSameHeader('store');
   await page.locator('.tp-store-card').first().waitFor();
   assert.equal(await page.locator('.tp-store-card').count(),3,'store must display live API items');
   const storeLayout=await page.evaluate(()=>{
