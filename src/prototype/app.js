@@ -616,7 +616,7 @@ async function loadStore({quiet=false}={}){
   } finally {
     if(generation===storeLoadGeneration){
       state.storeLoading=false;
-      if(['store','lobby'].includes(currentRoute())) render();
+      if(['store','lobby','match'].includes(currentRoute())) render();
     }
   }
 }
