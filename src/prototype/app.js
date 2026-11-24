@@ -34,6 +34,7 @@ const state = {
   roomExitNotice: null, leavingRoom: false,
   skillMode: null, skillTargets: [], skillArea: [], skillAnchor: null, skillDirection: 'RIGHT', skillDialog: false,
   adminModes: null, adminLoading: false, adminError: '',
+  adminTab:'modes', adminProducts:null, adminStoreLoading:false, adminStoreError:'',
   store: null, demoTopupRequests: new Map(), storeLoading: false, storeFilter: 'ALL', walletDialog:null, profileEditorOpen: false, profileSecurityOpen: false,
   preferences: loadPreferences(),
 };
@@ -200,7 +201,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.adminTab='modes';state.adminProducts=null;state.adminStoreLoading=false;state.adminStoreError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -642,7 +643,7 @@ function settingsScreen(){
 function adminScreen(){
   if(state.profile?.admin!==true)
     return mainContent(panel('Acesso restrito','Somente administradores podem acessar esta área.'),{noNav:true});
-  return mainContent(renderAdminPanel({modes:state.adminModes,loading:state.adminLoading,error:state.adminError}),{noNav:true});
+  return mainContent(renderAdminPanel({modes:state.adminModes,loading:state.adminLoading||state.busy,error:state.adminError,tab:state.adminTab,products:state.adminProducts,storeLoading:state.adminStoreLoading||state.busy,storeError:state.adminStoreError}),{noNav:true});
 }
 async function loadAdminModes(){
   if(!api.isAuthenticated()||state.profile?.admin!==true||state.adminLoading)return;
@@ -661,6 +662,27 @@ async function loadAdminModes(){
   }finally{
     if(state.profile?.id===userId){
       state.adminLoading=false;
+      if(currentRoute()==='admin')render();
+    }
+  }
+}
+
+async function loadAdminStore(){
+  if(!api.isAuthenticated()||state.profile?.admin!==true||state.adminStoreLoading)return;
+  state.adminStoreLoading=true;state.adminStoreError='';
+  const userId=state.profile.id;
+  if(currentRoute()==='admin')render();
+  try{
+    const items=await api.get('/admin/store/items');
+    if(api.isAuthenticated()&&state.profile?.id===userId)state.adminProducts=items;
+  }catch(error){
+    if(state.profile?.id===userId){
+      state.adminProducts=null;
+      state.adminStoreError=error?.message||'Não foi possível consultar os produtos.';
+    }
+  }finally{
+    if(state.profile?.id===userId){
+      state.adminStoreLoading=false;
       if(currentRoute()==='admin')render();
     }
   }
@@ -805,11 +827,34 @@ async function runAction(action,itemId=null) {
     case 'store-category':
       if(currentRoute()==='store'&&['ALL','SKIN','SOUND','TAUNT','CAPTAIN','BUNDLE','COSMETICS'].includes(itemId)){state.storeFilter=itemId;render();root.querySelector('.bn-store-category[data-item-id="'+itemId+'"]')?.focus({preventScroll:true});}
       break;
-    case 'admin-refresh':
-      if(currentRoute()==='admin'&&state.profile?.admin===true){
-        state.adminModes=null;await loadAdminModes();
+    case 'admin-tab':
+      if(currentRoute()==='admin'&&state.profile?.admin===true&&!state.busy&&['modes','store'].includes(itemId)){
+        state.adminTab=itemId;render();
+        if(itemId==='store')await loadAdminStore();
+        else if(state.adminModes===null)await loadAdminModes();
       }
       break;
+    case 'admin-refresh':
+      if(currentRoute()==='admin'&&state.profile?.admin===true&&!state.busy){
+        if(state.adminTab==='store')await loadAdminStore();
+        else {state.adminModes=null;await loadAdminModes();}
+      }
+      break;
+    case 'admin-toggle-product': {
+      if(currentRoute()!=='admin'||state.profile?.admin!==true||state.adminStoreLoading||state.busy||state.adminTab!=='store')break;
+      const item=state.adminProducts?.find(p=>p.id===itemId);
+      if(!item?.manageable)break;
+      if(item.enabled&&!confirm('Desativar a venda de '+item.name+'? Quem já possui o item continuará podendo usá-lo.'))break;
+      await guard(async()=>{
+        const updated=await api.put('/admin/store/items/'+encodeURIComponent(itemId)+'/availability',{enabled:!item.enabled});
+        state.adminProducts=(state.adminProducts||[]).map(p=>p.id===itemId?updated:p);
+        await loadAdminStore(); // Also refresh the effective status of dependent bundles.
+        storeLoadGeneration++;state.storeLoading=false;
+        await loadStore({quiet:true});
+        notice('Disponibilidade de '+item.name+' atualizada.');
+      });
+      break;
+    }
     case 'admin-toggle-mode':
       if(currentRoute()!=='admin'||state.profile?.admin!==true||state.adminLoading)break;
       {
@@ -1220,8 +1265,8 @@ function bindEvents() {
     if(state.lobby&&['lobby','matchmaking','placement','match','result'].includes(currentRoute()))synchronizeRoute();
     if(currentRoute()!=='profile'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
     render();
-    if(['store','fleet'].includes(currentRoute()) && !state.store && !state.storeLoading) void loadStore();
-    if(currentRoute()==='admin'&&state.profile?.admin===true&&state.adminModes===null&&!state.adminLoading)void loadAdminModes();
+    if((currentRoute()==='store'||(currentRoute()==='fleet'&&!state.store))&&!state.storeLoading) void loadStore({quiet:true});
+    if(currentRoute()==='admin'&&state.profile?.admin===true){if(state.adminTab==='store')void loadAdminStore();else if(state.adminModes===null&&!state.adminLoading)void loadAdminModes();}
   });
 }
 export function startTidepoint(element) {

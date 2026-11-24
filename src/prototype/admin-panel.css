@@ -88,3 +88,17 @@ body[data-route="admin"] .bn-admin-feedback {color:#b4e6e9;}
   body[data-route="admin"] .bn-admin-mode {align-items:stretch;flex-direction:column;}
   body[data-route="admin"] .bn-admin-toggle {width:100%;}
 }
+
+body[data-route="admin"] .bn-admin-tabs{display:flex;gap:8px;flex-wrap:wrap}
+body[data-route="admin"] .bn-admin-tabs button{flex:1;min-height:44px;border:1px solid #416a76;border-radius:9px;background:#102b38;color:#dfedf2;font:700 15px 'Barlow',sans-serif;cursor:pointer}
+body[data-route="admin"] .bn-admin-tabs button[aria-pressed="true"]{background:#205b63;border-color:#83e1cf;color:white}
+body[data-route="admin"] .bn-admin-product-group{display:grid;gap:6px;min-width:0}
+body[data-route="admin"] .bn-admin-product-group h3{font:800 20px/1.2 'Barlow Condensed',sans-serif;margin:10px 0 2px;color:#f8d777}
+body[data-route="admin"] .bn-admin-product-group h3 small{color:#a8c3cc;font:500 12px 'Barlow',sans-serif}
+body[data-route="admin"] .bn-admin-product{padding:9px 12px;gap:8px}
+body[data-route="admin"] .bn-admin-product .bn-admin-mode-details h2{overflow-wrap:anywhere}
+body[data-route="admin"] .bn-admin-product .bn-admin-toggle:disabled{cursor:not-allowed}
+@media(max-width:520px){
+ body[data-route="admin"] .bn-admin-product{flex-direction:row;align-items:center}
+ body[data-route="admin"] .bn-admin-product .bn-admin-toggle{width:auto;min-width:86px;font-size:12px}
+}

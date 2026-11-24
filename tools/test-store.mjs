@@ -109,3 +109,10 @@ for(const mood of ['neutral','hit','damage']){
  assert.ok(renderCaptainExpressions('captain_corsair').includes('data-mood="'+mood+'"'));
  assert.ok(renderCaptainExpressions('captain_corsair').includes('/captain_corsair/'+mood+'.'));
 }
+
+// Withdrawal hides a released item from the store but preserves its owned equipment.
+const withdrawn={id:'sound_pirate',category:'SOUND',name:'Canhões Piratas',price:140,enabled:true,saleEnabled:false,owned:true,equipped:true};
+assert.ok(!renderCosmeticStore({items:[withdrawn]}).includes('sound_pirate'));
+const withdrawnSelection=renderEquipmentSelection('SOUND',{catalog:{items:[withdrawn]}});
+assert.match(withdrawnSelection,/data-equipment-id="sound_pirate"/);
+assert.ok(renderCosmeticStore({items:[{...withdrawn,saleEnabled:true}]}).includes('sound_pirate'));
