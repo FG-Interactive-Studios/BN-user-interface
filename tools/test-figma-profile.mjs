@@ -119,6 +119,11 @@ try{
    await page.locator('form[data-form="password"] button[type="submit"]').click();
    await page.waitForFunction(()=>document.querySelector('#tp-notice-root')?.textContent?.includes('Senha atualizada'));
    assert.deepEqual(requests.password,[{currentPassword:'old-password',newPassword:'new-password-123'}]);
+   if(viewport.width===375){
+     await page.locator('#tp-notice-root .tp-notice').waitFor({state:'detached',timeout:6500});
+     assert.equal(await page.locator('.bn-profile-notice').count(),0);
+     assert.equal(await page.locator('#bn-profile-editor').evaluate(el=>el.open),true,'Notice expiration must not close account editor');
+   }
    await page.locator('[data-action="close-profile-editor"]').click();
    assert.equal(await page.locator('#bn-profile-editor').evaluate(el=>el.open),false);
    assert.deepEqual(errors,[],'JavaScript errors: '+errors.join('; '));

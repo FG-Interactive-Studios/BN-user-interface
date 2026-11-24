@@ -1,0 +1,4 @@
+/* Temporary feedback never changes page layout on expiry. */
+.bn-profile-notice{margin:12px 0 0;padding:10px 12px;border:1px solid #79c8a3;border-radius:8px;background:#183e35;color:#d9ffeb;font-size:13px}
+.bn-profile-notice.is-error{border-color:#d77b6e;background:#512c2a;color:#ffe5e0}
+#tp-notice-root .tp-notice{overflow-wrap:anywhere}

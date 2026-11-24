@@ -36,6 +36,6 @@ export function walletDialogMarkup(catalog,{currency='premium',loading=false,not
  <button type="button" data-action="wallet-currency" data-item-id="free" aria-pressed="${free}">Marinha · ${esc(amounts.free)}</button>
  <button type="button" data-action="wallet-currency" data-item-id="premium" aria-pressed="${!free}">Naval · ${esc(amounts.premium)}</button></div>
  ${free?`<section class="bn-wallet-info"><h3>Ganhe moedas Marinha</h3><p>Conclua partidas para receber moedas gratuitas de teste. As recompensas são creditadas pelo servidor.</p></section>`:catalog?.demoPremiumEnabled===true?`<section class="bn-wallet-info"><h3>Adicionar moedas Naval</h3><p>Simule uma compra. Nenhum dinheiro real será cobrado e não solicitamos dados financeiros.</p><div class="bn-wallet-packs">${[100,300,700].map(amount=>`<button type="button" class="btn btn-primary" data-action="store-demo-topup" data-item-id="demo_${amount}" ${loading?'disabled':''}><span class="bn-gd-wallet-coin is-naval" aria-hidden="true"></span><strong>+ ${amount} Naval</strong><small>Simular compra</small></button>`).join('')}</div></section>`:`<section class="bn-wallet-info"><h3>Moedas Naval</h3><p>${loading?'Carregando opções…':'A aquisição de moedas de demonstração está indisponível.'}</p></section>`}
- ${notice?`<p class="bn-wallet-feedback ${error?'is-error':''}" role="status">${esc(notice)}</p>`:''}
+ ${notice?`<p class="bn-wallet-feedback ${error?'is-error':''}" role="${error?'alert':'status'}">${esc(notice)}</p>`:''}
  </dialog>`;
 }
