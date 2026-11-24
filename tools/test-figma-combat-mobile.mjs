@@ -107,10 +107,11 @@ try {
      assert.ok(layout.fleet.bottom<=layout.tools.top+4,'Tools overlap ship cards: '+explain);
      assert.equal(await page.locator('.bn-placement-screen .board-main .cell').count(),64);
      assert.equal(await page.locator('.bn-placement-ship').count(),3);
-     assert.equal(await page.locator('.bn-placement-ship[data-item-id="CARRIER"] img[src*="ship-carrier.webp"]').count(),1,'ZIP carrier artwork absent');
-     assert.equal(await page.locator('.bn-placement-ship[data-item-id="DESTROYER"] img[src*="ship-destroyer-gd.webp"]').count(),1,'GD destroyer artwork absent');
-     assert.equal(await page.locator('.bn-placement-ship[data-item-id="SEARCH"] img').count(),0,'SEARCH must not inherit unrelated submarine art');
-     for(const type of ['CARRIER','DESTROYER']) {
+     for(const type of ['CARRIER','DESTROYER','SEARCH']) {
+       assert.equal(await page.locator('.bn-placement-ship[data-item-id="'+type+'"] img[src*="/assets/gd/skin_default/"]').count(),1,
+         'Official fleet art absent for '+type);
+     }
+     for(const type of ['CARRIER','DESTROYER','SEARCH']) {
        const art=page.locator('.bn-placement-ship[data-item-id="'+type+'"] img');
        const decoded=await art.evaluate(async img=>{
          try {await img.decode();return img.naturalWidth>0&&img.naturalHeight>0;}
