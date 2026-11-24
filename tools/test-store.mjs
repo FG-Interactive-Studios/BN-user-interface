@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {walletMarkup,walletDialogMarkup} from '../src/prototype/figma-wallet.js';
 import { renderCosmeticStore, renderProductCover } from '../src/prototype/store-ui.js';
 const items=[
  {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Padrão',price:0,enabled:true,owned:true,equipped:true},
@@ -48,7 +49,15 @@ assert.match(renderProductCover({id:'unknown',category:'OTHER'}),/COSMÉTICO/);
 assert.ok(!renderProductCover({id:'<script>',category:'<script>'}).includes('<script>'));
 assert.ok(!renderProductCover({id:'__proto__',category:'OTHER'}).includes('undefined'));
 const demo=renderCosmeticStore({credits:300,premiumCredits:100,demoPremiumEnabled:true,items:[{...items[1],premiumPrice:30},{...items[2],premiumPrice:30}]});
-assert.match(demo,/data-action="store-demo-topup"/);
+assert.ok(!demo.includes('data-action="store-demo-topup"'),'Top-ups belong to modal only');
+assert.match(walletDialogMarkup({demoPremiumEnabled:true},{currency:'premium'}),/data-action="store-demo-topup"/);
+assert.equal((walletDialogMarkup({demoPremiumEnabled:true}).match(/data-action="store-demo-topup"/g)||[]).length,3);
+assert.ok(!walletDialogMarkup({demoPremiumEnabled:true},{currency:'free'}).includes('store-demo-topup'));
+assert.ok(!walletDialogMarkup({demoPremiumEnabled:false}).includes('store-demo-topup'));
+assert.equal((walletMarkup({credits:300,premiumCredits:0}).match(/data-action="open-wallet"/g)||[]).length,2);
+assert.match(html,/Item em destaque/);
+assert.match(html,/data-action="store-category" data-item-id="BUNDLE"/);
+assert.match(html,/data-action="store-category" data-item-id="COSMETICS"/);
 assert.match(demo,/Comprar · 30 premium/);
 assert.ok(!demo.includes('data-item-id="sound_sonar"'));
 assert.ok(!html.includes('data-action="store-demo-topup"'));

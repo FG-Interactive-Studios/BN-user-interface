@@ -102,7 +102,7 @@ try {
  const shop=await openPage({width:1366,height:768});
  await shop.locator('.bn-lobby').waitFor({timeout:12000});
  await shop.locator('[data-go="store"]').click();
- await shop.locator('#store-filter').selectOption('TAUNT');
+ await shop.locator('[data-action="store-category"][data-item-id="TAUNT"]').click();
  assert.equal(await shop.locator('.tp-store-card.is-taunt').count(),5);
  assert.match(await shop.locator('.tp-store-grid').innerText(),/Atendimento Naval/);
  assert.match(await shop.locator('.tp-store-grid').innerText(),/Almirante dos Memes/);
