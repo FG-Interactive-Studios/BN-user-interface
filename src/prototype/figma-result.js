@@ -57,13 +57,13 @@ export function renderFigmaResult({battle,profile,lobby,reward=null,celebrate=fa
     : '';
   const celebration=celebrate
     ? '<div class="bn-finale-effects" aria-hidden="true">'
-      + Array.from({length:12},(_,index)=>'<span class="bn-finale-particle" style="--i:'+index+'">'+(won?'🎉':draw?'✨':'💧')+'</span>').join('')
+      + Array.from({length:12},(_,index)=>'<span class="bn-finale-particle" style="--i:'+index+';left:'+(4+index*8)+'%;--delay:'+(index*.035)+'s;--drift:'+(index%2===0?'30px':'-30px')+'">'+(won?'🎉':draw?'✨':'💧')+'</span>').join('')
       + '</div>'
     : '';
   const sharedNote=report.comparable
     ? '<span class="bn-report-equal-stats"> Os acertos e erros foram iguais, mas a condição de encerramento definiu o vencedor.</span>'
     : '';
-  return `<div class="screen bn-result-stage is-${outcome}">${celebration}
+  return `<div class="screen bn-result-stage is-${outcome} ${celebrate?'is-celebrating':''}">${celebration}
     <main class="bn-result-viewport" aria-label="Resultado da partida">
       <header class="bn-report-hero">
         <span class="bn-report-emblem" aria-hidden="true"></span>
