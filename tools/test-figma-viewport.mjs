@@ -35,7 +35,7 @@ try {
      path==='/api/game-modes'?modes:
      path==='/api/store'?{credits:300,premiumCredits,demoPremiumEnabled:true,items:[
        {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Visual padrão',price:0,enabled:true,owned:true,equipped:true},
-       {id:'skin_coral',category:'SKIN',name:'Coral',description:'Personalização',price:90,enabled:true,owned:false,equipped:false},
+       {id:'skin_coral',category:'SKIN',name:'Coral',description:'Personalização',price:90,premiumPrice:30,enabled:true,owned:false,equipped:false},
        {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Em breve',price:90,enabled:false,owned:false,equipped:false}
      ]}:null;
    if(path==='/api/store')lastWallet=body;
@@ -155,7 +155,9 @@ try {
     const rect=selector=>document.querySelector(selector).getBoundingClientRect();
     const nav=document.querySelector('.bn-store-categories');
     const hero=rect('.is-featured .tp-store-preview'),card=rect('.is-featured');
-    return {page:rect('.tp-store-page').width,featured:rect('.bn-store-featured').width,heroWidth:hero.width,heroHeight:hero.height,cardWidth:card.width,cardTop:card.top,heroTop:hero.top,navWidth:nav.clientWidth,navScroll:nav.scrollWidth,navHeight:nav.clientHeight,navDisplay:getComputedStyle(nav).display,artFit:document.querySelector('.is-featured svg')?.getAttribute('preserveAspectRatio')};
+    const regular=rect('.tp-store-grid .tp-store-card'),thumb=rect('.tp-store-grid .tp-store-preview'),copy=rect('.tp-store-grid .tp-store-card-text');
+    const buttons=[...document.querySelectorAll('.is-featured .tp-store-card-footer .btn')].map(el=>{const b=el.getBoundingClientRect();return {top:b.top,bottom:b.bottom,left:b.left,right:b.right,height:b.height};});
+    return {regularHeight:regular.height,thumbWidth:thumb.width,thumbHeight:thumb.height,thumbRight:thumb.right,copyLeft:copy.left,buttons,page:rect('.tp-store-page').width,featured:rect('.bn-store-featured').width,heroWidth:hero.width,heroHeight:hero.height,cardWidth:card.width,cardTop:card.top,heroTop:hero.top,navWidth:nav.clientWidth,navScroll:nav.scrollWidth,navHeight:nav.clientHeight,navDisplay:getComputedStyle(nav).display,artFit:document.querySelector('.is-featured svg')?.getAttribute('preserveAspectRatio')};
   });
   assert.ok(storeLayout.featured>=storeLayout.page-4,'Hero spans catalog width: '+JSON.stringify(storeLayout));
   assert.equal(storeLayout.navDisplay,'flex');
@@ -165,7 +167,11 @@ try {
     assert.ok(storeLayout.heroWidth<storeLayout.cardWidth*.65,'Desktop hero uses artwork and copy side by side');
   }else{
     assert.ok(storeLayout.heroWidth>=storeLayout.cardWidth-4,'Mobile hero cover must use full card width');
-    assert.ok(Math.abs(storeLayout.heroWidth/storeLayout.heroHeight-16/9)<.06,'Mobile cover must preserve image proportions');
+    assert.ok(storeLayout.heroHeight<=138,'Mobile hero art must be compact: '+JSON.stringify(storeLayout));
+    assert.ok(storeLayout.thumbWidth<=118&&storeLayout.thumbHeight<=118&&storeLayout.thumbRight<=storeLayout.copyLeft+1,'Mobile products use bounded thumbnails beside details: '+JSON.stringify(storeLayout));
+    assert.ok(storeLayout.regularHeight<=205,'Simple mobile product should be compact: '+JSON.stringify(storeLayout));
+    assert.equal(storeLayout.buttons.length,2);
+    assert.ok(Math.abs(storeLayout.buttons[0].top-storeLayout.buttons[1].top)<2&&storeLayout.buttons.every(b=>b.height>=39),'Purchase currencies should share one accessible row: '+JSON.stringify(storeLayout));
     assert.ok(storeLayout.navScroll>storeLayout.navWidth,'Mobile categories should scroll horizontally');
   }
   assert.equal(storeLayout.artFit,'xMidYMid meet','Fallback artwork must never be cropped');

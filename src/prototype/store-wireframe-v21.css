@@ -126,3 +126,62 @@ body[data-route="store"] .main{padding-bottom:max(118px,calc(96px + env(safe-are
  body[data-route="lobby"] .bn-wallet-pill .bn-gd-wallet-coin,body[data-route="store"] .bn-wallet-pill .bn-gd-wallet-coin{width:20px;height:20px;flex-basis:20px}
  body[data-route="lobby"] .bn-wallet-pill .bn-wallet-add,body[data-route="store"] .bn-wallet-pill .bn-wallet-add{width:22px;height:24px}
 }
+
+/* Compact phone catalogue. Desktop composition is intentionally untouched.
+ * Full, uncropped art fits a small thumbnail; the featured item keeps a
+ * wider artwork strip. Purchase methods sit next to one another. */
+@media(max-width:579px){
+ body[data-route="store"] .tp-store-page{gap:10px!important;padding-bottom:12px!important}
+ body[data-route="store"] .tp-store-grid{gap:9px!important}
+ body[data-route="store"] .bn-store-featured{gap:5px}
+ body[data-route="store"] .bn-store-featured h2,.bn-store-list-title{font-size:23px}
+ body[data-route="store"] .bn-store-categories{gap:12px;padding-bottom:2px}
+ body[data-route="store"] .bn-store-category{min-height:38px;font-size:12px}
+ body[data-route="store"] .tp-store-card{
+   display:grid;grid-template-columns:clamp(88px,29vw,116px) minmax(0,1fr);
+   grid-template-rows:auto auto;align-items:stretch;border-radius:11px;
+ }
+ body[data-route="store"] .tp-store-card .tp-store-preview{
+   grid-column:1;grid-row:1;align-self:center;aspect-ratio:1;
+   width:100%;height:auto!important;min-height:0!important;max-height:116px!important;
+   border:0;border-radius:8px;margin:0;box-sizing:border-box;
+ }
+ body[data-route="store"] .tp-store-card .tp-store-preview.is-fleet{padding:5px;gap:3px}
+ body[data-route="store"] .tp-store-card .tp-store-preview.is-fleet>img{width:28%;height:90%}
+ body[data-route="store"] .tp-store-card .bn-collection-cover{gap:3px;padding:4px}
+ body[data-route="store"] .tp-store-card .tp-store-card-text{
+   grid-column:2;grid-row:1;min-width:0;padding:8px!important;gap:4px;
+ }
+ body[data-route="store"] .tp-store-card-meta{font-size:9px;gap:4px;flex-wrap:wrap}
+ body[data-route="store"] .tp-store-card .tp-store-tag{font-size:9px;padding:2px 5px;white-space:normal}
+ body[data-route="store"] .tp-store-card h3{font-size:22px;line-height:1.05;overflow-wrap:anywhere}
+ body[data-route="store"] .tp-store-card p{font-size:11px;line-height:1.35}
+ body[data-route="store"] .tp-store-card .bn-product-perk{font-size:10px;line-height:1.3}
+ body[data-route="store"] .tp-store-card .bn-taunt-phrase{margin-top:2px;padding:3px 5px;font-size:10px}
+ body[data-route="store"] .tp-store-card .bn-bundle-items{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+ body[data-route="store"] .tp-store-card .bn-bundle-items strong{font-size:11px}
+ body[data-route="store"] .tp-store-card .bn-bundle-items small{flex-basis:100%;font-size:10px;line-height:1.3}
+ body[data-route="store"] .tp-store-card .tp-store-card-footer{
+   grid-column:1/-1;grid-row:2;display:flex;flex-direction:column;
+   padding:6px 8px 8px!important;gap:4px;
+ }
+ body[data-route="store"] .tp-store-card .tp-store-price{font-size:12px;line-height:1.2}
+ body[data-route="store"] .tp-store-card .tp-store-card-footer>div{flex-direction:row!important;gap:5px!important;align-items:stretch}
+ body[data-route="store"] .tp-store-card .tp-store-card-footer .btn{
+   flex:1 1 0;min-width:0;min-height:40px;font-size:11px;padding:5px 4px;
+   line-height:1.2;white-space:normal;overflow-wrap:anywhere;
+ }
+ body[data-route="store"] .tp-store-card.is-featured{
+   grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;
+ }
+ body[data-route="store"] .tp-store-card.is-featured .tp-store-preview{
+   grid-column:1;grid-row:1;aspect-ratio:auto;
+   height:clamp(100px,31vw,136px)!important;max-height:136px!important;
+   border-radius:0;border-bottom:1px solid #aa85474d;
+ }
+ body[data-route="store"] .tp-store-card.is-featured .tp-store-card-text{
+   grid-column:1;grid-row:2;padding:8px 10px!important;
+ }
+ body[data-route="store"] .tp-store-card.is-featured h3{font-size:26px}
+ body[data-route="store"] .tp-store-card.is-featured .tp-store-card-footer{grid-row:3}
+}
