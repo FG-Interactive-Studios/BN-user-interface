@@ -97,3 +97,5 @@
 
 /* Active fleet showcase and category-specific inventory views. */
 @import './fleet-equipment.css';
+
+@import './placement-preview.css';

@@ -124,9 +124,27 @@ try {
    }
    await page.screenshot({path:'artifacts/figma-placement/fleet-empty-'+viewport.width+'.png',fullPage:true});
 
-   // No out-of-bounds placement can overwrite the draft.
+   // Hover never commits, and an invalid edge cannot extend the board grid.
+   const cell=(r,c)=>page.locator('.bn-placement-board-wrap [data-coord="'+r+','+c+'"]');
+   await cell(0,8).hover();
+   assert.equal(await page.locator('.placement-preview-invalid').count(),2);
+   assert.equal(await page.locator('.bn-placement-ghost').count(),0);
+   assert.equal(await shipCells(),0);
    await clickCell(0,8);
    assert.equal(await shipCells(),0);
+   await cell(0,0).hover();
+   assert.equal(await page.locator('.placement-preview-valid').count(),5);
+   assert.equal(await page.locator('.bn-placement-ghost.is-horizontal').count(),1);
+   assert.equal(await shipCells(),0);
+   assert.equal(calls.put.length,0);
+   await page.keyboard.press('r');
+   assert.equal(await page.locator('.bn-placement-ghost.is-vertical').count(),1);
+   assert.equal(await page.locator('[data-coord="4,0"].placement-preview-valid').count(),1);
+   assert.equal(await shipCells(),0);
+   await page.keyboard.press('r');
+   assert.equal(await page.locator('.bn-placement-ghost.is-horizontal').count(),1);
+   await page.locator('.bn-placement-instruction').hover();
+   assert.equal(await page.locator('.bn-placement-ghost').count(),0);
    await clickCell(0,0);
    assert.equal(await shipCells(),5);
 
@@ -134,6 +152,13 @@ try {
    await page.locator('[data-action="select-placement-ship"][data-item-id="SUBMARINE"]').click();
    assert.equal(await page.locator('[data-item-id="SUBMARINE"]').getAttribute('aria-pressed'),'true');
    await page.locator('[data-action="rotate-placement"]').click();
+   await cell(0,2).hover();
+   assert.equal(await page.locator('.placement-preview-invalid').count(),3);
+   assert.equal(await shipCells(),5);
+   await clickCell(0,2);
+   assert.equal(await shipCells(),5);
+   await cell(5,8).hover();
+   assert.equal(await page.locator('.placement-preview-valid').count(),3);
    await clickCell(5,8);
    assert.equal(await shipCells(),8);
 
@@ -171,6 +196,8 @@ try {
    assert.equal(calls.confirm,1,'Server confirmation must be called');
    assert.equal(await page.locator('.bn-placement-confirm').isDisabled(),true);
    assert.match(await page.locator('.bn-placement-confirm').innerText(),/confirmadas/i);
+   assert.equal(await page.locator('.bn-placement-ghost').count(),0);
+   assert.equal(await page.locator('.placement-preview-valid,.placement-preview-invalid').count(),0);
    await page.screenshot({path:'artifacts/figma-placement/fleet-confirmed-'+viewport.width+'.png',fullPage:true});
 
    assert.deepEqual(errors,[],'JavaScript errors '+viewport.width);

@@ -1,4 +1,4 @@
-import { esc, renderBoard, shipName } from './board.js';
+import { esc, renderBoard, shipName, occupiedCells, keyOf } from './board.js';
 import { shipArt } from './ship-art.js';
 
 /** Figma "Sua frota" layout; the existing board renderer/CSS remain authoritative. */
@@ -8,6 +8,20 @@ const iconClear = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 /** Display-name exception within this approved Figma screen only. */
 const displayShipName = (id) => id === 'DESTROYER' ? 'Destróier' : shipName(id);
+
+/** One pure plan for the ghost preview AND the actual placement click. */
+export function planPlacement({mode,ships=[],selectedShipId,orientation,anchor}){
+  if(!anchor||mode?.geometry?.kind!=='RECTANGULAR'||!mode.placementDirections?.includes(orientation))return null;
+  const chosen=mode.fleet.find(s=>s.id===selectedShipId)||mode.fleet.find(s=>!ships.some(p=>p.type===s.id));
+  if(!chosen)return null;
+  const candidate={type:chosen.id,row:anchor.row,col:anchor.col,orientation};
+  const rest=ships.filter(s=>s.type!==chosen.id);
+  const cells=occupiedCells([candidate],mode),occupied=occupiedCells(rest,mode);
+  const playable=new Set(mode.geometry.cells.map(keyOf));
+  const inside=[...cells].every(key=>playable.has(key));
+  const overlaps=[...cells].some(key=>occupied.has(key));
+  return {candidate,length:chosen.length,cells,inside,valid:inside&&!overlaps,proposed:[...rest,candidate]};
+}
 
 export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId, orientation, skin }) {
   const ships = draft ?? (preparation.yourShips || []);
@@ -23,7 +37,7 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
   const hint = preparation.fleetConfirmed
     ? 'Sua frota está confirmada. Aguarde a confirmação do adversário.'
     : canManual
-      ? 'Toque em um navio e depois no tabuleiro para posicioná-lo.'
+      ? 'Passe o mouse para prever. Clique ou toque para posicionar.'
       : 'Use Aleatório para posicionar a frota neste modo de jogo.';
 
   const cards = mode.fleet.map(def => {
@@ -71,8 +85,8 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
       </section>
       <div class="bn-placement-tools" aria-label="Ferramentas de posicionamento">
         <button type="button" class="bn-placement-tool" data-action="rotate-placement"
-          ${!canRotate?'disabled':''} aria-label="Girar embarcação selecionada">
-          <span class="bn-placement-tool-icon">${iconRotate}</span><span>Girar</span>
+          ${!canRotate?'disabled':''} aria-label="Girar embarcação selecionada" title="Girar (R) · ${orientation==='VERTICAL'?'Vertical':'Horizontal'}" aria-keyshortcuts="R">
+          <span class="bn-placement-tool-icon">${iconRotate}</span><span>Girar <span class="bn-placement-orientation">(${orientation==='VERTICAL'?'V':'H'})</span></span>
         </button>
         <button type="button" class="bn-placement-tool" data-action="random-placement"
           ${!editable?'disabled':''} aria-label="Gerar posições aleatórias">

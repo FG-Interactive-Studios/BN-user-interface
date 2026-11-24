@@ -1,0 +1,28 @@
+/* Placement-only ghost: keep actual ship cells, board geometry and hit targets intact. */
+body[data-route="placement"] .bn-placement-board-wrap .board-main{position:relative}
+body[data-route="placement"] .bn-placement-board-wrap .cell.placement-preview-valid{
+  background:#177b63!important;box-shadow:inset 0 0 0 2px #7effcd!important;
+}
+body[data-route="placement"] .bn-placement-board-wrap .cell.placement-preview-invalid{
+  background:#842e36!important;box-shadow:inset 0 0 0 2px #ff8686!important;
+}
+body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost{
+  pointer-events:none!important;position:absolute!important;z-index:12!important;opacity:.68;
+  inset:0;min-width:0;min-height:0;display:grid;place-items:center;overflow:hidden;container-type:size;
+}
+body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost *{pointer-events:none!important}
+body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost.is-invalid{opacity:.42;filter:sepia(.8) saturate(4) hue-rotate(325deg)}
+.bn-placement-orientation{font-size:.8em;color:#a5d5da}
+
+/* Original GD ship artwork is vertical. Bound it to the ghost's exact grid area. */
+body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost>img{
+  position:absolute!important;left:50%!important;top:50%!important;
+  right:auto!important;bottom:auto!important;margin:0!important;
+  min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;
+  width:100cqw!important;height:100cqh!important;object-fit:contain!important;
+  transform:translate(-50%,-50%)!important;
+}
+body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost.is-horizontal>img{
+  width:100cqh!important;height:100cqw!important;
+  transform:translate(-50%,-50%) rotate(90deg)!important;
+}
