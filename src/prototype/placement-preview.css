@@ -38,3 +38,14 @@ body[data-route="placement"] .bn-placement-board-wrap .bn-placement-ghost.is-hor
   width:100cqh!important;height:100cqw!important;
   transform:translate(-50%,-50%) rotate(90deg)!important;
 }
+
+/* Preserve the green/red footprint even beneath transparent sprite art. */
+body[data-route="placement"] .bn-placement-board-wrap .cell.placement-preview-valid,
+body[data-route="placement"] .bn-placement-board-wrap .cell.placement-preview-invalid{
+  position:relative;
+}
+body[data-route="placement"] .bn-placement-board-wrap .cell.placement-preview-valid::after,
+body[data-route="placement"] .bn-placement-board-wrap .cell.placement-preview-invalid::after{
+  content:"";position:absolute;inset:1px;pointer-events:none;border:1px solid #9bffda;border-radius:2px;
+}
+body[data-route="placement"] .bn-placement-board-wrap .cell.placement-preview-invalid::after{border-color:#ff9999}

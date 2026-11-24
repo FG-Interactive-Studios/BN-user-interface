@@ -1224,7 +1224,7 @@ function selectCell(row,col,side='ENEMY'){
   } else if(route==='placement'){
     if(state.preparation?.fleetConfirmed||mode.geometry.kind!=='RECTANGULAR')return;
     const plan=placementPlan({row,col});
-    if(!plan)return notice('Selecione um navio para reposicioná-lo ou confirme a frota.',false);
+    if(!plan)return;
     if(!plan.valid)return notice('Posição inválida ou sobreposta. Escolha outra célula.',true);
     // Preview never edits the draft; only a valid click commits this plan.
     state.draft=plan.proposed;
@@ -1267,8 +1267,9 @@ function bindEvents() {
     // Pointerup commits a touch placement. Suppress its browser-generated click,
     // including a click retargeted after the DOM has been rebuilt.
     if(currentRoute()==='placement'&&lastPlacementTouch&&performance.now()-lastPlacementTouch.at<700&&
-      (event.pointerType==='touch'||event.sourceCapabilities?.firesTouchEvents||
-       (event.detail>0&&Math.abs(event.clientX-lastPlacementTouch.x)<4&&Math.abs(event.clientY-lastPlacementTouch.y)<4))){
+      Math.abs(event.clientX-lastPlacementTouch.x)<12&&Math.abs(event.clientY-lastPlacementTouch.y)<12&&
+      (event.pointerType==='touch'||event.sourceCapabilities?.firesTouchEvents||event.detail>0)&&
+      (event.target===root||event.target.closest('.bn-placement-board-wrap'))){
       event.preventDefault();lastPlacementTouch=null;return;
     }
     const target=event.target.closest('[data-coord]');
