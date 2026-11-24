@@ -102,7 +102,7 @@ try {
  await shop.waitForFunction(()=>document.querySelector('.bn-wallet-pill.is-free strong')?.textContent==='210');
  assert.equal(wallet.credits,210,'Fake currency must be deducted by purchase');
  await shop.locator('[data-action="store-equip"][data-item-id="taunt_banter"]').click();
- await shop.waitForFunction(()=>document.querySelector('.tp-store-card.is-taunt .tp-store-tag.is-equipped')?.textContent==='Equipado');
+ await shop.locator('.tp-store-card').filter({hasText:'Tio do Pavê Naval'}).locator('.tp-store-tag.is-equipped').waitFor({timeout:10000});
  assert.equal(wallet.items[3].equipped,true,'New pack must be equipped server-side');
  assert.equal(purchases,1);assert.equal(equipments,1);
  await shop.screenshot({path:'artifacts/chaos-economy/shop-desktop.png',fullPage:true});
