@@ -52,25 +52,25 @@ body[data-route="result"] .bn-finale-effects {
   position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none;
 }
 body[data-route="result"] .bn-finale-particle {
-  position:absolute;top:-10%;left:calc(4% + var(--i)*8%);
+  position:absolute;top:-10%;left:4%;
   font-size:clamp(15px,2.2vw,30px);
   opacity:0;filter:drop-shadow(0 3px 6px #0007);
-  animation:bn-finale-fall calc(1.3s + var(--i)*.07s) ease-out both;
-  animation-delay:calc(var(--i)*.035s);
+  animation:bn-finale-fall 1.65s ease-out both;
+  animation-delay:var(--delay,0s);
 }
 body[data-route="result"] .bn-result-stage.is-defeat .bn-finale-particle {
   animation-duration:1.1s;
 }
-body[data-route="result"] .bn-result-stage.is-victory .bn-report-hero h1{
+body[data-route="result"] .bn-result-stage.is-celebrating.is-victory .bn-report-hero h1{
   animation:bn-finale-pop .58s cubic-bezier(.2,1.65,.45,1) both;
 }
-body[data-route="result"] .bn-result-stage.is-defeat .bn-report-hero h1{
+body[data-route="result"] .bn-result-stage.is-celebrating.is-defeat .bn-report-hero h1{
   animation:bn-finale-sad .55s ease-in-out both;
 }
 @keyframes bn-finale-fall{
   0% {opacity:0;transform:translate3d(0,-20px,0) rotate(0deg);}
   17% {opacity:1;}
-  100% {opacity:0;transform:translate3d(calc((var(--i) - 6)*3vw),90dvh,0) rotate(520deg);}
+  100% {opacity:0;transform:translate3d(var(--drift,20px),90dvh,0) rotate(520deg);}
 }
 @keyframes bn-finale-pop {
   0%{transform:scale(.78);opacity:.35;}
@@ -107,6 +107,6 @@ body[data-route="result"] .bn-result-stage.is-defeat .bn-report-hero h1{
 }
 @media(prefers-reduced-motion:reduce){
   body[data-route="result"] .bn-finale-particle{animation:none!important;display:none!important;}
-  body[data-route="result"] .bn-result-stage.is-victory .bn-report-hero h1,
-  body[data-route="result"] .bn-result-stage.is-defeat .bn-report-hero h1{animation:none!important;}
+  body[data-route="result"] .bn-result-stage.is-celebrating.is-victory .bn-report-hero h1,
+  body[data-route="result"] .bn-result-stage.is-celebrating.is-defeat .bn-report-hero h1{animation:none!important;}
 }
