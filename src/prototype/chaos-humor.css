@@ -103,3 +103,13 @@ body[data-route="store"] .bn-taunt-phrase {
   background-image:url('/assets/gd/gd-icons.webp');
   background-size:400% 400%;background-repeat:no-repeat;
 }
+
+/* Native GD currencies: Marinha = earned credits; Naval = premium demo. */
+.bn-gd-wallet-coin{
+  display:inline-block;flex:0 0 33px;width:33px;height:33px;
+  background-image:url('/assets/gd/gd-icons.webp');
+  background-repeat:no-repeat;background-size:400% 400%;
+  border-radius:50%;
+}
+.bn-gd-wallet-coin.is-marine{background-position:66.667% 66.667%}
+.bn-gd-wallet-coin.is-naval{background-position:100% 66.667%}
