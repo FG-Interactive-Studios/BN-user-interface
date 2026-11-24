@@ -161,12 +161,21 @@ try {
     const images=page.locator(selector);
     assert.ok(await images.count()>0,'Missing artwork: '+selector);
     for(const img of await images.all()){
-      const result=await img.evaluate(async (el,frameSelector)=>{
-        try{await el.decode()}catch{return {decoded:false}};
-        const b=el.getBoundingClientRect(),f=el.closest(frameSelector).getBoundingClientRect();
-        return {decoded:el.naturalWidth>0,inside:b.left>=f.left-1&&b.right<=f.right+1&&b.top>=f.top-1&&b.bottom<=f.bottom+1,fit:getComputedStyle(el).objectFit};
-      },frameSelector);
-      assert.ok(result.decoded&&result.inside&&result.fit==='contain','Artwork escaped frame: '+JSON.stringify(result)+' at '+viewport.width);
+      // Lazy images below the fold must enter the viewport before decoding.
+      // A catalog refresh can replace DOM nodes; retry against the live locator.
+      await img.scrollIntoViewIfNeeded();
+      let result;
+      for(let attempt=0;attempt<4;attempt++){
+        result=await img.evaluate(async (el,frameSelector)=>{
+          try{await el.decode()}catch(error){return {decoded:false,src:el.getAttribute('src'),connected:el.isConnected,error:String(error)};}
+          if(!el.isConnected)return {decoded:false,connected:false,src:el.getAttribute('src')};
+          const b=el.getBoundingClientRect(),f=el.closest(frameSelector).getBoundingClientRect();
+          return {decoded:el.naturalWidth>0,inside:b.left>=f.left-1&&b.right<=f.right+1&&b.top>=f.top-1&&b.bottom<=f.bottom+1,fit:getComputedStyle(el).objectFit,src:el.getAttribute('src')};
+        },frameSelector);
+        if(result.decoded)break;
+        await img.scrollIntoViewIfNeeded();
+      }
+      assert.ok(result.decoded&&result.inside&&result.fit==='contain','Artwork escaped frame or failed to load: '+JSON.stringify(result)+' at '+viewport.width);
     }
   }
   await verifyArtBounds('.bn-equipment-ship-art img','.bn-equipment-ship-art');
