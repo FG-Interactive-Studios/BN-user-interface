@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {statSync} from 'node:fs';
 import {GD_ASSETS} from '../src/prototype/gd-assets.js';
-import {shipArt,captainArt,captainMoods} from '../src/prototype/ship-art.js';
+import {shipArt,captainArt,captainMoods,createCaptainMoodTracker} from '../src/prototype/ship-art.js';
 import {renderBoard} from '../src/prototype/board.js';
 import {renderProductCover} from '../src/prototype/store-ui.js';
 const paths=[...Object.values(GD_ASSETS.fleets).flatMap(p=>Object.values(p).flatMap(Object.values)),...Object.values(GD_ASSETS.captains).flatMap(Object.values),...Object.values(GD_ASSETS.covers)];
@@ -13,6 +13,20 @@ assert.match(captainArt('captain_overlord','damage'),/damage.jpg/);
 assert.match(renderProductCover({id:'skin_pirate',category:'SKIN'}),/banner.jpg/);
 const mode={geometry:{kind:'RECTANGULAR',rows:2,columns:2,cells:[{row:0,col:0},{row:0,col:1},{row:1,col:0},{row:1,col:1}]},fleet:[{id:'DESTROYER',length:2}]};
 const ship={type:'DESTROYER',row:0,col:0,orientation:'HORIZONTAL'};
+for(const skin of [undefined,null,'skin_classic','skin_default']){
+ assert.match(shipArt('DESTROYER',skin),/skin_default\/destroyer-intact/);
+ assert.match(renderBoard(mode,{ships:[ship],skin}),/skin_default\/destroyer-intact/);
+ assert.ok(!renderBoard(mode,{skin}).includes('bn-gd-ship-overlay'));
+}
+const tracker=createCaptainMoodTracker();
+const first={matchId:'qa',revision:1,shotsFired:[],shotsReceived:[]};
+assert.deepEqual(tracker.update(first),{mine:'neutral',rival:'neutral'});
+const hit={...first,revision:4,shotsFired:[{row:0,col:0,hit:true}]};
+assert.deepEqual(tracker.update(hit),{mine:'hit',rival:'damage'});
+assert.deepEqual(tracker.update(hit),{mine:'hit',rival:'damage'});
+assert.deepEqual(tracker.update({...hit,revision:5}),{mine:'hit',rival:'damage'});
+assert.deepEqual(tracker.update({...hit,revision:6,shotsReceived:[{row:1,col:1,hit:false}]}),{mine:'neutral',rival:'neutral'});
+assert.deepEqual(tracker.update({...first,matchId:'next'}),{mine:'neutral',rival:'neutral'});
 const own=renderBoard(mode,{ships:[ship],skin:'skin_pirate',hits:[{row:0,col:0},{row:0,col:1}]});
 assert.match(own,/destroyer-sunk.webp/);
 assert.equal((own.match(/data-cell=/g)||[]).length,4);
