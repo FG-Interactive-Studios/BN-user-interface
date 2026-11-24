@@ -16,7 +16,7 @@ import { renderFigmaResult } from './figma-result.js';
 import {buildMatchReport,ridiculousAward} from './match-report.js';
 import { renderFigmaProfile } from './figma-profile.js';
 import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
-import { renderFigmaPlacement, planPlacement } from './figma-placement.js';
+import { renderFigmaPlacement, planPlacement, chosenPlacementShip } from './figma-placement.js';
 import { renderZipBattle } from './zip-battle.js';
 import {renderAdminPanel} from './admin-panel.js';
 import {planAbility, ABILITY_DIRECTIONS, abilityNeedsDirection, directionText} from './ability-targeting.js';
@@ -42,6 +42,8 @@ const audio=new AudioManager({packs:audioPacks});
 const audioEvents=new AudioEvents();
 const captainMoodTracker=createCaptainMoodTracker();
 let audioRoute='';
+let placementTouch=null;
+let lastPlacementTouch=null;
 let storeLoadGeneration=0;
 const rewardReceipts=new Map();
 const rewardRequests=new Set();
@@ -538,13 +540,12 @@ function rotatePlacement(){
   const mode=state.preparation?.mode||activeMode();
   if(currentRoute()!=='placement'||state.busy||!state.preparation||state.preparation.fleetConfirmed||mode?.geometry.kind!=='RECTANGULAR')return;
   const directions=mode.placementDirections||[];
-  if(!directions.includes('HORIZONTAL')||!directions.includes('VERTICAL'))return;
+  if(!directions.includes('HORIZONTAL')||!directions.includes('VERTICAL')||!chosenPlacementShip(mode,state.draft??state.preparation.yourShips??[],state.placementShip))return;
   state.orientation=state.orientation==='HORIZONTAL'?'VERTICAL':'HORIZONTAL';
   const button=root.querySelector('[data-action="rotate-placement"]');
   if(button){
     button.title='Girar (R) · '+(state.orientation==='VERTICAL'?'Vertical':'Horizontal');
-    const indicator=button.querySelector('.bn-placement-orientation');
-    if(indicator)indicator.textContent=state.orientation==='VERTICAL'?'(V)':'(H)';
+
   }
   paintPlacementPreview();
 }
@@ -755,7 +756,7 @@ function render(){ if (!root) return;
     route=resolvedRoute(route,true,state.lobby?.status);
     history.replaceState(null,'',`${location.pathname}${location.search}#${route}`);
   }
-  if(route!=='placement'||state.preparation?.fleetConfirmed)state.placementHover=null;
+  if(route!=='placement'||state.preparation?.fleetConfirmed){state.placementHover=null;placementTouch=null;}
   if(route!=='match'||state.battle?.status==='FINISHED'){state.skillMode=null;clearSkillTargeting();state.skillDialog=false;}
   if(route==='admin'&&state.profile?.admin!==true&&api.isAuthenticated()){
     history.replaceState(null,'',`${location.pathname}${location.search}#lobby`);
@@ -1108,7 +1109,7 @@ async function runAction(action,itemId=null) {
       const mode=activeMode();
       if(currentRoute()!=='placement'||state.preparation?.fleetConfirmed||!mode?.fleet.some(s=>s.id===itemId))break;
       if(mode.geometry.kind!=='RECTANGULAR')break;
-      state.placementShip=itemId;
+      state.placementShip=itemId;state.placementHover=null;
       const selectedPlacement=(state.draft??state.preparation?.yourShips??[]).find(s=>s.type===itemId);
       if(selectedPlacement && mode.placementDirections?.includes(selectedPlacement.orientation))
         state.orientation=selectedPlacement.orientation;
@@ -1116,7 +1117,7 @@ async function runAction(action,itemId=null) {
     }
     case 'rotate-placement':rotatePlacement();break;
     case 'save-placement':await guard(async()=>{state.preparation=await api.put('/matches/me/placement',{ships:state.draft});state.draft=[...state.preparation.yourShips];notice('Frota validada e salva pela API.');});break;
-    case 'confirm-placement':await guard(async()=>{
+    case 'confirm-placement':if(currentRoute()!=='placement'||state.preparation?.fleetConfirmed||!state.preparation||root.querySelector('.bn-placement-confirm')?.disabled)break;await guard(async()=>{
       if (state.draft!==null && JSON.stringify(state.draft)!==JSON.stringify(state.preparation.yourShips)) state.preparation=await api.put('/matches/me/placement',{ships:state.draft});
       state.preparation=await api.post('/matches/me/placement/confirm');state.draft=[...state.preparation.yourShips];state.placementShip=null;await reconcile();
     });break;
@@ -1223,13 +1224,13 @@ function selectCell(row,col,side='ENEMY'){
   } else if(route==='placement'){
     if(state.preparation?.fleetConfirmed||mode.geometry.kind!=='RECTANGULAR')return;
     const plan=placementPlan({row,col});
-    if(!plan)return notice('Selecione um navio para reposicioná-lo ou confirme a frota.',false);
+    if(!plan)return;
     if(!plan.valid)return notice('Posição inválida ou sobreposta. Escolha outra célula.',true);
     // Preview never edits the draft; only a valid click commits this plan.
     state.draft=plan.proposed;
     state.placementHover=null;
     audio.play('ship_placement');
-    state.placementShip=mode.fleet.find(s=>!plan.proposed.some(d=>d.type===s.id))?.id||plan.candidate.type;
+    state.placementShip=mode.fleet.find(s=>!plan.proposed.some(d=>d.type===s.id))?.id||null;
     state.notice='';render();
   }
 }
@@ -1263,13 +1264,59 @@ function bindEvents() {
     event.preventDefault(); void handleForm(form);
   });
   root.addEventListener('click',event=>{
+    // Pointerup commits a touch placement. Suppress its browser-generated click,
+    // including a click retargeted after the DOM has been rebuilt.
+    if(currentRoute()==='placement'&&lastPlacementTouch&&performance.now()-lastPlacementTouch.at<700&&
+      Math.abs(event.clientX-lastPlacementTouch.x)<12&&Math.abs(event.clientY-lastPlacementTouch.y)<12&&
+      (event.pointerType==='touch'||event.sourceCapabilities?.firesTouchEvents||event.detail>0)&&
+      (event.target===root||event.target.closest('.bn-placement-board-wrap'))){
+      event.preventDefault();lastPlacementTouch=null;return;
+    }
     const target=event.target.closest('[data-coord]');
     if(target){const [row,col]=target.dataset.coord.split(',').map(Number);selectCell(row,col,target.closest('.zip-own-board,.combat-left-rail')?'OWN':'ENEMY');return;}
     const action=event.target.closest('[data-action]');if(action){if(!action.disabled&&!['fire','activate-ability','toggle-setting'].includes(action.dataset.action))audio.play('ui_click');void runAction(action.dataset.action,action.dataset.abilityId||action.dataset.itemId);return;}
     const link=event.target.closest('[data-go]');if(link){audio.play('ui_click');go(link.dataset.go);}
   });
+  // Capture on the persistent SPA root, not a cell that can be replaced by a
+  // server snapshot. Hit-test by coordinates because captured events target root.
+  const touchCell=event=>document.elementFromPoint(event.clientX,event.clientY)?.closest('.bn-placement-board-wrap [data-coord]')||null;
+  root.addEventListener('pointerdown',event=>{
+    if(currentRoute()!=='placement'||event.pointerType!=='touch'||!event.isPrimary||placementTouch)return;
+    const cell=touchCell(event);
+    if(!cell||state.busy||state.preparation?.fleetConfirmed)return;
+    const [row,col]=cell.dataset.coord.split(',').map(Number);
+    if(!placementPlan({row,col}))return;
+    event.preventDefault();
+    lastPlacementTouch=null;
+    placementTouch={id:event.pointerId};
+    try{root.setPointerCapture(event.pointerId);}catch{}
+    placementHoverCell(cell);
+  },{passive:false});
+  root.addEventListener('pointermove',event=>{
+    if(placementTouch?.id!==event.pointerId)return;
+    event.preventDefault();placementHoverCell(touchCell(event));
+  },{passive:false});
+  root.addEventListener('pointerup',event=>{
+    if(placementTouch?.id!==event.pointerId)return;
+    event.preventDefault();
+    const cell=touchCell(event);
+    placementTouch=null;
+    lastPlacementTouch={at:performance.now(),x:event.clientX,y:event.clientY};
+    state.placementHover=null;paintPlacementPreview();
+    try{root.releasePointerCapture(event.pointerId);}catch{}
+    if(cell&&currentRoute()==='placement'){
+      const [row,col]=cell.dataset.coord.split(',').map(Number);
+      selectCell(row,col);
+    }
+  },{passive:false});
+  const cancelPlacementTouch=event=>{
+    if(placementTouch?.id!==event.pointerId)return;
+    placementTouch=null;placementHoverCell(null);
+  };
+  root.addEventListener('pointercancel',cancelPlacementTouch);
+  root.addEventListener('lostpointercapture',cancelPlacementTouch);
   root.addEventListener('pointerover',event=>{
-    if(currentRoute()==='placement'&&event.pointerType!=='touch'){placementHoverCell(event.target);return;}
+    if(currentRoute()==='placement'){if(!placementTouch&&event.pointerType!=='touch')placementHoverCell(event.target);return;}
     if(state.skillMode&&currentRoute()==='match'){
       const cell=event.target.closest('[data-coord]');
       if(cell)paintAbilityPreview(cell);
@@ -1277,7 +1324,7 @@ function bindEvents() {
   });
   root.addEventListener('pointerout',event=>{
     if(currentRoute()==='placement'){
-      if(!event.relatedTarget?.closest?.('.bn-placement-board-wrap [data-coord]'))placementHoverCell(null);
+      if(!placementTouch&&!event.relatedTarget?.closest?.('.bn-placement-board-wrap [data-coord]'))placementHoverCell(null);
       return;
     }
     if(!state.skillMode||currentRoute()!=='match')return;
@@ -1289,7 +1336,7 @@ function bindEvents() {
     if(state.skillMode&&currentRoute()==='match'&&event.target.matches('[data-coord]'))paintAbilityPreview(event.target);
   });
   root.addEventListener('focusout',event=>{
-    if(currentRoute()==='placement'&&event.target.matches('.bn-placement-board-wrap [data-coord]:focus-visible')){placementHoverCell(null);return;}
+    if(currentRoute()==='placement'&&!placementTouch&&event.target.matches('.bn-placement-board-wrap [data-coord]:focus-visible')){placementHoverCell(null);return;}
     if(state.skillMode&&currentRoute()==='match'&&event.target.matches('[data-coord]'))paintAbilityPreview(null);
   });
   // Document-level shortcut still works when a placement click has rebuilt the DOM.
