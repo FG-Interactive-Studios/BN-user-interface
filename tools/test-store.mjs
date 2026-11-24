@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { renderCosmeticStore } from '../src/prototype/store-ui.js';
+import { renderCosmeticStore, renderProductCover } from '../src/prototype/store-ui.js';
 const items=[
  {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Padrão',price:0,enabled:true,owned:true,equipped:true},
  {id:'skin_coral',category:'SKIN',name:'Coral',description:'Cosmético',price:90,enabled:true,owned:false,equipped:false},
@@ -40,4 +40,9 @@ assert.ok(!renderCosmeticStore({credits:0,items:[{...items[3],enabled:true}]})
 const escaped=renderCosmeticStore({credits:0,items:[{...items[1],name:'<script>',description:'<img src=x onerror=alert(1)>'}]});
 assert.ok(!escaped.includes('<script>'));assert.ok(!escaped.includes('<img src=x'));
 assert.ok(!renderCosmeticStore({credits:0,items},{filter:'SOUND'}).includes('skin_default'));
+assert.equal((html.match(/data-product-cover="true"/g)||[]).length,items.length);
+assert.notEqual(renderProductCover(items[0]),renderProductCover(items[1]));
+assert.match(renderProductCover({id:'unknown',category:'OTHER'}),/COSMÉTICO/);
+assert.ok(!renderProductCover({id:'<script>',category:'<script>'}).includes('<script>'));
+assert.ok(!renderProductCover({id:'__proto__',category:'OTHER'}).includes('undefined'));
 console.log('TidePoint: catálogo de cosméticos, compras e filtros: OK');
