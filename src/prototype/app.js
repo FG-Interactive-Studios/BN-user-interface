@@ -693,7 +693,9 @@ function render(){ if (!root) return;
   }
   if(!['lobby','store'].includes(route)||renderedRoute&&renderedRoute!==route)state.walletDialog=null;
   const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen,admin:adminScreen};
+  const categoryScroll=route==='store'?root.querySelector('.bn-store-categories')?.scrollLeft:0;
   root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog()+(state.walletDialog?walletDialogMarkup(state.store,{currency:state.walletDialog,loading:state.busy||state.storeLoading,notice:state.notice,error:state.error}):'');
+  if(categoryScroll){const categories=root.querySelector('.bn-store-categories');if(categories)categories.scrollLeft=categoryScroll;}
   if(state.walletDialog){
     const dialog=root.querySelector('#bn-wallet-dialog');
     // Native dialog cancel does not bubble; attach directly to each rendered dialog.
@@ -784,7 +786,7 @@ async function runAction(action,itemId=null) {
       root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();break;
     }
     case 'store-category':
-      if(currentRoute()==='store'&&['ALL','SKIN','SOUND','TAUNT','CAPTAIN','BUNDLE','COSMETICS'].includes(itemId)){state.storeFilter=itemId;render();root.querySelector('.bn-store-category[data-item-id="'+itemId+'"]')?.focus();}
+      if(currentRoute()==='store'&&['ALL','SKIN','SOUND','TAUNT','CAPTAIN','BUNDLE','COSMETICS'].includes(itemId)){state.storeFilter=itemId;render();root.querySelector('.bn-store-category[data-item-id="'+itemId+'"]')?.focus({preventScroll:true});}
       break;
     case 'admin-refresh':
       if(currentRoute()==='admin'&&state.profile?.admin===true){

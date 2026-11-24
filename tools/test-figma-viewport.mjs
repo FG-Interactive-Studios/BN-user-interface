@@ -136,15 +136,22 @@ try {
   assert.equal(await page.locator('.tp-store-card').count(),3,'store must display live API items');
   const storeLayout=await page.evaluate(()=>{
     const rect=selector=>document.querySelector(selector).getBoundingClientRect();
-    return {page:rect('.tp-store-page').width,featured:rect('.bn-store-featured').width,hero:rect('.is-featured .tp-store-preview').width,heroHeight:rect('.is-featured .tp-store-preview').height,cover:rect('.tp-store-grid .tp-store-preview').width};
+    const nav=document.querySelector('.bn-store-categories');
+    const hero=rect('.is-featured .tp-store-preview'),card=rect('.is-featured');
+    return {page:rect('.tp-store-page').width,featured:rect('.bn-store-featured').width,heroWidth:hero.width,heroHeight:hero.height,cardWidth:card.width,cardTop:card.top,heroTop:hero.top,navWidth:nav.clientWidth,navScroll:nav.scrollWidth,navHeight:nav.clientHeight,navDisplay:getComputedStyle(nav).display,artFit:document.querySelector('.is-featured svg')?.getAttribute('preserveAspectRatio')};
   });
+  assert.ok(storeLayout.featured>=storeLayout.page-4,'Hero spans catalog width: '+JSON.stringify(storeLayout));
+  assert.equal(storeLayout.navDisplay,'flex');
+  assert.ok(storeLayout.navHeight<70,'Categories must remain a single row');
   if(viewport.width>=850){
-    assert.ok(storeLayout.page<=1042&&storeLayout.featured<=642,'Desktop feature must not fill the store: '+JSON.stringify(storeLayout));
-    assert.ok(storeLayout.hero<=242&&storeLayout.heroHeight<=152&&storeLayout.cover<=162,'Desktop artwork must be bounded: '+JSON.stringify(storeLayout));
+    assert.ok(storeLayout.page<=1122&&storeLayout.heroHeight<=254,'Desktop hero must remain shallow: '+JSON.stringify(storeLayout));
+    assert.ok(storeLayout.heroWidth<storeLayout.cardWidth*.65,'Desktop hero uses artwork and copy side by side');
   }else{
-    assert.ok(storeLayout.featured>=storeLayout.page-4,'Mobile feature keeps the original full-width composition');
-    assert.ok(storeLayout.heroHeight>=163,'Mobile featured artwork must remain prominent');
+    assert.ok(storeLayout.heroWidth>=storeLayout.cardWidth-4,'Mobile hero cover must use full card width');
+    assert.ok(Math.abs(storeLayout.heroWidth/storeLayout.heroHeight-16/9)<.06,'Mobile cover must preserve image proportions');
+    assert.ok(storeLayout.navScroll>storeLayout.navWidth,'Mobile categories should scroll horizontally');
   }
+  assert.equal(storeLayout.artFit,'xMidYMid meet','Fallback artwork must never be cropped');
   assert.match(await page.locator('.bn-wallet-pill.is-free strong').innerText(),/300/);
   assert.equal(await page.locator('.bn-wallet-pills').count(),1,'Store must display only one wallet in the sticky header');
   assert.equal(await page.locator('.bn-store-wallet').count(),0,'Redundant store wallet must be removed');

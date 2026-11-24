@@ -35,14 +35,39 @@ const ship='<path d="M-92 13 L-62 31 H53 L98 -10 H57 L45 -24 H10 V-43 H-24 V-26 
 const speech='<path d="M-77 -40 H40 Q62 -40 62 -18 V9 Q62 30 40 30 H-10 L-40 52 V30 H-77 Q-98 30 -98 9 V-18 Q-98 -40 -77 -40Z" fill="#ffffff" fill-opacity=".18" stroke="currentColor" stroke-width="3"/><path d="M5 -57 H75 Q95 -57 95 -37 V-17 Q95 3 75 3 H67" fill="none" stroke="currentColor" stroke-width="3"/><g fill="currentColor"><circle cx="-59" cy="-6" r="7"/><circle cx="-18" cy="-6" r="7"/><circle cx="23" cy="-6" r="7"/></g>';
 const sonar='<g fill="none" stroke="currentColor" stroke-width="2"><circle r="60"/><circle r="42"/><circle r="24"/><path d="M-65 0 H65 M0 -65 V65 M0 0 L50 -37"/></g><path d="M0 0 L60 -10 A60 60 0 0 0 35 -49Z" fill="currentColor" opacity=".25"/><g fill="currentColor"><circle cx="36" cy="-26" r="5"/><circle cx="-25" cy="15" r="4"/><circle cx="10" cy="38" r="3"/></g>';
 const captain='<path d="M-59 47 Q-58 10 -29 1 L29 1 Q58 10 59 47Z" fill="#b8cdda" stroke="currentColor" stroke-width="2"/><circle cy="-20" r="29" fill="#b8cdda"/><path d="M-36 -30 Q-40 -60 0 -61 Q40 -60 36 -30Z" fill="#23354e" stroke="currentColor" stroke-width="3"/><path d="M-39 -29 H39" stroke="currentColor" stroke-width="6"/><path d="M-16 7 L0 26 L16 7 M0 26 V45" fill="none" stroke="#38546b" stroke-width="4"/>';
+const collectionArt={
+  bundle_corsair:['skin_corsair','captain_corsair'],
+  bundle_space:['skin_space','captain_space']
+};
+const productHighlights={
+  sound_sonar:'4 efeitos de combate em 8 bits',
+  skin_default:'3 embarcações originais',
+  skin_corsair:'3 navios · estética corsária',
+  skin_space:'3 navios · frota futurista',
+  skin_pirate:'3 navios · estética pirata',
+  skin_magnate:'3 navios · frota magnata',
+  skin_overlord:'3 navios · frota Overlord'
+};
+function productTheme(item){
+  return Object.hasOwn(coverThemes,item.id)?coverThemes[item.id]:Object.hasOwn(expressionThemes,item.category)?[...expressionThemes[item.category],'COSMÉTICO']:genericTheme;
+}
 export function renderProductCover(item){
+  const pair=Object.hasOwn(collectionArt,item.id)?collectionArt[item.id]:null;
+  if(pair){
+    const [fleet,cap]=pair;
+    const fleetCover=coverArt(fleet);
+    return `<div class="tp-store-preview bn-gd-cover bn-collection-cover" data-product-cover="true" aria-hidden="true">
+      <div class="bn-collection-fleet">${fleetCover?`<img src="${fleetCover}" alt="" loading="lazy">`:`<div class="bn-fleet-line">${['SEARCH','DESTROYER','CARRIER'].map(id=>`<img src="${shipArt(id,fleet)}" alt="" loading="lazy">`).join('')}</div>`}</div>
+      <div class="bn-collection-captain"><img src="${captainArt(cap)}" alt="" loading="lazy"></div>
+    </div>`;
+  }
   const cover=coverArt(item.id);
   if(cover)return `<div class="tp-store-preview bn-gd-cover" data-product-cover="true" aria-hidden="true"><img src="${cover}" alt="" loading="lazy"></div>`;
   if(isOfficialCaptain(item.id))return `<div class="tp-store-preview bn-gd-cover is-portrait" data-product-cover="true" aria-hidden="true"><img src="${captainArt(item.id)}" alt="" loading="lazy"></div>`;
   if(isOfficialFleet(item.id))return `<div class="tp-store-preview bn-gd-cover is-fleet" data-product-cover="true" aria-hidden="true">${['SEARCH','DESTROYER','CARRIER'].map(id=>`<img src="${shipArt(id,item.id)}" alt="" loading="lazy">`).join('')}</div>`;
   const [dark,mid,accent,label]=Object.hasOwn(coverThemes,item.id)?coverThemes[item.id]:Object.hasOwn(expressionThemes,item.category)&&Object.hasOwn(EXPRESSION_ITEMS,item.id)?[...expressionThemes[item.category],EXPRESSION_ITEMS[item.id][0].toLocaleUpperCase('pt-BR')]:genericTheme;
   const art=EXPRESSIVE_CATEGORIES.includes(item.category)&&Object.hasOwn(EXPRESSION_ITEMS,item.id)?'<text text-anchor="middle" y="25" font-size="74" font-family="system-ui,sans-serif">'+EXPRESSION_ITEMS[item.id][1]+'</text>':item.category==='SKIN'?ship:item.category==='SOUND'?sonar:item.category==='CAPTAIN'?captain:item.category==='BUNDLE'?'<g transform="translate(-48 8) scale(.65)">'+ship+'</g><g transform="translate(56 -4) scale(.7)">'+captain+'</g>':speech;
-  return `<div class="tp-store-preview" aria-hidden="true" style="position:relative;overflow:hidden"><svg data-product-cover="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;display:block">
+  return `<div class="tp-store-preview" aria-hidden="true" style="position:relative;overflow:hidden"><svg data-product-cover="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;width:100%;height:100%;display:block">
   <rect width="320" height="180" fill="${dark}"/><circle cx="160" cy="65" r="113" fill="${mid}" opacity=".34"/><circle cx="160" cy="65" r="82" fill="${mid}" opacity=".45"/>
   <g stroke="${accent}" opacity=".16" fill="none"><circle cx="160" cy="65" r="100"/><circle cx="160" cy="65" r="72"/><path d="M0 20 H320 M0 55 H320 M0 90 H320 M0 125 H320 M40 0 V180 M100 0 V180 M220 0 V180 M280 0 V180"/></g>
   <g fill="${accent}" opacity=".6"><circle cx="29" cy="37" r="2"/><circle cx="282" cy="28" r="3"/><circle cx="253" cy="89" r="2"/><circle cx="66" cy="99" r="3"/></g>
@@ -55,7 +80,7 @@ export function renderProductCover(item){
 
 export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
   const items=(catalog?.items||[]).filter(item=>filter==='ALL'||item.category===filter||(filter==='COSMETICS'&&EXPRESSIVE_CATEGORIES.includes(item.category)));
-  const categories=[['BUNDLE','Pacotes'],['CAPTAIN','Capitães'],['SKIN','Navios'],['COINS','Moedas'],['ALL','Todos'],['SOUND','Sons'],['TAUNT','Provocações'],['COSMETICS','Cosméticos']];
+  const categories=[['ALL','Todos'],['BUNDLE','Pacotes'],['CAPTAIN','Capitães'],['SKIN','Navios'],['SOUND','Sons'],['TAUNT','Provocações'],['COSMETICS','Cosméticos'],['COINS','Moedas']];
   const categoryOptions=categories.map(([id,label])=>`<button type="button" class="bn-store-category" data-action="${id==='COINS'?'open-wallet':'store-category'}" data-item-id="${id==='COINS'?'premium':id}" ${id==='COINS'?'aria-haspopup="dialog"':`aria-pressed="${filter===id||(id==='COSMETICS'&&EXPRESSIVE_CATEGORIES.includes(filter))}"`}>${label}</button>`).join('');
   // Promote a real, available, unowned product; no artificial discounts.
   const candidates=items.filter(item=>item.enabled&&!item.owned&&!item.equipped&&item.price>0&&(!item.premiumOnly||catalog?.demoPremiumEnabled===true)&&(item.category!=='CAPTAIN'||isOfficialCaptain(item.id))&&(item.category!=='BUNDLE'||item.components?.length&&item.components.every(id=>catalog?.items?.some(x=>x.id===id&&x.enabled))&&!item.components.every(id=>catalog?.items?.some(x=>x.id===id&&x.owned))));
@@ -68,11 +93,18 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
     const owned=Boolean(item.owned)||(validBundle&&components.every(x=>x.owned)),equipped=Boolean(item.equipped);
     const available=Boolean(item.enabled)&&(item.category!=='CAPTAIN'||isOfficialCaptain(item.id))&&(['SKIN','SOUND','TAUNT','CAPTAIN',...EXPRESSIVE_CATEGORIES].includes(item.category)||validBundle);
     const bundlePreview=isBundle&&components.length?`<div class="bn-bundle-items"><strong>Inclui:</strong>${components.map(x=>x?`<span class="bn-taunt-phrase">${x.owned?'✓ ':''}${esc(x.name)}</span>`:'').join('')}${validBundle&&!owned&&components.some(x=>x.owned)?'<small>O preço da coleção permanece o mesmo para itens já adquiridos.</small>':''}</div>`:'';
-    const cls=['tp-store-card',item.category==='SOUND'?'is-sound':item.category==='TAUNT'?'is-taunt':item.category==='CAPTAIN'?'is-captain':item.category==='BUNDLE'?'is-bundle':'is-skin',
+    const cls=['tp-store-card',!available?'is-unavailable':equipped?'is-equipped-product':owned?'is-owned-product':'is-for-sale',item.category==='SOUND'?'is-sound':item.category==='TAUNT'?'is-taunt':item.category==='CAPTAIN'?'is-captain':item.category==='BUNDLE'?'is-bundle':'is-skin',
       item.id==='skin_coral'?'is-coral':'',item.id==='skin_abyss'?'is-abyss':''].filter(Boolean).join(' ');
     const appearance={SKIN:['⚓','Frota'],SOUND:['♫','Som'],TAUNT:['💬','Provocação'],CAPTAIN:['♟','Capitão'],BUNDLE:['✦','Coleção']};
     const [icon,type]=appearance[item.category]||['◈',EXPRESSIVE_LABELS[item.category]||'Cosmético'];
     const description=esc(item.description);
+    const [dark,mid,accent]=productTheme(item);
+    const highlight=Object.hasOwn(productHighlights,item.id)?productHighlights[item.id]:
+      item.category==='CAPTAIN'&&isOfficialCaptain(item.id)?'3 expressões de combate':
+      isOfficialFleet(item.id)?'Sprites intactos e destruídos':
+      item.category==='TAUNT'&&Array.isArray(TAUNT_PACKS[item.id])?TAUNT_PACKS[item.id].length+' provocações para usar em batalha':
+      isBundle&&components.length?components.length+' itens em uma coleção':'';
+    const perk=highlight&&available?`<span class="bn-product-perk">${esc(highlight)}</span>`:'';
     const phrases=item.category==='TAUNT'&&Array.isArray(TAUNT_PACKS[item.id])
       ? TAUNT_PACKS[item.id].slice(0,2).map(p=>`<span class="bn-taunt-phrase">${esc(p)}</span>`).join('')
       : '';
@@ -91,10 +123,10 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
       owned?`<button class="btn btn-primary" type="button" data-action="store-equip" data-item-id="${esc(item.id)}">Equipar</button>`:
       premiumOnly?catalog?.demoPremiumEnabled===true?'':'<span class="tp-store-unavailable">Somente moedas navais · demonstração indisponível</span>':
       `<button class="btn btn-orange" type="button" data-action="store-buy" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Comprar · ${item.price} créditos</button>`;
-    return `<article class="${cls}${isFeatured?' is-featured':''}" data-product-id="${esc(item.id)}">
+    return `<article class="${cls}${isFeatured?' is-featured':''}" data-product-id="${esc(item.id)}" style="--product-accent:${accent};--product-dark:${dark};--product-mid:${mid}">
       ${renderProductCover(item)}
       <div class="tp-store-card-text"><div class="tp-store-card-meta"><span>${type}</span>${tags}</div>
-      <h3>${esc(item.name)}</h3><p>${description}</p>${phrases}${bundlePreview}${expressionPreview(item)}</div>
+      <h3>${esc(item.name)}</h3>${perk}<p>${description}</p>${phrases}${bundlePreview}${expressionPreview(item)}</div>
       <div class="tp-store-card-footer"><span class="tp-store-price">${available?(item.price===0?'Grátis':premiumOnly?item.premiumPrice+' moedas navais':item.price+' créditos'):'Indisponível'}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0">${action}${premiumAction}</div></div>
     </article>`;
   };
@@ -103,8 +135,9 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
     <header class="bn-page-heading tp-store-header">
       <div><h1>Loja</h1><p>Personalize sua experiência com frotas, sons e provocações. Nenhum dinheiro real é usado.</p></div>
     </header>
-    ${featured?`<section class="bn-store-featured" aria-label="Item em destaque"><h2>Item em destaque</h2>${renderCard(featured,true)}</section>`:''}
-    <nav class="bn-store-categories" aria-label="Categorias da loja">${categoryOptions}</nav>
+    ${featured?`<section class="bn-store-featured" aria-label="Item em destaque"><h2><span aria-hidden="true">✦</span> Item em destaque</h2>${renderCard(featured,true)}</section>`:''}
+    <div class="bn-store-category-wrap"><nav class="bn-store-categories" aria-label="Categorias da loja">${categoryOptions}</nav></div>
+    <h2 class="bn-store-list-title">${filter==='ALL'?'Explore a loja':esc(categories.find(([id])=>id===filter)?.[1]||'Cosméticos')}</h2>
     <div class="tp-store-grid" aria-live="polite">
       ${loading&&!catalog?'<p class="tp-store-loading">Carregando catálogo...</p>':
         !catalog?'<p class="tp-store-loading">A loja não está disponível no momento.</p>':

@@ -79,3 +79,10 @@ assert.ok(!demoOff.includes('data-action="store-buy"'));
 assert.ok(!demoOff.includes('data-action="store-buy-premium"'));
 assert.match(demoOff,/demonstração indisponível/);
 console.log('TidePoint: catálogo de cosméticos, compras e filtros: OK');
+
+const themedBundle=renderProductCover({id:'bundle_corsair',category:'BUNDLE'});
+assert.match(themedBundle,/bn-collection-cover/);
+assert.match(themedBundle,/skin_corsair\/banner/);
+assert.match(themedBundle,/captain_corsair\/neutral/);
+assert.match(renderProductCover({id:'sound_sonar',category:'SOUND'}),/xMidYMid meet/);
+assert.match(renderCosmeticStore({items:[{id:'sound_sonar',category:'SOUND',name:'Sonar Retrô',description:'Efeitos',enabled:true,price:90}]}),/4 efeitos de combate em 8 bits/);
