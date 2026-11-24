@@ -40,7 +40,7 @@ await mkdir('artifacts/figma-combat',{recursive:true});
 
 try {
  for(const status of ['PREPARING','PLAYING','RIVAL','PAUSED']){
-  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1366,height:768}]){
+  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1366,height:768},...(status==='PREPARING'?[]:[{width:1366,height:636},{width:1024,height:600},{width:850,height:650}])]){
    const errors=[];
    const page=await browser.newPage({viewport,deviceScaleFactor:1});
    page.on('pageerror',e=>errors.push(e.message));
@@ -159,6 +159,9 @@ try {
        actions:rect('.zip-battle-action-bar'),
        enemy:rect('.zip-enemy-section'),
        enemyHeading:rect('.zip-enemy-section .zip-board-heading'),
+       enemyPortrait:rect('.zip-enemy-section .zip-combat-captain'),
+       ownPortrait:rect('.zip-own-section .zip-combat-captain'),
+       footer:rect('.zip-battle-footer'),
        board:rect('.zip-primary-board .board-main'),
        defense:rect('.zip-own-section'),
        defenseHeading:rect('.zip-own-section .zip-board-heading'),
@@ -176,24 +179,37 @@ try {
    assert.ok(metrics.pageHeight<=viewport.height+2,'Battle document should fit screen: '+explain);
    assert.ok(metrics.board.width>=Math.min(130,viewport.width*.4),'Targeting board too small: '+explain);
    assert.ok(Math.abs(metrics.board.height-metrics.board.width)<=3,'Targeting board distorted: '+explain);
-   for(const key of ['head','score','enemy','board','turn','defense','powers','fire','ownBoard']) {
+   for(const key of ['head','score','enemy','board','turn','defense','powers','fire','ownBoard','enemyPortrait','ownPortrait','footer']) {
      const bounds=metrics[key];
      assert.ok(bounds.left>=-2&&bounds.right<=viewport.width+2,'Offscreen horizontal '+key+': '+explain);
      assert.ok(bounds.top>=-2&&bounds.bottom<=viewport.height+2,'Offscreen vertical '+key+': '+explain);
    }
    assert.ok(metrics.head.bottom<=metrics.score.top+3,'Score overlays header: '+explain);
    assert.ok(metrics.score.bottom<=metrics.board.top+3,'Target board overlaps score: '+explain);
+   assert.match(await page.locator('.zip-enemy-section .zip-side-label').innerText(),/ATAQUE.*OPONENTE/);
+   assert.match(await page.locator('.zip-own-section .zip-side-label').innerText(),/DEFESA.*SUA FROTA/);
+   assert.equal(await page.locator('.zip-scoreboard img').count(),0,'Portraits must not resize the score row');
+   for(const [portrait,section,board] of [['enemyPortrait','enemy','board'],['ownPortrait','defense','ownBoard']]) {
+     const p=metrics[portrait],s=metrics[section],b=metrics[board];
+     assert.ok(p.width>=24&&p.height>=24&&p.width<=115&&p.height<=132,'Captain portrait not bounded: '+explain);
+     assert.ok(p.left>=s.left-2&&p.right<=s.right+2&&p.top>=s.top-2&&p.bottom<=s.bottom+2,'Captain escaped panel: '+explain);
+     assert.ok(p.right<=b.left+2||p.bottom<=b.top+2,'Portrait overlaps grid: '+explain);
+   }
+   for(const selector of ['.zip-enemy-section .zip-combat-captain','.zip-own-section .zip-combat-captain']) {
+     assert.ok(await page.locator(selector).evaluate(async img=>{try{await img.decode();return img.naturalWidth>0;}catch{return false;}}),'Broken captain artwork: '+explain);
+   }
+   assert.ok(metrics.enemy.bottom<=metrics.footer.top+2&&metrics.defense.bottom<=metrics.footer.top+2&&metrics.turn.bottom<=metrics.footer.top+2,'Action footer overlaps arena: '+explain);
    if(viewport.width<=849) {
      assert.ok(metrics.enemyHeading.top>=metrics.score.bottom-2,'Enemy heading covered by scoreboard: '+explain);
      assert.ok(metrics.enemyHeading.bottom<=metrics.board.top+3,'Enemy heading overlaps attack board: '+explain);
      assert.ok(metrics.board.bottom<=metrics.turn.top+4,'Turn panel overlaps attack board: '+explain);
      assert.ok(metrics.turn.bottom<=metrics.defense.top+4,'Defense overlaps turn panel: '+explain);
      assert.ok(metrics.defenseHeading.bottom<=metrics.ownBoard.top+3,'Own heading overlaps defense: '+explain);
-     assert.ok(metrics.board.width>=metrics.ownBoard.width*1.25,'Mobile defense board must be notably smaller: '+explain);
+     assert.ok(metrics.board.width>=metrics.ownBoard.width&&metrics.ownBoard.width>=metrics.board.width*.8,'Mobile grids should be similarly sized, with attack slightly larger: '+explain);
    } else {
      assert.ok(metrics.ownBoard.right<=metrics.turn.left+4,'Desktop: own fleet must be LEFT of turn panel: '+explain);
      assert.ok(metrics.turn.right<=metrics.board.left+4,'Desktop: enemy grid must be RIGHT of turn panel: '+explain);
-     assert.ok(metrics.board.width>=300,'Desktop boards must use the available space: '+explain);
+     assert.ok(metrics.board.width>=Math.min(300,viewport.width*.31,viewport.height*.46),'Desktop boards must use the available space: '+explain);
    }
    assert.ok(metrics.defense.bottom<=metrics.fire.top+4,'Defense overlaps fire control: '+explain);
    assert.ok(metrics.powers.right<=metrics.fire.left+5,'Powers and fire must sit side-by-side: '+explain);
