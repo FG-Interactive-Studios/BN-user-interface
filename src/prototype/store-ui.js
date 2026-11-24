@@ -80,18 +80,20 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
       '<span class="tp-store-tag">Disponível</span>';
     const unavailableReason=item.category==='BUNDLE'?'Coleção em preparação':
       item.category==='CAPTAIN'?'Capitão em preparação':'Aguardando recursos do Game Design';
+    const premiumOnly=item.premiumOnly===true;
     const premiumAction=available&&!owned&&!equipped&&catalog?.demoPremiumEnabled===true&&Number.isSafeInteger(item.premiumPrice)&&item.premiumPrice>0
-      ? `<button class="btn btn-ghost" type="button" data-action="store-buy-premium" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Comprar · ${item.premiumPrice} premium</button>` : '';
+      ? `<button class="btn btn-ghost" type="button" data-action="store-buy-premium" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Comprar · ${item.premiumPrice} ${premiumOnly?'moedas navais':'premium'}</button>` : '';
     const action=!available?`<span class="tp-store-unavailable">${unavailableReason}</span>`:
       equipped?'<button class="btn btn-ghost" type="button" disabled>Em uso</button>':
       owned&&isBundle?'<span class="tp-store-tag">Coleção completa</span>':
       owned?`<button class="btn btn-primary" type="button" data-action="store-equip" data-item-id="${esc(item.id)}">Equipar</button>`:
+      premiumOnly?catalog?.demoPremiumEnabled===true?'':'<span class="tp-store-unavailable">Somente moedas navais · demonstração indisponível</span>':
       `<button class="btn btn-orange" type="button" data-action="store-buy" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Comprar · ${item.price} créditos</button>`;
     return `<article class="${cls}">
       ${renderProductCover(item)}
       <div class="tp-store-card-text"><div class="tp-store-card-meta"><span>${type}</span>${tags}</div>
       <h3>${esc(item.name)}</h3><p>${description}</p>${phrases}${bundlePreview}${expressionPreview(item)}</div>
-      <div class="tp-store-card-footer"><span class="tp-store-price">${available?(item.price===0?'Grátis':item.price+' créditos'):'Indisponível'}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0">${action}${premiumAction}</div></div>
+      <div class="tp-store-card-footer"><span class="tp-store-price">${available?(item.price===0?'Grátis':premiumOnly?item.premiumPrice+' moedas navais':item.price+' créditos'):'Indisponível'}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0">${action}${premiumAction}</div></div>
     </article>`;
   }).join('');
   return `<section class="bn-page bn-store-page tp-store-page" aria-label="Loja de cosméticos">
