@@ -4,7 +4,7 @@ import { esc, coordLabel, renderBoard } from './board.js';
 export function renderZipBattle({
   battle, mode, opponent, own, enemy, myTurn, finished, canAct,
   selected, skillTargets=[], skillArea=[], available, sunk, activeAbility, skillControls,
-  activeEffects, radarInfo, clockStrip, pausedOverlay
+  activeEffects, radarInfo, clockStrip, pausedOverlay, tauntControls=''
 }) {
   const ownLost = new Set((battle.shotsReceived || []).filter(shot => shot.sunkShip).map(shot => shot.sunkShip)).size;
   const enemyLost = new Set(sunk.map(shot => shot.sunkShip)).size;
@@ -100,6 +100,7 @@ export function renderZipBattle({
       <footer class="zip-battle-footer" aria-label="Controles de batalha">
         <div class="zip-battle-action-bar">
           <div class="zip-tactics-section">
+            ${tauntControls}
             ${activeAbility
               ? `<button type="button" class="zip-cancel-power" data-action="cancel-ability">Cancelar ${esc(activeAbility.name)}</button>`
               : `<details class="zip-abilities-menu">
