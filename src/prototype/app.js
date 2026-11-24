@@ -16,7 +16,7 @@ import { renderFigmaResult } from './figma-result.js';
 import {buildMatchReport,ridiculousAward} from './match-report.js';
 import { renderFigmaProfile } from './figma-profile.js';
 import {renderFigmaSettings,loadPreferences,savePreferences,settingKeys} from './figma-settings.js';
-import { renderFigmaPlacement } from './figma-placement.js';
+import { renderFigmaPlacement, planPlacement } from './figma-placement.js';
 import { renderZipBattle } from './zip-battle.js';
 import {renderAdminPanel} from './admin-panel.js';
 import {planAbility, ABILITY_DIRECTIONS, abilityNeedsDirection, directionText} from './ability-targeting.js';
@@ -29,7 +29,7 @@ const logo = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 const brand = () => `<div class="brand"><div class="brand-mark">${logo}</div><div><div class="brand-name">Batalha Naval</div><div class="brand-sub">Duelo 1v1 em alto-mar</div></div></div>`;
 const state = {
   profile: null, modes: [], lobby: null, queue: null, queueStartedAt: null, preparation: null, battle: null,
-  modeId: 'classic', selected: null, draft: null, placementShip: null, orientation: 'HORIZONTAL',
+  modeId: 'classic', selected: null, draft: null, placementShip: null, placementHover:null, orientation: 'HORIZONTAL',
   notice: '', error: false, busy: false, socketOnline: false, initialized: false,
   roomExitNotice: null, leavingRoom: false,
   skillMode: null, skillTargets: [], skillArea: [], skillAnchor: null, skillDirection: 'RIGHT', skillDialog: false,
@@ -201,7 +201,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.adminTab='modes';state.adminProducts=null;state.adminStoreLoading=false;state.adminStoreError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.placementHover=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.adminTab='modes';state.adminProducts=null;state.adminStoreLoading=false;state.adminStoreError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -297,7 +297,7 @@ async function reconcile() {
       if (!state.preparation || state.preparation.preparationId!==prep.preparationId || prep.revision>=state.preparation.revision) {
         changed ||= JSON.stringify(state.preparation)!==JSON.stringify(prep);
         state.preparation=prep;
-        if (previous!=='PREPARING') {state.draft=null;state.placementShip=null;state.orientation='HORIZONTAL';}
+        if (previous!=='PREPARING') {state.draft=null;state.placementShip=null;state.placementHover=null;state.orientation='HORIZONTAL';}
       }
     } else if (['PLAYING','FINISHED'].includes(room.status)) {
       if (state.preparation) changed=true;
@@ -500,6 +500,54 @@ function placementScreen(){
   });
 }
 
+function placementPlan(anchor){
+  if(currentRoute()!=='placement'||state.busy||!state.preparation||state.preparation.fleetConfirmed)return null;
+  return planPlacement({mode:state.preparation.mode||activeMode(),ships:state.draft??state.preparation.yourShips??[],
+    selectedShipId:state.placementShip,orientation:state.orientation,anchor});
+}
+function paintPlacementPreview(){
+  const board=root?.querySelector('.bn-placement-board-wrap .board-main');
+  if(!board)return;
+  board.querySelectorAll('.bn-placement-ghost').forEach(node=>node.remove());
+  board.querySelectorAll('.placement-preview-valid,.placement-preview-invalid').forEach(node=>node.classList.remove('placement-preview-valid','placement-preview-invalid'));
+  const plan=placementPlan(state.placementHover);
+  if(!plan)return;
+  const style=plan.valid?'placement-preview-valid':'placement-preview-invalid';
+  board.querySelectorAll('[data-cell]').forEach(node=>{if(plan.cells.has(node.dataset.cell))node.classList.add(style);});
+  // Only draw a full sprite when all its cells fit. Invalid edge placements
+  // still highlight their in-board portion, never create implicit grid tracks.
+  const {candidate,length}=plan;
+  const art=shipArt(candidate.type,equippedId(state.store?.items,'SKIN','skin_default'));
+  if(!plan.inside||!art)return;
+  const vertical=candidate.orientation==='VERTICAL';
+  const ghost=document.createElement('span');
+  ghost.className='bn-gd-ship-overlay bn-placement-ghost '+(vertical?'is-vertical':'is-horizontal')+(plan.valid?'':' is-invalid');
+  ghost.setAttribute('aria-hidden','true');
+  ghost.style.gridRow=(candidate.row+2)+'/'+(candidate.row+2+(vertical?length:1));
+  ghost.style.gridColumn=(candidate.col+2)+'/'+(candidate.col+2+(vertical?1:length));
+  ghost.style.setProperty('--ship-length',length);
+  const img=document.createElement('img');img.src=art;img.alt='';img.draggable=false;
+  ghost.append(img);board.append(ghost);
+}
+function placementHoverCell(node){
+  const cell=node?.closest?.('.bn-placement-board-wrap [data-coord]');
+  state.placementHover=cell?{row:Number(cell.dataset.coord.split(',')[0]),col:Number(cell.dataset.coord.split(',')[1])}:null;
+  paintPlacementPreview();
+}
+function rotatePlacement(){
+  const mode=state.preparation?.mode||activeMode();
+  if(currentRoute()!=='placement'||state.busy||!state.preparation||state.preparation.fleetConfirmed||mode?.geometry.kind!=='RECTANGULAR')return;
+  const directions=mode.placementDirections||[];
+  if(!directions.includes('HORIZONTAL')||!directions.includes('VERTICAL'))return;
+  state.orientation=state.orientation==='HORIZONTAL'?'VERTICAL':'HORIZONTAL';
+  const button=root.querySelector('[data-action="rotate-placement"]');
+  if(button){
+    button.title='Girar (R) · '+(state.orientation==='VERTICAL'?'Vertical':'Horizontal');
+    const indicator=button.querySelector('.bn-placement-orientation');
+    if(indicator)indicator.textContent=state.orientation==='VERTICAL'?'(V)':'(H)';
+  }
+  paintPlacementPreview();
+}
 function skillMeta(id) { return (state.battle?.yourAbilities||[]).find(a=>a.id===id); }
 function skillLimit(id){return Number(skillMeta(id)?.targetCount)||0;}
 function skillScope(id){return skillMeta(id)?.targetScope||'ENEMY';}
@@ -707,6 +755,7 @@ function render(){ if (!root) return;
     route=resolvedRoute(route,true,state.lobby?.status);
     history.replaceState(null,'',`${location.pathname}${location.search}#${route}`);
   }
+  if(route!=='placement'||state.preparation?.fleetConfirmed)state.placementHover=null;
   if(route!=='match'||state.battle?.status==='FINISHED'){state.skillMode=null;clearSkillTargeting();state.skillDialog=false;}
   if(route==='admin'&&state.profile?.admin!==true&&api.isAuthenticated()){
     history.replaceState(null,'',`${location.pathname}${location.search}#lobby`);
@@ -739,6 +788,7 @@ function render(){ if (!root) return;
   updateNotice();
   if (state.busy) root.classList.add('tp-loading'); else root.classList.remove('tp-loading');
   document.body.dataset.route=route;
+  if(route==='placement')paintPlacementPreview();
   document.body.dataset.boardTheme=selectedExpression(state.store?.items,'BOARD_THEME')==='board_abyss'?'abyss':'default';
   syncAudio(route);
   document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
@@ -1053,7 +1103,7 @@ async function runAction(action,itemId=null) {
       } finally {state.leavingRoom=false;}
       break;
     }
-    case 'random-placement':await guard(async()=>{state.preparation=await api.post('/matches/me/placement/random');state.draft=[...state.preparation.yourShips];state.placementShip=null;});break;
+    case 'random-placement':await guard(async()=>{state.preparation=await api.post('/matches/me/placement/random');state.draft=[...state.preparation.yourShips];state.placementShip=null;state.placementHover=null;});break;
     case 'select-placement-ship': {
       const mode=activeMode();
       if(currentRoute()!=='placement'||state.preparation?.fleetConfirmed||!mode?.fleet.some(s=>s.id===itemId))break;
@@ -1064,20 +1114,13 @@ async function runAction(action,itemId=null) {
         state.orientation=selectedPlacement.orientation;
       render();break;
     }
-    case 'rotate-placement': {
-      const mode=activeMode();
-      if(currentRoute()!=='placement'||state.preparation?.fleetConfirmed||mode?.geometry.kind!=='RECTANGULAR')break;
-      const directions=mode.placementDirections||[];
-      if(!directions.includes('HORIZONTAL')||!directions.includes('VERTICAL'))break;
-      state.orientation=state.orientation==='HORIZONTAL'?'VERTICAL':'HORIZONTAL';
-      render();break;
-    }
+    case 'rotate-placement':rotatePlacement();break;
     case 'save-placement':await guard(async()=>{state.preparation=await api.put('/matches/me/placement',{ships:state.draft});state.draft=[...state.preparation.yourShips];notice('Frota validada e salva pela API.');});break;
     case 'confirm-placement':await guard(async()=>{
       if (state.draft!==null && JSON.stringify(state.draft)!==JSON.stringify(state.preparation.yourShips)) state.preparation=await api.put('/matches/me/placement',{ships:state.draft});
       state.preparation=await api.post('/matches/me/placement/confirm');state.draft=[...state.preparation.yourShips];state.placementShip=null;await reconcile();
     });break;
-    case 'clear-draft':if(currentRoute()==='placement'&&!state.preparation?.fleetConfirmed){state.draft=[];state.placementShip=null;state.orientation='HORIZONTAL';render();}break;
+    case 'clear-draft':if(currentRoute()==='placement'&&!state.preparation?.fleetConfirmed){state.draft=[];state.placementShip=null;state.placementHover=null;state.orientation='HORIZONTAL';render();}break;
     case 'open-abilities':if((state.battle?.yourAbilities||[]).some(a=>a.usesRemaining>0&&!a.locked)){state.skillDialog=true;render();}break;
     case 'close-abilities':state.skillDialog=false;render();break;
     case 'pick-ability':{
@@ -1179,21 +1222,14 @@ function selectCell(row,col,side='ENEMY'){
     if(button){button.disabled=false;const caption=button.querySelector('small');if(caption)caption.textContent=`Disparar em ${coordLabel(state.selected)}`;}
   } else if(route==='placement'){
     if(state.preparation?.fleetConfirmed||mode.geometry.kind!=='RECTANGULAR')return;
-    const placed=[...(state.draft??state.preparation?.yourShips??[])];
-    const chosen=mode.fleet.find(s=>s.id===state.placementShip)
-      || mode.fleet.find(s=>!placed.some(d=>d.type===s.id));
-    if(!chosen)return notice('Selecione um navio para reposicioná-lo ou confirme a frota.',false);
-    // Replacing a selected ship is atomic in the draft: invalid destinations
-    // must leave the existing coordinates and all other ships intact.
-    const candidate={type:chosen.id,row,col,orientation:state.orientation};
-    const proposed=[...placed.filter(s=>s.type!==chosen.id),candidate];
-    const occupied=occupiedCells(proposed,mode);
-    const valid=new Set(mode.geometry.cells.map(keyOf));
-    const total=proposed.reduce((sum,s)=>sum+(mode.fleet.find(d=>d.id===s.type)?.length||0),0);
-    if(occupied.size!==total||[...occupied].some(key=>!valid.has(key)))return notice('Posição inválida ou sobreposta. Escolha outra célula.',true);
-    state.draft=proposed;
+    const plan=placementPlan({row,col});
+    if(!plan)return notice('Selecione um navio para reposicioná-lo ou confirme a frota.',false);
+    if(!plan.valid)return notice('Posição inválida ou sobreposta. Escolha outra célula.',true);
+    // Preview never edits the draft; only a valid click commits this plan.
+    state.draft=plan.proposed;
+    state.placementHover=null;
     audio.play('ship_placement');
-    state.placementShip=mode.fleet.find(s=>!proposed.some(d=>d.type===s.id))?.id||chosen.id;
+    state.placementShip=mode.fleet.find(s=>!plan.proposed.some(d=>d.type===s.id))?.id||plan.candidate.type;
     state.notice='';render();
   }
 }
@@ -1233,21 +1269,40 @@ function bindEvents() {
     const link=event.target.closest('[data-go]');if(link){audio.play('ui_click');go(link.dataset.go);}
   });
   root.addEventListener('pointerover',event=>{
+    if(currentRoute()==='placement'&&event.pointerType!=='touch'){placementHoverCell(event.target);return;}
     if(state.skillMode&&currentRoute()==='match'){
       const cell=event.target.closest('[data-coord]');
       if(cell)paintAbilityPreview(cell);
     }
   });
   root.addEventListener('pointerout',event=>{
+    if(currentRoute()==='placement'){
+      if(!event.relatedTarget?.closest?.('.bn-placement-board-wrap [data-coord]'))placementHoverCell(null);
+      return;
+    }
     if(!state.skillMode||currentRoute()!=='match')return;
     const cell=event.target.closest('[data-coord]');
     if(cell&&cell!==event.relatedTarget?.closest?.('[data-coord]'))paintAbilityPreview(null);
   });
   root.addEventListener('focusin',event=>{
+    if(currentRoute()==='placement'&&event.target.matches('.bn-placement-board-wrap [data-coord]:focus-visible')){placementHoverCell(event.target);return;}
     if(state.skillMode&&currentRoute()==='match'&&event.target.matches('[data-coord]'))paintAbilityPreview(event.target);
   });
   root.addEventListener('focusout',event=>{
+    if(currentRoute()==='placement'&&event.target.matches('.bn-placement-board-wrap [data-coord]:focus-visible')){placementHoverCell(null);return;}
     if(state.skillMode&&currentRoute()==='match'&&event.target.matches('[data-coord]'))paintAbilityPreview(null);
+  });
+  // Document-level shortcut still works when a placement click has rebuilt the DOM.
+  document.addEventListener('keydown',event=>{
+    if(currentRoute()!=='placement'||event.repeat||event.ctrlKey||event.altKey||event.metaKey||event.target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
+    if(event.key.toLowerCase()==='r'){
+      event.preventDefault();rotatePlacement();
+    }
+  });
+  root.addEventListener('contextmenu',event=>{
+    if(currentRoute()==='placement'&&event.target.closest('.bn-placement-board-wrap [data-coord]')){
+      event.preventDefault();placementHoverCell(event.target);rotatePlacement();
+    }
   });
   root.addEventListener('keydown',event=>{
     if((event.key==='Enter'||event.key===' ')&&event.target.matches('g[data-coord]')) {
