@@ -36,6 +36,11 @@ export function renderZipBattle({
   const fireHint = finished ? 'Partida encerrada' : battle.paused ? 'Partida pausada' :
     myTurn ? selected ? `Alvo ${coordLabel(selected)}` : 'Selecione uma casa' : 'Aguardando oponente';
 
+  const rivalName = esc(opponent?.nickname || 'Oponente');
+  const rivalTitle = expressionTitle(opponent?.cosmetics?.TITLE);
+  const ownPortrait = captainArt(captain,moods.mine);
+  const rivalPortrait = captainArt(opponent?.cosmetics?.CAPTAIN,moods.rival);
+
   const powers = abilities.length
     ? abilities.map(ability => {
       const disabled = !canAct || ability.locked || ability.usesRemaining <= 0;
@@ -66,19 +71,20 @@ export function renderZipBattle({
 
       <section class="zip-scoreboard" aria-label="Placar da partida">
         <div class="zip-score-side">
-          <strong><img class="bn-gd-captain" src="${captainArt(captain,moods.mine)}" alt="" aria-hidden="true">Você</strong>
+          <strong>Você</strong>
           <small>Navios: ${remainingOwn}/${totalShips} · Acertos: ${enemy.hits.length}</small>
         </div>
         <div class="zip-score-value" aria-label="Acertos ${enemy.hits.length} a ${own.hits.length}">${enemy.hits.length} × ${own.hits.length}</div>
         <div class="zip-score-side zip-score-opponent">
-          <strong><img class="bn-gd-captain" src="${captainArt(opponent?.cosmetics?.CAPTAIN,moods.rival)}" alt="" aria-hidden="true">${esc(opponent?.nickname || 'Oponente')}${expressionTitle(opponent?.cosmetics?.TITLE)?` · ${esc(expressionTitle(opponent.cosmetics.TITLE))}`:''}</strong>
+          <strong>${rivalName}</strong>
           <small>Navios: ${remainingEnemy}/${totalShips} · Acertos: ${own.hits.length}</small>
         </div>
       </section>
 
       <div class="zip-battle-center">
         <section class="zip-enemy-section" aria-label="Tabuleiro de ataque">
-          <div class="zip-board-heading">Tabuleiro do oponente · ${canAct ? 'toque para mirar' : finished ? 'partida encerrada' : battle.paused ? 'partida pausada' : 'aguarde o oponente'}</div>
+          <div class="zip-board-heading"><span class="zip-side-label">ATAQUE · ÁGUAS DO OPONENTE</span><strong title="${rivalName}">${rivalName}</strong>${rivalTitle?`<small class="zip-captain-title">${esc(rivalTitle)}</small>`:''}</div>
+          <div class="zip-captain-portrait"><img class="zip-combat-captain" src="${rivalPortrait}" alt="Capitão do adversário"></div>
           <div class="zip-primary-board">
             ${renderBoard(mode, {
               hits: enemy.hits, misses: enemy.misses,
@@ -100,7 +106,8 @@ export function renderZipBattle({
         </section>
 
         <section class="zip-own-section" aria-label="Tabuleiro de defesa">
-          <div class="zip-board-heading">SUA FROTA · ${remainingOwn} navios operacionais</div>
+          <div class="zip-board-heading"><span class="zip-side-label">DEFESA · SUA FROTA</span><strong>Você</strong></div>
+          <div class="zip-captain-portrait"><img class="zip-combat-captain" src="${ownPortrait}" alt="Seu capitão"></div>
           <div class="zip-own-board">
             ${renderBoard(mode, {
               ships: battle.yourShips, hits: own.hits, misses: own.misses, skin,
@@ -120,7 +127,7 @@ export function renderZipBattle({
               ? `<button type="button" class="zip-cancel-power" data-action="cancel-ability">Cancelar ${esc(activeAbility.name)}</button>`
               : `<details class="zip-abilities-menu">
                   <summary aria-label="Escolher habilidade" title="Habilidades da partida">
-                    <span>Poderes</span><span class="zip-powers-count">${usefulAbilities} disponíveis · ${abilityCredits} pts</span><span aria-hidden="true">⌄</span>
+                    <span>Poderes</span><span class="zip-powers-count">${usefulAbilities} disp. · ${abilityCredits} pts</span><span aria-hidden="true">⌄</span>
                   </summary>
                   <div class="zip-abilities-options">
                     <div class="zip-abilities-grid">${powers}</div>
