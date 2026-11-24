@@ -595,7 +595,7 @@ function fleetScreen(){
   const mode=activeMode()||state.modes[0];
   const ships=mode?.fleet||[];
   const catalogue=ships.length
-    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">${shipArt(def.id,equippedId(state.store?.items,'SKIN','skin_default'))?`<img src="${shipArt(def.id)}" class="bn-fleet-thumb" alt="" loading="lazy" />`:'⚓'}</span>
+    ? ships.map(def=>`<article class="bn-ship-item"><span class="bn-ship-glyph" aria-hidden="true">${shipArt(def.id,equippedId(state.store?.items,'SKIN','skin_default'))?`<img src="${shipArt(def.id,equippedId(state.store?.items,'SKIN','skin_default'))}" class="bn-fleet-thumb" alt="" loading="lazy" />`:'⚓'}</span>
        <div><strong>${esc(shipName(def.id))}</strong><small>${def.length} casas</small></div>
        <span class="bn-ship-status">Disponível</span></article>`).join('')
     : '<p class="bn-available-note">Nenhum modo de jogo habilitado no momento.</p>';
