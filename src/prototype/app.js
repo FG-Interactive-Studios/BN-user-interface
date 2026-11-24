@@ -6,7 +6,7 @@ import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
 import {selectedExpression,publicExpression,impactAttacker,paidFuneral,paidCommentary} from './expressive-cosmetics.js';
 import {tauntControls, equippedTaunts, funnyReaction, funeralReaction} from './chaos-humor.js';
-import {walletMarkup} from './figma-wallet.js';
+import {walletMarkup,walletDialogMarkup} from './figma-wallet.js';
 import {RADAR_SWEEP_SECONDS, sonarContactMarkup} from './radar-blips.js';
 import shipEmblem from '../assets/figma/ship-icon.png';
 import cannonIcon from '../assets/figma/cannon.png';
@@ -32,7 +32,7 @@ const state = {
   roomExitNotice: null, leavingRoom: false,
   skillMode: null, skillTargets: [], skillArea: [], skillAnchor: null, skillDirection: 'RIGHT', skillDialog: false,
   adminModes: null, adminLoading: false, adminError: '',
-  store: null, demoTopupRequests: new Map(), storeLoading: false, storeFilter: 'ALL', profileEditorOpen: false, profileSecurityOpen: false,
+  store: null, demoTopupRequests: new Map(), storeLoading: false, storeFilter: 'ALL', walletDialog:null, profileEditorOpen: false, profileSecurityOpen: false,
   preferences: loadPreferences(),
 };
 const audio=new AudioManager({packs:audioPacks});
@@ -193,7 +193,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -691,8 +691,10 @@ function render(){ if (!root) return;
     history.replaceState(null,'',`${location.pathname}${location.search}#lobby`);
     route='lobby';
   }
+  if(!['lobby','store'].includes(route)||renderedRoute&&renderedRoute!==route)state.walletDialog=null;
   const pages={auth:()=>authForm(false),register:()=>authForm(true),lobby:lobbyScreen,matchmaking:waitingScreen,placement:placementScreen,match:battleScreen,result:resultScreen,fleet:fleetScreen,store:storeScreen,profile:profileScreen,settings:settingsScreen,admin:adminScreen};
-  root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog();
+  root.innerHTML='<div id="tp-notice-root" aria-live="polite"></div>'+(pages[route]||pages.lobby)()+roomExitDialog()+(state.walletDialog?walletDialogMarkup(state.store,{currency:state.walletDialog,loading:state.busy||state.storeLoading,notice:state.notice,error:state.error}):'');
+  if(state.walletDialog)root.querySelector('#bn-wallet-dialog')?.showModal();
   mountChaosToast();
   if(route==='match'){
     const dialog=root.querySelector('#tp-skill-dialog');
@@ -757,6 +759,21 @@ async function handleForm(form) {
 
 async function runAction(action,itemId=null) {
   switch(action) {
+    case 'open-wallet':
+      if(!['lobby','store'].includes(currentRoute()))break;
+      state.walletDialog=itemId==='free'?'free':'premium';state.notice='';state.error=false;render();
+      if(!state.store)void loadStore();
+      break;
+    case 'wallet-currency':
+      if(state.walletDialog&&['free','premium'].includes(itemId)){state.walletDialog=itemId;render();}
+      break;
+    case 'close-wallet': {
+      const currency=state.walletDialog;state.walletDialog=null;render();
+      root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();break;
+    }
+    case 'store-category':
+      if(currentRoute()==='store'&&['ALL','SKIN','SOUND','TAUNT','CAPTAIN','BUNDLE','COSMETICS'].includes(itemId)){state.storeFilter=itemId;render();root.querySelector('.bn-store-category[data-item-id="'+itemId+'"]')?.focus();}
+      break;
     case 'admin-refresh':
       if(currentRoute()==='admin'&&state.profile?.admin===true){
         state.adminModes=null;await loadAdminModes();
@@ -864,7 +881,7 @@ async function runAction(action,itemId=null) {
       notice('Item adquirido com créditos premium de demonstração.');
     });break;
     case 'store-demo-topup':{
-      if(!['demo_100','demo_300','demo_700'].includes(itemId)||state.store?.demoPremiumEnabled!==true||state.busy)break;
+      if(state.walletDialog!=='premium'||!['demo_100','demo_300','demo_700'].includes(itemId)||state.store?.demoPremiumEnabled!==true||state.busy)break;
       const amount=itemId.split('_')[1];
       if(!window.confirm('Simular a aquisição de '+amount+' créditos premium? Nenhum dinheiro real será cobrado.'))break;
       await guard(async()=>{
@@ -1113,6 +1130,7 @@ function bindEvents() {
   document.addEventListener('visibilitychange',()=>audio.setVisible(!document.hidden));
   audio.setVisible(!document.hidden);
   root.addEventListener('cancel', event=>{
+    if(event.target?.id==='bn-wallet-dialog'){state.walletDialog=null;event.preventDefault();render();root.querySelector('.bn-wallet-add[data-item-id="premium"]')?.focus();}
     if (event.target?.id==='tp-room-exit-dialog') event.preventDefault();
     if (event.target?.id==='tp-skill-dialog') state.skillDialog=false;
     if (event.target?.id==='bn-profile-editor'){state.profileEditorOpen=false;state.profileSecurityOpen=false;}
@@ -1151,7 +1169,6 @@ function bindEvents() {
     }
   });
   root.addEventListener('change',event=>{
-    if(event.target.id==='store-filter'){state.storeFilter=event.target.value;render();}
     if(event.target.id==='mode-picker')state.modeId=event.target.value;
     if(event.target.id==='orientation')state.orientation=event.target.value;
     if(event.target.matches('.bn-profile-security'))state.profileSecurityOpen=event.target.open;

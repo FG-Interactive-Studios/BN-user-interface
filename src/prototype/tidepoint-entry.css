@@ -88,3 +88,6 @@
 
 /* Distinct combat identities and size-aware grids on desktop and mobile. */
 @import './zip-combat-identity-v20.css';
+
+/* Store wireframe and wallet controls. */
+@import './store-wireframe-v21.css';

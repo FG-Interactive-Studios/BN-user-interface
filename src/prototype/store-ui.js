@@ -54,11 +54,13 @@ export function renderProductCover(item){
 }
 
 export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
-  const items=(catalog?.items||[]).filter(item=>filter==='ALL'||item.category===filter);
-  const categoryOptions=[
-    ['ALL','Todos'],['SKIN','Embarcações'],['SOUND','Sons'],['TAUNT','Provocações'],['CAPTAIN','Capitães'],['BUNDLE','Coleções'],...EXPRESSIVE_CATEGORIES.map(id=>[id,EXPRESSIVE_LABELS[id]])
-  ].map(([id,label])=>`<option value="${id}" ${filter===id?'selected':''}>${label}</option>`).join('');
-  const cards=items.map(item=>{
+  const items=(catalog?.items||[]).filter(item=>filter==='ALL'||item.category===filter||(filter==='COSMETICS'&&EXPRESSIVE_CATEGORIES.includes(item.category)));
+  const categories=[['BUNDLE','Pacotes'],['CAPTAIN','Capitães'],['SKIN','Navios'],['COINS','Moedas'],['ALL','Todos'],['SOUND','Sons'],['TAUNT','Provocações'],['COSMETICS','Cosméticos']];
+  const categoryOptions=categories.map(([id,label])=>`<button type="button" class="bn-store-category" data-action="${id==='COINS'?'open-wallet':'store-category'}" data-item-id="${id==='COINS'?'premium':id}" ${id==='COINS'?'aria-haspopup="dialog"':`aria-pressed="${filter===id||(id==='COSMETICS'&&EXPRESSIVE_CATEGORIES.includes(filter))}"`}>${label}</button>`).join('');
+  // Promote a real, available, unowned product; no artificial discounts.
+  const candidates=items.filter(item=>item.enabled&&!item.owned&&!item.equipped&&item.price>0&&(!item.premiumOnly||catalog?.demoPremiumEnabled===true)&&(item.category!=='CAPTAIN'||isOfficialCaptain(item.id))&&(item.category!=='BUNDLE'||item.components?.length&&item.components.every(id=>catalog?.items?.some(x=>x.id===id&&x.enabled))&&!item.components.every(id=>catalog?.items?.some(x=>x.id===id&&x.owned))));
+  const featured=candidates.find(item=>item.category==='BUNDLE')||candidates[0]||null;
+  const renderCard=(item,isFeatured=false)=>{
     // Bundle components are provided by the server; never equip a bundle itself.
     const isBundle=item.category==='BUNDLE';
     const components=isBundle&&Array.isArray(item.components)?item.components.map(id=>catalog?.items?.find(x=>x.id===id)):[]; 
@@ -89,26 +91,24 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
       owned?`<button class="btn btn-primary" type="button" data-action="store-equip" data-item-id="${esc(item.id)}">Equipar</button>`:
       premiumOnly?catalog?.demoPremiumEnabled===true?'':'<span class="tp-store-unavailable">Somente moedas navais · demonstração indisponível</span>':
       `<button class="btn btn-orange" type="button" data-action="store-buy" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Comprar · ${item.price} créditos</button>`;
-    return `<article class="${cls}">
+    return `<article class="${cls}${isFeatured?' is-featured':''}" data-product-id="${esc(item.id)}">
       ${renderProductCover(item)}
       <div class="tp-store-card-text"><div class="tp-store-card-meta"><span>${type}</span>${tags}</div>
       <h3>${esc(item.name)}</h3><p>${description}</p>${phrases}${bundlePreview}${expressionPreview(item)}</div>
       <div class="tp-store-card-footer"><span class="tp-store-price">${available?(item.price===0?'Grátis':premiumOnly?item.premiumPrice+' moedas navais':item.price+' créditos'):'Indisponível'}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0">${action}${premiumAction}</div></div>
     </article>`;
-  }).join('');
+  };
+  const cards=items.filter(item=>item!==featured).map(item=>renderCard(item)).join('');
   return `<section class="bn-page bn-store-page tp-store-page" aria-label="Loja de cosméticos">
     <header class="bn-page-heading tp-store-header">
       <div><h1>Loja</h1><p>Personalize sua experiência com frotas, sons e provocações. Nenhum dinheiro real é usado.</p></div>
     </header>
-    <div class="tp-store-toolbar"><label for="store-filter">Categorias</label>
-      <select class="tp-mode-select" id="store-filter">${categoryOptions}</select>
-      <span class="tp-store-beta">Economia beta · sem dinheiro real</span>
-    </div>
+    ${featured?`<section class="bn-store-featured" aria-label="Item em destaque"><h2>Item em destaque</h2>${renderCard(featured,true)}</section>`:''}
+    <nav class="bn-store-categories" aria-label="Categorias da loja">${categoryOptions}</nav>
     <div class="tp-store-grid" aria-live="polite">
-      ${catalog?.demoPremiumEnabled===true?`<article class="tp-store-card" style="grid-column:1/-1;min-height:0"><div class="tp-store-card-text"><h3>Créditos premium de demonstração</h3><p>Simule uma compra para experimentar a loja. Nenhum pagamento ou dado financeiro será solicitado.</p><div style="display:flex;flex-wrap:wrap;gap:8px">${[100,300,700].map(amount=>`<button class="btn btn-primary" type="button" data-action="store-demo-topup" data-item-id="demo_${amount}" ${loading?'disabled':''}>+ ${amount} premium</button>`).join('')}</div></div></article>`:''}
       ${loading&&!catalog?'<p class="tp-store-loading">Carregando catálogo...</p>':
         !catalog?'<p class="tp-store-loading">A loja não está disponível no momento.</p>':
-        cards||'<p class="tp-store-loading">Nenhum item nesta categoria.</p>'}
+        cards||(featured?'':'<p class="tp-store-loading">Nenhum item nesta categoria.</p>')}
     </div>
     <footer class="tp-store-footnote">As provocações são cosméticas: não aumentam poder, precisão ou dano. Alguns capitães, coleções e sons extras aguardam homologação.</footer>
   </section>`;
