@@ -923,7 +923,7 @@ async function runAction(action,itemId=null) {
       state.preferences=savePreferences({...state.preferences,[itemId]:!state.preferences[itemId]});
       render();
       root.querySelector(`[data-action="toggle-setting"][data-item-id="${itemId}"]`)?.focus();
-      // Audio preferences are applied immediately by syncAudio; vibration and notifications remain local preferences.
+      // Audio preferences are applied immediately by syncAudio; notifications remain a local preference.
       break;
     }
     case 'settings-manage-account':{

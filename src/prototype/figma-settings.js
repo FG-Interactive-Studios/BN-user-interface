@@ -2,11 +2,11 @@ import {esc} from './board.js';
 
 /** Approved Figma settings artboard.
  * These settings are local display preferences only, not server/user preferences.
- * Music and effects control AudioManager; push notices and vibration still require their engines.
+ * Music and effects control AudioManager; push notices still require their engine.
  */
 const STORAGE_KEY='bn.ui.preferences.v1';
-const defaults=Object.freeze({music:true,effects:true,vibration:true,notifications:false,language:'pt-BR'});
-export const settingKeys=Object.freeze(['music','effects','vibration','notifications']);
+const defaults=Object.freeze({music:true,effects:true,notifications:false,language:'pt-BR'});
+export const settingKeys=Object.freeze(['music','effects','notifications']);
 
 export function loadPreferences(){
   try{
@@ -51,7 +51,6 @@ export function renderFigmaSettings(profile,preferences){
           </section>
           <section class="bn-settings-panel bn-settings-game" aria-labelledby="bn-settings-game-heading">
             <h2 id="bn-settings-game-heading">Jogo</h2>
-            ${switchControl('Vibração','vibration',p.vibration)}
             ${switchControl('Notificações','notifications',p.notifications,'Avisos de turno e eventos')}
             <button type="button" class="bn-settings-row bn-settings-link-row" data-action="settings-language">
               <span>Idioma</span><span class="bn-settings-row-value">Português (BR) ${arrow}</span>
