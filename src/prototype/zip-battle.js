@@ -1,6 +1,7 @@
 import { esc, coordLabel, renderBoard } from './board.js';
 import {captainArt} from './ship-art.js';
 import {expressionTitle} from './expressive-cosmetics.js';
+import {orderedPowers,powerCostLabel} from './power-feedback.js';
 
 /** Positions in the official 4×4 GD icon atlas; unknown powers retain a neutral symbol. */
 const GD_POWER_ICONS=Object.freeze({
@@ -25,7 +26,7 @@ export function renderZipBattle({
   const totalShips = mode.fleet.length;
   const remainingOwn = Math.max(0, totalShips - ownLost);
   const remainingEnemy = Math.max(0, totalShips - enemyLost);
-  const abilities = available || [];
+  const abilities = orderedPowers(available || []);
   const usefulAbilities = abilities.filter(ability => ability.usesRemaining > 0 && !ability.locked).length;
   const abilityCredits = Number(battle.yourAbilityPointsEarned) || 0;
   const aimingForOwnBoard = activeAbility?.targetScope === 'OWN';
@@ -50,7 +51,7 @@ export function renderZipBattle({
         title="${esc(ability.description || ability.name)}" ${disabled ? 'disabled' : ''} aria-pressed="${chosen}">
         <span class="zip-ability-emblem${powerIcon?' gd-power-icon':''}" ${powerIcon?`style="background-position:${powerIcon}"`:''} aria-hidden="true">${powerIcon?'':'✦'}</span>
         <span class="zip-ability-name">${esc(ability.name)}</span>
-        <small>${ability.usesRemaining} uso(s) · ${['radar','double-shot'].includes(ability.id)?'Grátis':'1 ponto'}${ability.locked?' · Bloqueado':''}</small>
+        <small>${ability.usesRemaining} uso(s) · ${powerCostLabel(ability)}${ability.locked?' · Bloqueado':''}</small>
       </button>`;
     }).join('')
     : '<p class="zip-no-powers">Este modo não possui habilidades disponíveis.</p>';

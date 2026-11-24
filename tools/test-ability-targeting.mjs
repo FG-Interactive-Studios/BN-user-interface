@@ -54,3 +54,20 @@ assert.equal(planAbility({ability:power('future-multi-shot',3),anchor:{row:1,col
 const damaged=planAbility({ability:power('hull-shield',1,'OWN'),anchor:{row:1,col:1},mode,battle:{...match,shotsReceived:[{row:1,col:1,hit:true}]}});
 assert.equal(damaged.valid,false);
 console.log('PASS ability targeting: manually selected double shot, rotatable line/area and backend-compatible payloads');
+
+// Power feedback depends on accepted server snapshots, not guessed enemy cells.
+const {orderedPowers,gainedPowerPoints}=await import('../src/prototype/power-feedback.js');
+const list=[{id:'air-strike',usesRemaining:1},{id:'double-shot',usesRemaining:1},{id:'radar',usesRemaining:0},{id:'retreat',usesRemaining:1}];
+assert.deepEqual(orderedPowers(list).map(a=>a.id),['double-shot','radar','air-strike','retreat']);
+assert.equal(list[0].id,'air-strike');
+const oldPower={matchId:5,revision:2,status:'PLAYING',yourAbilityPointsEarned:1,yourAbilities:list,yourAbilityPointCells:[{row:0,col:0}]};
+const gained={...oldPower,revision:4,yourAbilityPointsEarned:2};
+assert.equal(gainedPowerPoints(oldPower,gained),1);
+assert.equal(gainedPowerPoints(gained,gained),0);
+assert.equal(gainedPowerPoints(gained,oldPower),0);
+assert.equal(gainedPowerPoints(null,gained),0);
+assert.equal(gainedPowerPoints(oldPower,{...gained,matchId:6}),0);
+const spent=list.map(a=>a.id==='air-strike'?{...a,usesRemaining:0}:a);
+assert.equal(gainedPowerPoints(oldPower,{...gained,yourAbilityPointsEarned:0,yourAbilities:spent}),0);
+assert.equal(gainedPowerPoints(oldPower,{...gained,yourAbilityPointsEarned:1,yourAbilities:spent}),1);
+assert.equal(gainedPowerPoints(oldPower,{...gained,yourAbilityPointsEarned:3,yourAbilities:spent}),3);
