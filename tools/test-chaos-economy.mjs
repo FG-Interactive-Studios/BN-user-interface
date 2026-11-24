@@ -1,3 +1,4 @@
+import {REACTIONS} from '../src/prototype/chaos-humor.js';
 // End-to-end mocked transport, REAL Vite/DOM: fake money -> buy -> equip ->
 // use taunt -> humorous shot -> result -> single reward credit.
 import assert from 'node:assert/strict';
@@ -135,9 +136,7 @@ try {
  // A normal shot triggers a text-only humorous reaction.
  await play.locator('.zip-primary-board [data-coord]').first().click();
  await play.locator('[data-action="fire"]').click();
- await play.waitForFunction(()=>document.querySelector('.bn-chaos-toast')?.textContent?.includes('casco')
-     ||document.querySelector('.bn-chaos-toast')?.textContent?.includes('seguradora')
-     ||document.querySelector('.bn-chaos-toast')?.textContent?.includes('garantia'),null,{timeout:10000});
+ await play.waitForFunction(phrases=>phrases.includes(document.querySelector('.bn-chaos-toast')?.textContent),REACTIONS.hit,{timeout:10000});
  assert.equal(shots,1);
  await play.screenshot({path:'artifacts/chaos-economy/battle-mobile.png',fullPage:true});
  // Finish -> one 25-coin reward paid; original store purchases stay owned.
