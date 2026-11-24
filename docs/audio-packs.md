@@ -10,10 +10,10 @@ AudioManager, AudioEvents e audio-packs separam reprodução, extração de even
 | Evento | Disparo | Canal |
 | --- | --- | --- |
 | lobby | Login/cadastro, lobby, menus e criação de sala | Música, loop |
-| waiting_radar | Sala WAITING | Efeitos, loop |
-| positioning_music | Posicionamento | Música, loop |
+| waiting_radar | Busca pública SEARCHING, sem sala | Efeitos, loop |
+| positioning_music | Sala aguardando pronto e posicionamento (mesmo loop contínuo) | Música, loop |
 | victory_music / defeat_music | Tela de resultado, conforme vencedor | Música, loop |
-| game_found | Segundo jogador entra na sala; convidado após confirmação da entrada | Efeito |
+| game_found | Pareamento público confirmado, uma vez; não toca ao entrar por código | Efeito |
 | ui_transition | Navegação entre telas (exceto entradas de preparação, combate e resultado) | Efeito |
 | battle_music | Combate | Música, loop |
 | match_start | Transição observada PREPARING para PLAYING | Efeito |

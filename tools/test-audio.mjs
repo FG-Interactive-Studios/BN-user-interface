@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {AudioManager,EVENTS,isCustomizableSoundEvent,resolveSounds,sceneEvent} from '../src/prototype/audio-manager.js';
 import {AudioEvents} from '../src/prototype/audio-events.js';
-const packs={sound_default:{lobby:'default-lobby',shot:'default-shot',hit:'default-hit',ability_activation:'default-ability',waiting_radar:'default-radar'},sound_sonar:{shot:'sonar-shot'}};
+const packs={sound_default:{lobby:'default-lobby',shot:'default-shot',hit:'default-hit',ability_activation:'default-ability',waiting_radar:'default-radar',positioning_music:'default-positioning'},sound_sonar:{shot:'sonar-shot'}};
 assert.deepEqual(resolveSounds(packs,'sound_sonar','shot'),['sonar-shot','default-shot']);
 assert.deepEqual(resolveSounds(packs,'sound_sonar','hit'),['default-hit']);
 assert.deepEqual(resolveSounds(packs,'sound_sonar','ability-radar'),[]);
@@ -29,7 +29,12 @@ assert.deepEqual(resolveSounds({sound_default:{},sound_sonar:{match_start:'paid-
 assert.deepEqual(resolveSounds({sound_default:{},sound_sonar:{ui_click:'paid-click'}},'sound_sonar','ui_click'),[]);
 assert.deepEqual(resolveSounds({sound_default:{ship_sunk:'default-generic'},sound_sonar:{ship_sunk:'paid-generic'}},'sound_sonar','ship_sunk_ally'),['default-generic']);
 assert.equal(sceneEvent('store'),'lobby');
-assert.equal(sceneEvent('matchmaking','WAITING'),'waiting_radar');
+assert.equal(sceneEvent('matchmaking'),'lobby','Choice screen is not active search');
+assert.equal(sceneEvent('matchmaking',null,{queueStatus:'SEARCHING'}),'waiting_radar');
+assert.equal(sceneEvent('matchmaking','WAITING'),'positioning_music');
+assert.equal(sceneEvent('matchmaking','WAITING',{queueStatus:'SEARCHING'}),'positioning_music','Room takes precedence over stale queue');
+assert.equal(sceneEvent('matchmaking','PREPARING'),'positioning_music');
+assert.equal(sceneEvent('matchmaking',null,{queueStatus:'IDLE'}),'lobby');
 assert.equal(sceneEvent('match'),'battle_music');
 assert.equal(sceneEvent('placement','PREPARING'),'positioning_music');
 assert.equal(sceneEvent('result'),null);
@@ -63,8 +68,15 @@ assert.deepEqual(tracker.update({room:room('FINISHED',3),battle:finished,userId:
 const foundTracker=new AudioEvents();
 const waiting=room('WAITING',1);waiting.players.pop();
 foundTracker.update({room:waiting,battle:null,userId:p});
-assert.deepEqual(foundTracker.update({room:room('WAITING',2),battle:null,userId:p}),['game_found']);
+assert.deepEqual(foundTracker.update({room:room('WAITING',2),battle:null,userId:p}),[],'Private host does not receive a second sonar-like found cue');
 assert.deepEqual(foundTracker.update({room:room('WAITING',2),battle:null,userId:p}),[]);
+const publicRoom={...room('WAITING',1),code:'PUBLIC',publicMatch:true};
+foundTracker.update({room:null,battle:null,userId:p});
+assert.deepEqual(foundTracker.update({room:publicRoom,battle:null,userId:p}),['game_found']);
+assert.deepEqual(foundTracker.update({room:publicRoom,battle:null,userId:p}),[]);
+assert.deepEqual(foundTracker.update({room:{...publicRoom,status:'PREPARING',revision:2},battle:null,userId:p}),[]);
+const restored=new AudioEvents();
+assert.deepEqual(restored.update({room:publicRoom,battle:null,userId:p}),[],'Restored session must not replay found cue');
 const started=[],stopped=[],fetched=[];
 const fake={
  state:'suspended',destination:{},async resume(){this.state='running';},async decodeAudioData(data){return data;},
@@ -97,6 +109,31 @@ assert.equal(started.filter(x=>x==='default-shot').length,1);
 assert.equal(media.paused,true);
 assert.equal(media.src,'');
 assert.ok(!fetched.includes('default-lobby'),'Music must stream, not decode into effect cache');
+// One streaming element and no restart when a second player joins or both ready.
+manager.setVisible(true);
+const begin=started.length;
+const stoppedAt=stopped.length;
+const scene=(route,status,queueStatus)=>manager.setState({scene:sceneEvent(route,status,{queueStatus}),preferences:{music:true,effects:true}});
+scene('matchmaking',null,'SEARCHING');
+assert.equal(media.src,'default-radar');
+scene('matchmaking',null,'SEARCHING');
+scene('matchmaking','WAITING');
+assert.equal(media.src,'default-positioning');
+assert.equal(media.paused,false);
+scene('matchmaking','WAITING');
+scene('matchmaking','PREPARING');
+scene('placement','PREPARING');
+await settle();
+assert.deepEqual(started.slice(begin),['default-radar','default-positioning']);
+assert.deepEqual(stopped.slice(stoppedAt),['default-lobby','default-radar']);
+scene('lobby');
+assert.equal(media.src,'default-lobby');
+scene('matchmaking','WAITING');
+assert.equal(media.src,'default-positioning','Private room starts preparation music immediately');
+scene('matchmaking','WAITING');
+assert.equal(started.filter(x=>x==='default-radar').length,2,'No radar in private room');
+manager.stop();
+
 const dir=new URL('../src/assets/audio/default/',import.meta.url);
 const official=JSON.parse(readFileSync(new URL('manifest.json',dir),'utf8'));
 for(const event of ['lobby','positioning_music','battle_music','victory_music','defeat_music','waiting_radar','hit','miss','ship_sunk_enemy','ship_sunk_ally','game_found','ui_click','ui_transition','victory','defeat']){
