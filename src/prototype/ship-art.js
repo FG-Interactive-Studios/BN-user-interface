@@ -2,7 +2,7 @@ import {GD_ASSETS} from './gd-assets.js';
 export const DEFAULT_SHIP_ART=Object.freeze({CARRIER:'/assets/bn-zip/ship-carrier.webp',DESTROYER:'/assets/bn-zip/ship-destroyer-gd.webp'});
 const lookup=(obj,key)=>Object.hasOwn(obj,key)?obj[key]:null;
 export function shipArt(id,skin,state='intact'){
- if(skin===undefined)return lookup(DEFAULT_SHIP_ART,id);
+ // The official base fleet also covers missing or legacy skin identifiers.
  const pack=lookup(GD_ASSETS.fleets,skin)||GD_ASSETS.fleets.skin_default;
  const ship=lookup(pack,id);
  return ship&&['intact','sunk'].includes(state)?ship[state]:null;
@@ -19,8 +19,26 @@ export function equippedId(items,category,fallback){
 }
 // Only observed shots, never placement or information from the opponent's hidden fleet.
 export function captainMoods(battle,previous){
- if(!battle||battle.matchId!==previous?.matchId||battle.revision!==previous.revision+1)return {mine:'neutral',rival:'neutral'};
+ if(!battle||battle.matchId!==previous?.matchId||battle.revision<=previous.revision)return {mine:'neutral',rival:'neutral'};
  const newHit=(a,b)=>{const old=new Map((a||[]).map(s=>[s.row+','+s.col,s]));return (b||[]).some(s=>s.hit&&!s.blocked&&(!old.get(s.row+','+s.col)?.hit||old.get(s.row+','+s.col)?.blocked));};
  const fired=newHit(previous.shotsFired,battle.shotsFired),received=newHit(previous.shotsReceived,battle.shotsReceived);
  return {mine:fired?'hit':received?'damage':'neutral',rival:received?'hit':fired?'damage':'neutral'};
+}
+
+/** Independent from audio playback: keep a reaction across rerenders, including
+ * local targeting, store refresh, and repeated REST/WebSocket snapshots. */
+export function createCaptainMoodTracker(){
+ let previous=null,moods={mine:'neutral',rival:'neutral'};
+ return {
+  update(battle){
+   if(!battle||battle.matchId!==previous?.matchId){
+    previous=battle;moods={mine:'neutral',rival:'neutral'};return moods;
+   }
+   if(battle.revision<=previous.revision)return moods;
+   const shotSignature=b=>JSON.stringify([b.shotsFired||[],b.shotsReceived||[]]);
+   if(shotSignature(battle)!==shotSignature(previous))moods=captainMoods(battle,previous);
+   previous=battle;return moods;
+  },
+  reset(){previous=null;moods={mine:'neutral',rival:'neutral'};}
+ };
 }

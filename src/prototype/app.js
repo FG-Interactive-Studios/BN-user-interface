@@ -18,7 +18,7 @@ import { renderFigmaPlacement } from './figma-placement.js';
 import { renderZipBattle } from './zip-battle.js';
 import {renderAdminPanel} from './admin-panel.js';
 import {planAbility, ABILITY_DIRECTIONS, abilityNeedsDirection, directionText} from './ability-targeting.js';
-import { shipArt,equippedId,captainMoods } from './ship-art.js';
+import { shipArt,equippedId,createCaptainMoodTracker } from './ship-art.js';
 import { esc, renderBoard, keyOf, coordLabel, occupiedCells, shipName } from './board.js';
 import { roomDeparture, resolvedRoute } from './room-flow.js';
 import { compactEnemyContacts } from './mobile-presenters.js';
@@ -37,6 +37,7 @@ const state = {
 };
 const audio=new AudioManager({packs:audioPacks});
 const audioEvents=new AudioEvents();
+const captainMoodTracker=createCaptainMoodTracker();
 let audioRoute='';
 let storeLoadGeneration=0;
 const rewardReceipts=new Map();
@@ -192,7 +193,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -579,7 +580,7 @@ function battleScreen(){
     skillTargets:state.skillTargets, skillArea:state.skillArea,
     available, sunk, activeAbility, skillControls, activeEffects, radarInfo,
     clockStrip, pausedOverlay, tauntControls:tauntControls(state.store?.items),
-    skin:equippedId(state.store?.items,'SKIN','skin_default'),captain:equippedId(state.store?.items,'CAPTAIN','captain_default'),moods:captainMoods(b,audioEvents.battle),
+    skin:equippedId(state.store?.items,'SKIN','skin_default'),captain:equippedId(state.store?.items,'CAPTAIN','captain_default'),moods:captainMoodTracker.update(b),
   }) + skillDialogMarkup();
 }
 function resultScreen() {

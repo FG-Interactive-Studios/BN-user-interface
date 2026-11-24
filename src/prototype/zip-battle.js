@@ -74,7 +74,7 @@ export function renderZipBattle({
           <strong>Você</strong>
           <small>Navios: ${remainingOwn}/${totalShips} · Acertos: ${enemy.hits.length}</small>
         </div>
-        <div class="zip-score-value" aria-label="Acertos ${enemy.hits.length} a ${own.hits.length}">${enemy.hits.length} × ${own.hits.length}</div>
+        <div class="zip-score-value" aria-label="Acertos ${enemy.hits.length} a ${own.hits.length}"><span class="zip-score-own">${enemy.hits.length}</span><span aria-hidden="true">×</span><span class="zip-score-rival">${own.hits.length}</span></div>
         <div class="zip-score-side zip-score-opponent">
           <strong>${rivalName}</strong>
           <small>Navios: ${remainingEnemy}/${totalShips} · Acertos: ${own.hits.length}</small>
@@ -84,7 +84,7 @@ export function renderZipBattle({
       <div class="zip-battle-center">
         <section class="zip-enemy-section" aria-label="Tabuleiro de ataque">
           <div class="zip-board-heading"><span class="zip-side-label">ATAQUE · ÁGUAS DO OPONENTE</span><strong title="${rivalName}">${rivalName}</strong>${rivalTitle?`<small class="zip-captain-title">${esc(rivalTitle)}</small>`:''}</div>
-          <div class="zip-captain-portrait"><img class="zip-combat-captain" src="${rivalPortrait}" alt="Capitão do adversário"></div>
+          <div class="zip-captain-portrait" data-mood="${moods.rival}"><img class="zip-combat-captain" src="${rivalPortrait}" alt="Capitão do adversário"></div>
           <div class="zip-primary-board">
             ${renderBoard(mode, {
               hits: enemy.hits, misses: enemy.misses,
@@ -107,7 +107,7 @@ export function renderZipBattle({
 
         <section class="zip-own-section" aria-label="Tabuleiro de defesa">
           <div class="zip-board-heading"><span class="zip-side-label">DEFESA · SUA FROTA</span><strong>Você</strong></div>
-          <div class="zip-captain-portrait"><img class="zip-combat-captain" src="${ownPortrait}" alt="Seu capitão"></div>
+          <div class="zip-captain-portrait" data-mood="${moods.mine}"><img class="zip-combat-captain" src="${ownPortrait}" alt="Seu capitão"></div>
           <div class="zip-own-board">
             ${renderBoard(mode, {
               ships: battle.yourShips, hits: own.hits, misses: own.misses, skin,

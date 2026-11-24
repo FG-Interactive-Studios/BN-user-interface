@@ -1,4 +1,4 @@
-import {shipArt,isOfficialFleet} from './ship-art.js';
+import {shipArt} from './ship-art.js';
 /** Renders only the cells and polygons described by the selected server mode. */
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 export { esc };
@@ -61,13 +61,13 @@ export function renderBoard(mode, { ships=[], hits=[], misses=[], markers=[], hi
     }
     // Absolutely positioned grid children use the same tracks, never occupy extra cells.
     // Only ships explicitly supplied by the caller can be drawn.
-    if(isOfficialFleet(skin))for(const ship of ships||[]){
+    for(const ship of ships||[]){
       const length=mode.fleet?.find(s=>s.id===ship.type)?.length;
       if(!Number.isInteger(length)||length<1||!Number.isInteger(ship.row)||!Number.isInteger(ship.col)||!['HORIZONTAL','VERTICAL'].includes(ship.orientation))continue;
       const vertical=ship.orientation==='VERTICAL',endRow=ship.row+(vertical?length:1),endCol=ship.col+(vertical?1:length);
       if(ship.row<0||ship.col<0||endRow>size||endCol>size)continue;
       const destroyed=Array.from({length},(_,i)=>hitSet.has((ship.row+(vertical?i:0))+','+(ship.col+(vertical?0:i)))).every(Boolean);
-      const art=shipArt(ship.type,skin,destroyed?'sunk':'intact');
+      const art=shipArt(ship.type,skin??'skin_default',destroyed?'sunk':'intact');
       if(art)html+=`<span class="bn-gd-ship-overlay ${vertical?'is-vertical':'is-horizontal'} ${destroyed?'is-sunk':''}" aria-hidden="true" style="grid-row:${ship.row+2}/${endRow+2};grid-column:${ship.col+2}/${endCol+2};--ship-length:${length}"><img src="${art}" alt="" draggable="false"></span>`;
     }
     return html+'</div>';

@@ -27,17 +27,9 @@ export function renderFigmaResult({battle,profile,lobby,reward=null,celebrate=fa
     : draw ? 'A batalha terminou empatada.'
     : `A batalha contra ${opponentLabel} terminou.`;
 
-  // The server provides two perspectives: shotsFired (you) and shotsReceived (opponent).
   const gameMode=esc(battle.mode?.name||'Modo de jogo');
-  const playerRow=(label,stats,isYou)=>`<div class="bn-report-player ${isYou?'is-you':'is-rival'}">
-    <strong class="bn-report-player-name">${esc(label)}</strong>
-    <div class="bn-report-player-numbers">
-      <span><b>${stats.hits}</b><small>Acertos</small></span>
-      <span><b>${stats.misses}</b><small>Erros</small></span>
-      <span><b>${stats.accuracy}%</b><small>Precisão</small></span>
-      <span><b>${stats.sunk}</b><small>Navios</small></span>
-    </div>
-  </div>`;
+  const {hits,misses,accuracy,sunk}=report.player;
+  const stat=(value,label,negative=false)=>`<div class="bn-report-stat${negative?' negative':''}"><strong>${esc(value)}</strong><span>${esc(label)}</span></div>`;
   const rematch=lobby?.rematch||null;
   const series=lobby?.rivalry;
   const host=lobby?.players?.[0]?.id===profile?.id;
@@ -72,9 +64,6 @@ export function renderFigmaResult({battle,profile,lobby,reward=null,celebrate=fa
       + Array.from({length:12},(_,index)=>'<span class="bn-finale-particle" style="--i:'+index+';left:'+(4+index*8)+'%;--delay:'+(index*.035)+'s;--drift:'+(index%2===0?'30px':'-30px')+'">'+(chaosCelebration?['🤡','🎊','✨','🦆'][index%4]:won?'🎉':draw?'✨':'💧')+'</span>').join('')
       + '</div>'
     : '';
-  const sharedNote=report.comparable
-    ? '<span class="bn-report-equal-stats"> Os acertos e erros foram iguais, mas a condição de encerramento definiu o vencedor.</span>'
-    : '';
   return `<div class="screen bn-result-stage is-${outcome} ${celebrate?'is-celebrating':''}">${celebration}
     <main class="bn-result-viewport" aria-label="Resultado da partida">
       <header class="bn-report-hero">
@@ -86,11 +75,11 @@ export function renderFigmaResult({battle,profile,lobby,reward=null,celebrate=fa
       <div class="bn-report-panels">
         <section class="bn-report-panel bn-report-summary" aria-labelledby="bn-result-summary">
           <h2 id="bn-result-summary">Resumo da partida</h2>
-          <div class="bn-report-stats" aria-label="Comparação dos jogadores">
-            ${playerRow('Você',report.player,true)}
-            ${playerRow(opponent||'Adversário',report.rival,false)}
+          <div class="bn-report-stats" aria-label="Suas estatísticas da partida">
+            ${stat(hits,'Acertos')}${stat(misses,'Erros',true)}
+            ${stat(accuracy+'%','Precisão')}${stat(sunk+'/'+(battle.mode?.fleet?.length||sunk),'Navios destruídos')}
           </div>
-          <p class="bn-report-verdict" aria-live="polite">${esc(report.reason)}${sharedNote}</p>
+          <p class="bn-report-verdict" aria-live="polite">${esc(report.reason)}</p>
           <div class="bn-report-award" role="group" aria-label="Prêmio engraçado desta batalha">
             <span class="bn-report-award-icon" aria-hidden="true">${esc(award.emoji)}</span>
             <span class="bn-report-award-copy"><strong>${esc(award.title)}</strong><small>${esc(award.description)}</small></span>
