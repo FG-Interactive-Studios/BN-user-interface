@@ -23,7 +23,7 @@ export function renderFigmaProfile(profile,{title,frame,captain,statistics,stati
     <strong ${value==null?'aria-label="Dado indisponível"':''}>${value==null?'—':esc(value)}</strong><span>${title}</span></div>`;
   const n=value=>Number.isFinite(value)?value.toLocaleString('pt-BR'):null;
   const rate=statistics?((statistics.totalMatches?100*statistics.wins/statistics.totalMatches:0).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%'):null;
-  const reasons={ALL_SHIPS_SUNK:'Frota afundada',ABANDONED:'Desistência',BOTH_DISCONNECTED:'Ambos desconectados',DISCONNECTED:'Desconexão',MATCH_TIMEOUT:'Tempo encerrado',TURN_TIMEOUT:'Tempo de turno'};
+  const reasons={ALL_SHIPS_SUNK:'Frota afundada',ABANDONED:'Desistência',BOTH_DISCONNECTED:'Ambos desconectados',DISCONNECT_TIMEOUT:'Desconexão',TIME_LIMIT:'Tempo encerrado',TIME_LIMIT_DRAW:'Tempo encerrado',TURN_TIMEOUT_FORFEIT:'Turnos expirados'};
   const date=value=>{const d=new Date(value);return value&&!Number.isNaN(d.getTime())?d.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Data indisponível';};
   const recent=Array.isArray(statistics?.recentMatches)?statistics.recentMatches.slice(0,10):[];
   const history=recent.map(m=>{
