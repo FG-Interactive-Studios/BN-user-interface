@@ -81,7 +81,8 @@ export function renderProductCover(item){
 }
 
 export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
-  const items=(catalog?.items||[]).filter(item=>filter==='ALL'||item.category===filter||(filter==='COSMETICS'&&EXPRESSIVE_CATEGORIES.includes(item.category)));
+  // A released product withdrawn from sale is hidden from the shop, not from the owned inventory.
+  const items=(catalog?.items||[]).filter(item=>!(item.enabled&&item.saleEnabled===false)).filter(item=>filter==='ALL'||item.category===filter||(filter==='COSMETICS'&&EXPRESSIVE_CATEGORIES.includes(item.category)));
   const categories=[['ALL','Todos'],['BUNDLE','Pacotes'],['CAPTAIN','Capitães'],['SKIN','Navios'],['SOUND','Sons'],['TAUNT','Provocações'],['COSMETICS','Cosméticos'],['COINS','Moedas']];
   const categoryOptions=categories.map(([id,label])=>`<button type="button" class="bn-store-category" data-action="${id==='COINS'?'open-wallet':'store-category'}" data-item-id="${id==='COINS'?'premium':id}" ${id==='COINS'?'aria-haspopup="dialog"':`aria-pressed="${filter===id||(id==='COSMETICS'&&EXPRESSIVE_CATEGORIES.includes(filter))}"`}>${label}</button>`).join('');
   // Promote a real, available, unowned product; no artificial discounts.

@@ -20,7 +20,9 @@ try{
     const page=await browser.newPage({viewport:user.viewport});
     const errors=[];
     let loginCount=0,adminCalls=0;
-    let enabled=false;
+    let enabled=false,productEnabled=true,productCalls=0;
+    const product=()=>({id:'sound_pirate',category:'SOUND',name:'Canhões Piratas',price:140,released:true,enabled:productEnabled,availableForPurchase:productEnabled,manageable:true});
+    page.on('dialog',dialog=>dialog.accept());
     page.on('pageerror',error=>errors.push(error.message));
     await page.route('**/api/**',route=>{
       const path=new URL(route.request().url()).pathname;
@@ -38,6 +40,19 @@ try{
       if(path==='/api/matchmaking/state')return respond(route,{status:'IDLE',room:null,modeId:null});
       if(path==='/api/store')return respond(route,{items:[]});
       if(path==='/api/realtime/ticket')return route.fulfill({status:503,body:'{}'});
+      if(path==='/api/admin/store/items'){
+        productCalls++;
+        assert.equal(route.request().headers().authorization,'Bearer test-access-'+user.id);
+        assert.equal(user.admin,true);
+        return respond(route,[product(),{id:'sound_default',category:'SOUND',name:'Sons Padrão',price:0,released:true,enabled:true,availableForPurchase:true,manageable:false}]);
+      }
+      if(path==='/api/admin/store/items/sound_pirate/availability'&&method==='PUT'){
+        productCalls++;
+        assert.equal(user.admin,true);
+        assert.equal(route.request().headers().authorization,'Bearer test-access-'+user.id);
+        productEnabled=route.request().postDataJSON().enabled;
+        return respond(route,product());
+      }
       if(path==='/api/admin/game-modes'){
         adminCalls++;
         assert.equal(route.request().headers().authorization,'Bearer test-access-'+user.id);
@@ -73,6 +88,18 @@ try{
       await page.locator('.bn-admin-toggle.is-enabled').waitFor({timeout:12000});
       assert.equal(enabled,true,'Admin action should use the original session JWT');
       assert.equal(loginCount,1,'Admin action must not create another login');
+      await page.locator('[data-action="admin-tab"][data-item-id="store"]').click();
+      const pirate=page.locator('[data-admin-product="sound_pirate"]');
+      await pirate.waitFor();
+      assert.equal(await page.locator('[data-admin-product="sound_default"] button').isDisabled(),true);
+      await pirate.locator('button').click();
+      await pirate.getByText('Ativar',{exact:true}).waitFor();
+      assert.equal(productEnabled,false);
+      await pirate.locator('button').click();
+      await pirate.getByText('Desativar',{exact:true}).waitFor();
+      assert.equal(productEnabled,true);
+      assert.ok(productCalls>=3);
+      assert.equal(loginCount,1);
       await page.locator('[data-go="lobby"]').last().click();
       await page.locator('body[data-route="lobby"]').waitFor({timeout:12000});
     }else{
@@ -81,6 +108,7 @@ try{
       await page.locator('body[data-route="lobby"]').waitFor({timeout:12000});
       assert.notEqual(new URL(page.url()).hash,'#admin','Non-admin direct route must redirect');
       assert.equal(adminCalls,0,'Never request admin data for non-admins');
+      assert.equal(productCalls,0,'Never request admin products for non-admins');
     }
     assert.deepEqual(errors,[],'No browser JavaScript errors');
     await page.close();
