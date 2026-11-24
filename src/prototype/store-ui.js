@@ -20,6 +20,7 @@ const coverThemes = {
   captain_space:['#171638','#5d48c2','#a6eaff','CAPITÃO FUTURISTA'],
   bundle_corsair:['#302018','#b27b42','#ffe0a0','COLEÇÃO CORSÁRIA'],
   bundle_space:['#191434','#7151bc','#9ceaff','COLEÇÃO FUTURISTA'],
+  bundle_chaos:['#291334','#b74da8','#ffce96','ALMIRANTE DO CAOS'],
   taunt_default:['#14263c','#296b9e','#b4e8ff','PROVOCAÇÕES'],
   taunt_banter:['#382619','#b27135','#ffe0a3','TIO DO PAVÊ'],
   taunt_panic:['#3c1929','#bc3654','#ffc0c8','SURTO MARÍTIMO'],
@@ -51,9 +52,13 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
     ['ALL','Todos'],['SKIN','Embarcações'],['SOUND','Sons'],['TAUNT','Provocações'],['CAPTAIN','Capitães'],['BUNDLE','Coleções']
   ].map(([id,label])=>`<option value="${id}" ${filter===id?'selected':''}>${label}</option>`).join('');
   const cards=items.map(item=>{
-    // CAPTAIN/BUNDLE are catalog previews only until the API grants them safely.
-    const owned=Boolean(item.owned),equipped=Boolean(item.equipped);
-    const available=Boolean(item.enabled)&&['SKIN','SOUND','TAUNT'].includes(item.category);
+    // Bundle components are provided by the server; never equip a bundle itself.
+    const isBundle=item.category==='BUNDLE';
+    const components=isBundle&&Array.isArray(item.components)?item.components.map(id=>catalog?.items?.find(x=>x.id===id)):[]; 
+    const validBundle=isBundle&&components.length>0&&components.every(x=>x&&x.enabled&&['SKIN','SOUND','TAUNT'].includes(x.category));
+    const owned=Boolean(item.owned)||(validBundle&&components.every(x=>x.owned)),equipped=Boolean(item.equipped);
+    const available=Boolean(item.enabled)&&(['SKIN','SOUND','TAUNT'].includes(item.category)||validBundle);
+    const bundlePreview=isBundle&&components.length?`<div class="bn-bundle-items"><strong>Inclui:</strong>${components.map(x=>x?`<span class="bn-taunt-phrase">${x.owned?'✓ ':''}${esc(x.name)}</span>`:'').join('')}${validBundle&&!owned&&components.some(x=>x.owned)?'<small>O preço da coleção permanece o mesmo para itens já adquiridos.</small>':''}</div>`:'';
     const cls=['tp-store-card',item.category==='SOUND'?'is-sound':item.category==='TAUNT'?'is-taunt':item.category==='CAPTAIN'?'is-captain':item.category==='BUNDLE'?'is-bundle':'is-skin',
       item.id==='skin_coral'?'is-coral':'',item.id==='skin_abyss'?'is-abyss':''].filter(Boolean).join(' ');
     const appearance={SKIN:['⚓','Frota'],SOUND:['♫','Som'],TAUNT:['💬','Provocação'],CAPTAIN:['♟','Capitão'],BUNDLE:['✦','Coleção']};
@@ -72,12 +77,13 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
       ? `<button class="btn btn-ghost" type="button" data-action="store-buy-premium" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Comprar · ${item.premiumPrice} premium</button>` : '';
     const action=!available?`<span class="tp-store-unavailable">${unavailableReason}</span>`:
       equipped?'<button class="btn btn-ghost" type="button" disabled>Em uso</button>':
+      owned&&isBundle?'<span class="tp-store-tag">Coleção completa</span>':
       owned?`<button class="btn btn-primary" type="button" data-action="store-equip" data-item-id="${esc(item.id)}">Equipar</button>`:
       `<button class="btn btn-orange" type="button" data-action="store-buy" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Comprar · ${item.price} créditos</button>`;
     return `<article class="${cls}">
       ${renderProductCover(item)}
       <div class="tp-store-card-text"><div class="tp-store-card-meta"><span>${type}</span>${tags}</div>
-      <h3>${esc(item.name)}</h3><p>${description}</p>${phrases}</div>
+      <h3>${esc(item.name)}</h3><p>${description}</p>${phrases}${bundlePreview}</div>
       <div class="tp-store-card-footer"><span class="tp-store-price">${available?(item.price===0?'Grátis':item.price+' créditos'):'Indisponível'}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0">${action}${premiumAction}</div></div>
     </article>`;
   }).join('');
@@ -95,6 +101,6 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
         !catalog?'<p class="tp-store-loading">A loja não está disponível no momento.</p>':
         cards||'<p class="tp-store-loading">Nenhum item nesta categoria.</p>'}
     </div>
-    <footer class="tp-store-footnote">As provocações são cosméticas: não aumentam poder, precisão ou dano. Capitães, coleções e sons extras aguardam homologação.</footer>
+    <footer class="tp-store-footnote">As provocações são cosméticas: não aumentam poder, precisão ou dano. Alguns capitães, coleções e sons extras aguardam homologação.</footer>
   </section>`;
 }
