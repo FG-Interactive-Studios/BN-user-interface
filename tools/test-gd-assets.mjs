@@ -6,6 +6,7 @@ import {renderBoard} from '../src/prototype/board.js';
 import {renderProductCover} from '../src/prototype/store-ui.js';
 const paths=[...Object.values(GD_ASSETS.fleets).flatMap(p=>Object.values(p).flatMap(Object.values)),...Object.values(GD_ASSETS.captains).flatMap(Object.values),...Object.values(GD_ASSETS.covers)];
 assert.equal(paths.length,66);
+assert.ok(statSync(new URL('../public/assets/gd/gd-icons.webp',import.meta.url)).size>1000,'Official GD power icon atlas missing');
 for(const path of paths)assert.ok(statSync(new URL('../public'+path,import.meta.url)).size>100);
 assert.match(shipArt('SEARCH','skin_pirate'),/skin_pirate\/search-intact/);
 assert.match(captainArt('captain_overlord','damage'),/damage.jpg/);
