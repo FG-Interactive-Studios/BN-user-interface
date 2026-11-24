@@ -113,3 +113,8 @@ body[data-route="store"] .bn-taunt-phrase {
 }
 .bn-gd-wallet-coin.is-marine{background-position:66.667% 66.667%}
 .bn-gd-wallet-coin.is-naval{background-position:100% 66.667%}
+
+/* Independent point feedback: never replace the captain/commentator reaction. */
+.bn-power-point-toast{position:fixed;z-index:9901;left:50%;bottom:clamp(94px,17dvh,150px);transform:translateX(-50%);width:max-content;max-width:min(90vw,420px);box-sizing:border-box;padding:9px 15px;background:#102c27f5;border:2px solid #75e4aa;border-radius:12px;color:#eaffef;text-align:center;box-shadow:0 6px 24px #000b;pointer-events:none;display:grid;gap:3px;font:600 14px/1.25 'Lexend',sans-serif}
+.bn-power-point-toast strong{color:#abffca;font-size:clamp(15px,3.8vw,19px)}
+.bn-power-point-toast small{font-size:clamp(10px,2.8vw,12px);font-weight:400}

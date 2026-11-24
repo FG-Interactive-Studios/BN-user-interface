@@ -1,6 +1,7 @@
 import * as api from './client.js';
 import {AudioManager,sceneEvent} from './audio-manager.js';
 import {AudioEvents} from './audio-events.js';
+import {orderedPowers,powerCostLabel,gainedPowerPoints,powerCost} from './power-feedback.js';
 import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
 import { renderCosmeticStore } from './store-ui.js';
@@ -51,6 +52,21 @@ const shownTaunts=new Set();
 const celebratedMatches=new Set();
 let chaosToastTimer;
 let activeChaosToast=null;
+let powerToast=null,powerToastTimer;
+function mountPowerToast(){
+  if(!root||currentRoute()!=='match'||!powerToast||Date.now()>=powerToast.until)return;
+  root.querySelector('.bn-power-point-toast')?.remove();
+  const el=document.createElement('div');el.className='bn-power-point-toast';el.setAttribute('role','status');el.setAttribute('aria-live','polite');
+  const heading=document.createElement('strong');heading.textContent=powerToast.gain===1?'✦ +1 ponto de poder!':'✦ +'+powerToast.gain+' pontos de poder!';
+  const detail=document.createElement('small');detail.textContent='Saldo: '+powerToast.balance+' · '+powerToast.hint;
+  el.append(heading,detail);root.append(el);
+}
+function showPowerToast(gain,battle){
+  const usable=(battle.yourAbilities||[]).some(a=>powerCost(a)>0&&a.usesRemaining>0&&!a.locked);
+  powerToast={gain,balance:battle.yourAbilityPointsEarned,hint:usable?'Use em Poderes no seu turno.':'Consulte os poderes disponíveis.',until:Date.now()+5000};
+  mountPowerToast();clearTimeout(powerToastTimer);
+  powerToastTimer=setTimeout(()=>{powerToast=null;root?.querySelector('.bn-power-point-toast')?.remove();},5000);
+}
 function mountChaosToast(){
   if(!root || currentRoute()!=='match'||!activeChaosToast
       ||Date.now()>activeChaosToast.until)return;
@@ -113,6 +129,8 @@ function syncAudio(route){
   const events=audioEvents.update({room:state.lobby,battle:state.battle,userId:state.profile?.id});
   for(const event of events)audio.play(event);
   if(route==='match'){
+    const gain=gainedPowerPoints(before,audioEvents.battle);
+    if(gain>0)showPowerToast(gain,audioEvents.battle);
     const rev=state.battle?.revision||0, me=state.profile?.id, rival=state.lobby?.players?.find(p=>p.id!==me)?.id;
     const victim=events.includes('ship_sunk_ally')?me:events.includes('ship_sunk_enemy')?rival:null;
     const funeral=victim==null?null:paidFuneral(publicExpression(state.lobby,victim,'FUNERAL'),rev);
@@ -203,7 +221,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.placementHover=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.adminTab='modes';state.adminProducts=null;state.adminStoreLoading=false;state.adminStoreError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;clearTimeout(powerToastTimer);powerToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.placementHover=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.adminTab='modes';state.adminProducts=null;state.adminStoreLoading=false;state.adminStoreError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -598,9 +616,9 @@ function paintAbilityPreview(target){
   });
 }
 function skillDialogMarkup(){
-  const abilities=state.battle?.yourAbilities||[];
+  const abilities=orderedPowers(state.battle?.yourAbilities||[]);
   if(!abilities.length)return '';
-  return `<dialog id='tp-skill-dialog' class='tp-join-dialog' aria-labelledby='tp-skill-title'><div class='tp-modal-header'><div><div class='eyebrow'>Mecânicas especiais · piloto</div><h2 id='tp-skill-title'>Escolher habilidade</h2></div><button type='button' data-action='close-abilities' aria-label='Fechar'>×</button></div><p class='tp-muted tp-small'>As regras são experimentais. Cada poder custa um turno. <span class='tp-skill-credit'>Pontos da partida: ${state.battle?.yourAbilityPointsEarned ?? 0}</span>.</p><div class='tp-skill-options'>${abilities.map(a=>`<button class='btn btn-ghost tp-skill-option' data-action='pick-ability' data-ability-id='${esc(a.id)}' ${a.usesRemaining>0&&!a.locked?'':'disabled'}><b>${esc(a.name)} · ${a.usesRemaining} uso(s)</b><small>${esc(a.description||'Habilidade tática')}${a.locked?' · Bloqueada (sem pontos ou interferência)':''}</small></button>`).join('')}</div><div class='tp-modal-actions'><button class='btn btn-ghost' data-action='close-abilities'>Cancelar</button></div></dialog>`;
+  return `<dialog id='tp-skill-dialog' class='tp-join-dialog' aria-labelledby='tp-skill-title'><div class='tp-modal-header'><div><div class='eyebrow'>Mecânicas especiais · piloto</div><h2 id='tp-skill-title'>Escolher habilidade</h2></div><button type='button' data-action='close-abilities' aria-label='Fechar'>×</button></div><p class='tp-muted tp-small'>As regras são experimentais. Cada poder custa um turno. <span class='tp-skill-credit'>Pontos da partida: ${state.battle?.yourAbilityPointsEarned ?? 0}</span>.</p><div class='tp-skill-options'>${abilities.map(a=>`<button class='btn btn-ghost tp-skill-option' data-action='pick-ability' data-ability-id='${esc(a.id)}' ${a.usesRemaining>0&&!a.locked?'':'disabled'}><b>${esc(a.name)} · ${a.usesRemaining} uso(s) · ${powerCostLabel(a)}</b><small>${esc(a.description||'Habilidade tática')}${a.locked?' · Bloqueada (sem pontos ou interferência)':''}</small></button>`).join('')}</div><div class='tp-modal-actions'><button class='btn btn-ghost' data-action='close-abilities'>Cancelar</button></div></dialog>`;
 }
 function shotSummary(shots){return {hits:shots.filter(x=>x.hit&&!x.blocked),misses:shots.filter(x=>!x.hit&&!x.blocked)};}
 function battleScreen(){
@@ -781,6 +799,8 @@ function render(){ if (!root) return;
     dialog?.showModal();
   }
   mountChaosToast();
+  if(route!=='match'){clearTimeout(powerToastTimer);powerToast=null;}
+  mountPowerToast();
   if(route==='match'){
     const dialog=root.querySelector('#tp-skill-dialog');
     if(state.skillDialog&&dialog&&!dialog.open)dialog.showModal();
