@@ -42,16 +42,22 @@ try {
  for(const status of ['PREPARING','PLAYING','RIVAL','PAUSED']){
   for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:412,height:915},{width:1366,height:768},...(status==='PREPARING'?[]:[{width:1366,height:636},{width:1024,height:600},{width:850,height:650}])]){
    const errors=[];
+   let battleFixture={...match,turnPlayerId:status==='RIVAL'?17:13,paused:status==='PAUSED'};
    const page=await browser.newPage({viewport,deviceScaleFactor:1});
    page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/api/**',async route=>{
     const path=new URL(route.request().url()).pathname;
+    if(path==='/api/matches/me/shots'&&route.request().method()==='POST'){
+      const target=route.request().postDataJSON();
+      battleFixture={...battleFixture,revision:battleFixture.revision+2,shotsFired:[...battleFixture.shotsFired,{...target,hit:true}],turnPlayerId:17};
+      return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(battleFixture)});
+    }
     const response=path==='/api/auth/login'?{
        tokenType:'Bearer',accessToken:'qa-token',refreshToken:'qa-refresh',expiresIn:900,user:player
       }:path==='/api/users/me'?player:path==='/api/game-modes'?[mode]:
       path==='/api/matchmaking/lobbies/me'?{...room,status:status==='PREPARING'?'PREPARING':'PLAYING'}:
       path==='/api/matches/me/placement'?placement:
-      path==='/api/matches/me'?{...match,turnPlayerId:status==='RIVAL'?17:13,paused:status==='PAUSED'}:null;
+      path==='/api/matches/me'?battleFixture:null;
     if(response!==null) return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(response)});
     if(path==='/api/realtime/ticket')return route.fulfill({status:503,body:'{"code":"UNAVAILABLE"}',contentType:'application/json'});
     return route.fulfill({status:404,body:'{}',contentType:'application/json'});
@@ -370,6 +376,12 @@ try {
    assert.ok(await page.locator('[data-action="activate-ability"]').isEnabled(),'Targetless power should work without a board click');
    await page.locator('[data-action="cancel-ability"]').click();
    await page.screenshot({path:'artifacts/figma-combat/'+route+'-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
+   await page.locator('.zip-primary-board [data-coord="7,7"]').click();
+   await page.locator('[data-action="fire"]').click();
+   await page.waitForFunction(()=>document.querySelector('.zip-own-section .zip-captain-portrait')?.dataset.mood==='hit'&&document.querySelector('.zip-enemy-section .zip-captain-portrait')?.dataset.mood==='damage');
+   assert.match(await page.locator('.zip-own-section .zip-combat-captain').getAttribute('src'),/hit\.jpg$/);
+   assert.match(await page.locator('.zip-enemy-section .zip-combat-captain').getAttribute('src'),/damage\.jpg$/);
+   await page.screenshot({path:'artifacts/figma-combat/reaction-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    assert.deepEqual(errors,[],'Page errors '+explain);
    console.log('PASS '+status+' '+viewport.width+'x'+viewport.height+'; ZIP battle board '+metrics.board.width.toFixed(0)+'px, scroll-free controls');
    await page.close();
