@@ -86,3 +86,10 @@ assert.match(themedBundle,/skin_corsair\/banner/);
 assert.match(themedBundle,/captain_corsair\/neutral/);
 assert.match(renderProductCover({id:'sound_sonar',category:'SOUND'}),/xMidYMid meet/);
 assert.match(renderCosmeticStore({items:[{id:'sound_sonar',category:'SOUND',name:'Sonar Retrô',description:'Efeitos',enabled:true,price:90}]}),/4 efeitos de combate em 8 bits/);
+
+const {connectionStatusContent,connectionStatusLabel}=await import('../src/prototype/connection-status.js');
+assert.equal(connectionStatusLabel(true),'Conectado');
+assert.match(connectionStatusContent(true),/tp-live-dot online/);
+assert.ok(!connectionStatusContent(true).includes('<span>'),'Online indicator has no visible text');
+assert.match(connectionStatusContent(false),/tp-live-dot warning/);
+assert.match(connectionStatusContent(false),/<span>Reconectando<\/span>/);

@@ -101,3 +101,28 @@ body[data-route="store"] .main{padding-bottom:max(118px,calc(96px + env(safe-are
  body[data-route="store"] .tp-store-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
 @media(prefers-reduced-motion:reduce){body[data-route="store"] .tp-store-card{transition:none}}
+
+/* Connection health precedes the wallet; an online dot takes almost no space. */
+.bn-topbar .bn-connection-status {
+  display:flex;align-items:center;flex:0 0 auto;gap:5px;
+  color:#ffc477;white-space:nowrap;font:500 11px/1.2 'Lexend',sans-serif;
+}
+.bn-topbar .bn-connection-status .tp-live-dot {
+  display:inline-block;flex:0 0 8px;width:8px;height:8px;min-width:8px;
+  border-radius:50%;background:#f5a742;box-shadow:0 0 0 2px #f5a74226;
+}
+.bn-topbar .bn-connection-status[data-online="true"] .tp-live-dot {
+  background:#54d99b;box-shadow:0 0 0 2px #54d99b22;
+}
+@media(max-width:760px){
+ body[data-route="lobby"] .bn-topbar,body[data-route="store"] .bn-topbar{column-gap:7px;}
+ body[data-route="lobby"] .bn-wallet-pills,body[data-route="store"] .bn-wallet-pills{gap:5px;justify-content:flex-end}
+ body[data-route="lobby"] .bn-connection-status,body[data-route="store"] .bn-connection-status{font-size:10px;gap:4px}
+ body[data-route="lobby"] .bn-wallet-pill .bn-gd-wallet-coin,body[data-route="store"] .bn-wallet-pill .bn-gd-wallet-coin{width:24px;height:24px;flex-basis:24px}
+}
+@media(max-width:360px){
+ body[data-route="lobby"] .bn-connection-status,body[data-route="store"] .bn-connection-status{font-size:9px;gap:3px}
+ body[data-route="lobby"] .bn-wallet-pill,body[data-route="store"] .bn-wallet-pill{gap:3px;padding-inline:3px}
+ body[data-route="lobby"] .bn-wallet-pill .bn-gd-wallet-coin,body[data-route="store"] .bn-wallet-pill .bn-gd-wallet-coin{width:20px;height:20px;flex-basis:20px}
+ body[data-route="lobby"] .bn-wallet-pill .bn-wallet-add,body[data-route="store"] .bn-wallet-pill .bn-wallet-add{width:22px;height:24px}
+}

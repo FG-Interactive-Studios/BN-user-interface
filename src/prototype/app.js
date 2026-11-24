@@ -7,6 +7,7 @@ import { renderCosmeticStore } from './store-ui.js';
 import {selectedExpression,publicExpression,impactAttacker,paidFuneral,paidCommentary} from './expressive-cosmetics.js';
 import {tauntControls, equippedTaunts, funnyReaction, funeralReaction} from './chaos-humor.js';
 import {walletMarkup,walletDialogMarkup} from './figma-wallet.js';
+import {connectionStatusContent,connectionStatusLabel} from './connection-status.js';
 import {RADAR_SWEEP_SECONDS, sonarContactMarkup} from './radar-blips.js';
 import shipEmblem from '../assets/figma/ship-icon.png';
 import cannonIcon from '../assets/figma/cannon.png';
@@ -130,7 +131,12 @@ function updateNotice() {
 }
 function updateConnectionIndicator() {
   const badge=root?.querySelector('[data-socket-status]');
-  if (badge) badge.innerHTML=`<i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}`;
+  if(!badge)return;
+  const online=state.socketOnline;
+  badge.dataset.online=String(online);
+  badge.setAttribute('aria-label',connectionStatusLabel(online));
+  badge.title=connectionStatusLabel(online);
+  badge.innerHTML=connectionStatusContent(online);
 }
 
 
@@ -159,8 +165,8 @@ function header() {
       <span class="bn-header-player"><strong>${nickname}</strong><small>Conta de jogador</small></span>
     </button>
     <div class="bn-header-actions">
+      <span class="bn-connection-status" data-socket-status data-online="${state.socketOnline}" role="status" aria-label="${connectionStatusLabel(state.socketOnline)}" title="${connectionStatusLabel(state.socketOnline)}">${connectionStatusContent(state.socketOnline)}</span>
       ${showWallet?walletMarkup(state.store,{compact:true}):''}
-      <span class="bn-connection-status" data-socket-status><i class="tp-live-dot ${state.socketOnline?'online':''}"></i>${state.socketOnline?'Conectado':'Reconectando'}</span>
       <details class="tp-account-menu bn-account-menu"><summary aria-label="Abrir menu da conta" title="Menu da conta"><span aria-hidden="true">☰</span></summary>
         <div class="tp-account-popover"><button type="button" data-go="profile">Meu perfil</button><button type="button" data-go="settings">Configurações</button>${state.profile?.admin===true?'<button type="button" data-go="admin">Área administrativa</button>':''}<button type="button" data-action="logout">Sair</button></div>
       </details>

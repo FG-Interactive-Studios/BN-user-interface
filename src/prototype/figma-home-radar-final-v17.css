@@ -188,8 +188,8 @@ body[data-route="matchmaking"] .bn-queue-screen .bn-room-leave-button:hover {
   body[data-route="lobby"] .bn-topbar,
   body[data-route="store"] .bn-topbar {
     display:grid!important;
-    grid-template-columns:minmax(0,1fr) auto;
-    grid-template-areas:"profile menu" "wallet wallet";
+    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:"profile profile menu" "connection wallet wallet";
     align-content:center;align-items:center;row-gap:5px;
     height:auto!important;min-height:99px!important;
     padding:8px 14px!important;
@@ -203,7 +203,7 @@ body[data-route="matchmaking"] .bn-queue-screen .bn-room-leave-button:hover {
   body[data-route="lobby"] .bn-account-menu,
   body[data-route="store"] .bn-account-menu {grid-area:menu;justify-self:end;}
   body[data-route="lobby"] .bn-connection-status,
-  body[data-route="store"] .bn-connection-status {display:none!important;}
+  body[data-route="store"] .bn-connection-status {display:flex!important;grid-area:connection;justify-self:start;}
   body[data-route="lobby"] .bn-wallet-pill,
   body[data-route="store"] .bn-wallet-pill {flex:1;max-width:175px;height:34px;min-height:34px;}
   body[data-route="lobby"] .bn-wallet-pill img,

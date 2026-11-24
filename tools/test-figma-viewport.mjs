@@ -156,6 +156,18 @@ try {
   assert.equal(await page.locator('.bn-wallet-pills').count(),1,'Store must display only one wallet in the sticky header');
   assert.equal(await page.locator('.bn-store-wallet').count(),0,'Redundant store wallet must be removed');
   assert.equal(await page.locator('.bn-wallet-add').count(),2);
+  const connection=page.locator('.bn-topbar [data-socket-status]');
+  await connection.waitFor({state:'visible'});
+  assert.equal(await connection.getAttribute('data-online'),'false');
+  assert.equal(await connection.innerText(),'Reconectando');
+  assert.equal(await connection.locator('.tp-live-dot').evaluate(dot=>getComputedStyle(dot).backgroundColor),'rgb(245, 167, 66)');
+  const headerPositions=await page.evaluate(()=>{
+    const status=document.querySelector('.bn-topbar [data-socket-status]').getBoundingClientRect();
+    const wallet=document.querySelector('.bn-topbar .bn-wallet-pills').getBoundingClientRect();
+    return {statusRight:status.right,walletLeft:wallet.left};
+  });
+  assert.ok(headerPositions.statusRight<=headerPositions.walletLeft+1,'Connection status must precede wallet: '+JSON.stringify(headerPositions));
+  await horizontalFit('wallet with connection warning');
   await page.locator('.bn-wallet-add[data-item-id="free"]').click();
   await page.locator('#bn-wallet-dialog[open]').waitFor();
   assert.match(await page.locator('#bn-wallet-dialog').innerText(),/Ganhe moedas Marinha/);
