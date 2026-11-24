@@ -49,7 +49,7 @@ try {
     const path=new URL(route.request().url()).pathname;
     if(path==='/api/matches/me/shots'&&route.request().method()==='POST'){
       const target=route.request().postDataJSON();
-      battleFixture={...battleFixture,revision:battleFixture.revision+2,shotsFired:[...battleFixture.shotsFired,{...target,hit:true}],yourAbilityPointsEarned:1,turnPlayerId:17};
+      battleFixture={...battleFixture,revision:battleFixture.revision+2,shotsFired:[...battleFixture.shotsFired,{...target,hit:viewport.width!==375}],yourAbilityPointsEarned:viewport.width===375?1:0,turnPlayerId:17};
       return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(battleFixture)});
     }
     const response=path==='/api/auth/login'?{
@@ -379,12 +379,17 @@ try {
    await page.screenshot({path:'artifacts/figma-combat/'+route+'-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    await page.locator('.zip-primary-board [data-coord="7,7"]').click();
    await page.locator('[data-action="fire"]').click();
-   await page.waitForFunction(()=>document.querySelector('.zip-own-section .zip-captain-portrait')?.dataset.mood==='hit'&&document.querySelector('.zip-enemy-section .zip-captain-portrait')?.dataset.mood==='damage');
-   await page.locator('.bn-power-point-toast').waitFor();
-   assert.match(await page.locator('.bn-power-point-toast').innerText(),/\+1 ponto de poder!/);
-   assert.match(await page.locator('.zip-powers-count').innerText(),/1 pts/);
-   assert.match(await page.locator('.zip-own-section .zip-combat-captain').getAttribute('src'),/hit\.(png|webp|jpg)$/);
-   assert.match(await page.locator('.zip-enemy-section .zip-combat-captain').getAttribute('src'),/damage\.(png|webp|jpg)$/);
+   if(viewport.width===375){
+     await page.locator('.bn-power-point-toast').waitFor();
+     assert.match(await page.locator('.bn-power-point-toast').innerText(),/\+1 ponto de poder!/);
+     assert.match(await page.locator('.zip-powers-count').innerText(),/1 pts/);
+     assert.equal(await page.locator('.zip-primary-board [data-cell="7,7"].miss').count(),1,'A power point may be earned on water');
+   }else{
+     await page.waitForFunction(()=>document.querySelector('.zip-own-section .zip-captain-portrait')?.dataset.mood==='hit'&&document.querySelector('.zip-enemy-section .zip-captain-portrait')?.dataset.mood==='damage');
+     assert.match(await page.locator('.zip-own-section .zip-combat-captain').getAttribute('src'),/hit\.(png|webp|jpg)$/);
+     assert.match(await page.locator('.zip-enemy-section .zip-combat-captain').getAttribute('src'),/damage\.(png|webp|jpg)$/);
+     assert.equal(await page.locator('.bn-power-point-toast').count(),0,'Ordinary hit does not earn a point');
+   }
    await page.screenshot({path:'artifacts/figma-combat/reaction-'+viewport.width+'x'+viewport.height+'.png',fullPage:true});
    assert.deepEqual(errors,[],'Page errors '+explain);
    console.log('PASS '+status+' '+viewport.width+'x'+viewport.height+'; ZIP battle board '+metrics.board.width.toFixed(0)+'px, scroll-free controls');
