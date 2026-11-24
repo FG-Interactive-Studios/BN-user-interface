@@ -85,3 +85,6 @@
 
 /* Chaotic finale, ridiculous awards and server-drawn random shot. */
 @import './chaos-finale-v19.css';
+
+/* Distinct combat identities and size-aware grids on desktop and mobile. */
+@import './zip-combat-identity-v20.css';
