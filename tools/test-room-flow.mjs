@@ -18,3 +18,18 @@ assert.equal(resolvedRoute('register',true,'WAITING'),'matchmaking');
 assert.equal(resolvedRoute('auth',true,'PLAYING'),'match');
 assert.equal(resolvedRoute('auth',false),'auth');
 console.log('TidePoint: abandono distinto por anfitrião/convidado e proteção do login: OK');
+
+// Replacing a notice cancels the previous deadline; ordinary rerenders do not restart it.
+const {NOTICE_DURATION,createNoticeLifetime}=await import('../src/prototype/notice-lifetime.js');
+let time=0,next=0;const pending=new Map();let expirations=0;
+const lifetime=createNoticeLifetime({now:()=>time,schedule:(fn,ms)=>{const id=++next;pending.set(id,{fn,at:time+ms});return id;},cancel:id=>pending.delete(id)});
+const advance=ms=>{time+=ms;for(const [id,job] of [...pending])if(job.at<=time){pending.delete(id);job.fn();}};
+lifetime.start(NOTICE_DURATION.success,()=>expirations++);
+advance(3000);assert.equal(expirations,0);
+lifetime.start(NOTICE_DURATION.error,()=>expirations++);
+advance(1000);assert.equal(expirations,0,'Old notice must not clear the new one');
+advance(6000);assert.equal(expirations,1);
+lifetime.start(null,()=>expirations++);
+advance(60000);assert.equal(expirations,1,'Critical acknowledgement remains');
+lifetime.start(NOTICE_DURATION.success,()=>expirations++);
+lifetime.clear();advance(5000);assert.equal(expirations,1);

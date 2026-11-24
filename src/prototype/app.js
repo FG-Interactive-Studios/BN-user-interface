@@ -1,6 +1,7 @@
 import * as api from './client.js';
 import {AudioManager,sceneEvent} from './audio-manager.js';
 import {AudioEvents} from './audio-events.js';
+import {NOTICE_DURATION,createNoticeLifetime} from './notice-lifetime.js';
 import {orderedPowers,powerCostLabel,gainedPowerPoints,powerCost} from './power-feedback.js';
 import {updateClockNodes} from './game-clock.js';
 import {audioPacks} from './audio-packs.js';
@@ -54,6 +55,8 @@ const celebratedMatches=new Set();
 let chaosToastTimer;
 let activeChaosToast=null;
 let powerToast=null,powerToastTimer;
+const noticeLifetime=createNoticeLifetime(),joinNoticeLifetime=createNoticeLifetime();
+let lastSyncNotice='';
 function mountPowerToast(){
   if(!root||currentRoute()!=='match'||!powerToast||Date.now()>=powerToast.until)return;
   root.querySelector('.bn-power-point-toast')?.remove();
@@ -64,9 +67,9 @@ function mountPowerToast(){
 }
 function showPowerToast(gain,battle){
   const usable=(battle.yourAbilities||[]).some(a=>powerCost(a)>0&&a.usesRemaining>0&&!a.locked);
-  powerToast={gain,balance:battle.yourAbilityPointsEarned,hint:usable?'Use em Poderes no seu turno.':'Consulte os poderes disponíveis.',until:Date.now()+5000};
+  powerToast={gain,balance:battle.yourAbilityPointsEarned,hint:usable?'Use em Poderes no seu turno.':'Consulte os poderes disponíveis.',until:Date.now()+NOTICE_DURATION.power};
   mountPowerToast();clearTimeout(powerToastTimer);
-  powerToastTimer=setTimeout(()=>{powerToast=null;root?.querySelector('.bn-power-point-toast')?.remove();},5000);
+  powerToastTimer=setTimeout(()=>{powerToast=null;root?.querySelector('.bn-power-point-toast')?.remove();},NOTICE_DURATION.power);
 }
 function mountChaosToast(){
   if(!root || currentRoute()!=='match'||!activeChaosToast
@@ -82,12 +85,12 @@ function mountChaosToast(){
 function showChaosToast(message,kind='taunt',clown=false){
   if(!root||currentRoute()!=='match')return;
   activeChaosToast={text:message,kind:kind==='hit'?'hit':kind==='miss'?'miss':kind==='sunk'?'sunk':'taunt',
-    until:Date.now()+3200,clown};
+    until:Date.now()+NOTICE_DURATION.combat,clown};
   mountChaosToast();
   clearTimeout(chaosToastTimer);
   chaosToastTimer=setTimeout(()=>{
     activeChaosToast=null;root?.querySelector('.bn-chaos-toast')?.remove();
-  },3200);
+  },NOTICE_DURATION.combat);
 }
 function showTauntMessage(data){
   if(!data || data.roomCode!==state.lobby?.code||typeof data.message!=='string'
@@ -149,8 +152,29 @@ let loading=false;
 let supportsMatchmakingState=true; // Old API builds still use legacy lookups.
 let renderedRoute='';
 function updateNotice() {
+  if(noticeLifetime.expired()){noticeLifetime.clear();state.notice='';state.error=false;}
   const node=root?.querySelector?.('#tp-notice-root');
-  if (node) node.innerHTML=state.walletDialog?'':alertNode();
+  if(node)node.innerHTML=state.walletDialog?'':alertNode();
+  // A native dialog is in the top layer: update the wallet's local feedback
+  // without rebuilding the modal, losing focus, or touching the user's input.
+  const wallet=root?.querySelector('#bn-wallet-dialog');
+  if(wallet){
+    let feedback=wallet.querySelector('.bn-wallet-feedback');
+    if(!state.notice)feedback?.remove();
+    else{
+      if(!feedback){feedback=document.createElement('p');feedback.setAttribute('role','status');wallet.append(feedback);}
+      feedback.className='bn-wallet-feedback'+(state.error?' is-error':'');
+      feedback.textContent=state.notice;
+    }
+  }
+  const editor=root?.querySelector('#bn-profile-editor');
+  if(editor){
+    editor.querySelector('.bn-profile-notice')?.remove();
+    if(state.profileEditorOpen&&state.notice){
+      const feedback=document.createElement('p');feedback.className='bn-profile-notice'+(state.error?' is-error':'');
+      feedback.setAttribute('role',state.error?'alert':'status');feedback.textContent=state.notice;editor.append(feedback);
+    }
+  }
 }
 function updateConnectionIndicator() {
   const badge=root?.querySelector('[data-socket-status]');
@@ -163,7 +187,12 @@ function updateConnectionIndicator() {
 }
 
 
-function notice(message, error=false) { state.notice=message; state.error=error; updateNotice(); }
+function clearNotice(){noticeLifetime.clear();state.notice='';state.error=false;updateNotice();}
+function notice(message,error=false,{duration=error?NOTICE_DURATION.error:NOTICE_DURATION.success}={}){
+  state.notice=message;state.error=error;
+  noticeLifetime.start(duration,clearNotice);
+  updateNotice();
+}
 function activeMode() { return state.battle?.mode || state.preparation?.mode || state.lobby?.mode || state.modes.find(m=>m.id===state.modeId) || null; }
 function currentRoute() { return decodeURIComponent(location.hash.slice(1).split('?')[0] || 'auth'); }
 function go(route) {
@@ -199,10 +228,10 @@ function header() {
 function screen(content,{active='play',noNav=false,noHeader=false,variant=''}={}) { return `<div class="screen ${variant}"><div class="shell">${noHeader?'':header()}<main class="main">${content}</main>${noNav?'':nav(active)}</div></div>`; }
 function panel(title,body,cls='') { return `<section class="panel tp-panel ${cls}"><div class="eyebrow">Comando naval</div><h2 class="panel-title" style="margin:8px 0 16px">${title}</h2>${body}</section>`; }
 function mainContent(inner,{active='play',noNav=false,noHeader=false,variant=''}={}) {return screen(`<div class="tp-content">${inner}</div>`,{active,noNav,noHeader,variant});}
-function alertNode() { return state.notice ? `<div class="tp-notice ${state.error?'error':''}" role="alert">${esc(state.notice)} <button type="button" data-action="dismiss" style="float:right;background:transparent;color:inherit;border:0;cursor:pointer">×</button></div>` : ''; }
+function alertNode() { return state.notice ? `<div class="tp-notice ${state.error?'error':''}" role="${state.error?'alert':'status'}">${esc(state.notice)} <button type="button" data-action="dismiss" aria-label="Fechar aviso" style="float:right;background:transparent;color:inherit;border:0;cursor:pointer">×</button></div>` : ''; }
 function routeForLobby(status) {return status==='WAITING'?'matchmaking':status==='PREPARING'?'placement':status==='PLAYING'?'match':status==='FINISHED'?'result':'lobby';}
 function synchronizeRoute() {
-  // Keep the departure dialog open until acknowledged, including after a room closes.
+  // Only the host closing the entire room requires acknowledgement.
   if (state.roomExitNotice) { if (!state.lobby && currentRoute()!=='lobby') go('lobby'); return; }
   if (!state.lobby) {
     if(state.queue?.status==='SEARCHING') {
@@ -215,14 +244,17 @@ function synchronizeRoute() {
 }
 async function guard(action) {
   if (state.busy) return;
-  state.busy=true; state.notice=''; state.error=false; render();
+  state.busy=true; clearNotice(); render();
   try { await action(); }
   catch(error) {
-    state.notice=error?.message||'Falha inesperada na operação.';state.error=true;
-    if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
+    if(error instanceof api.ApiError&&error.status===401){
+      const hadSession=Boolean(state.profile);
+      api.clearSession();reset();go('auth');
+      notice(hadSession?'Sua sessão foi encerrada. Entre novamente.':error.message,true,{duration:hadSession?null:NOTICE_DURATION.error});
+    }else notice(error?.message||'Falha inesperada na operação.',true);
   } finally {state.busy=false;render();}
 }
-function reset(){profileStatisticsGeneration++;state.profileStatistics=null;state.profileStatisticsLoading=false;state.profileStatisticsError=false;storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;clearTimeout(powerToastTimer);powerToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.placementHover=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.adminTab='modes';state.adminProducts=null;state.adminStoreLoading=false;state.adminStoreError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){clearNotice();joinNoticeLifetime.clear();lastSyncNotice='';profileStatisticsGeneration++;state.profileStatistics=null;state.profileStatisticsLoading=false;state.profileStatisticsError=false;storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();celebratedMatches.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;clearTimeout(powerToastTimer);powerToast=null;audio.stop();audioEvents.reset();captainMoodTracker.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.placementHover=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.adminTab='modes';state.adminProducts=null;state.adminStoreLoading=false;state.adminStoreError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.walletDialog=null;state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   if(currentRoute()==='profile')void loadProfileStatistics();
@@ -297,8 +329,10 @@ async function reconcile() {
       || JSON.stringify(state.queue)!==JSON.stringify(queue);
     if (!state.leavingRoom && !state.roomExitNotice && !(previousRoom?.publicMatch && queue)) {
       const departure = roomDeparture(previousRoom, room, state.profile?.id);
-      if (departure) {
-        state.roomExitNotice={type:departure};
+      if(departure==='host-left'){
+        state.roomExitNotice={type:departure};changed=true;
+      }else if(departure==='guest-left'){
+        notice('O convidado deixou a sala. Seu código continua válido.',false,{duration:NOTICE_DURATION.error});
         changed=true;
       }
     }
@@ -334,14 +368,17 @@ async function reconcile() {
       if (state.preparation || state.battle) changed=true;
       state.preparation=null;state.battle=null;
     }
+    lastSyncNotice='';
     synchronizeRoute();
     claimVirtualRewardIfFinished();
     // Avoid replacing a 100-cell DOM board every 7 s when nothing changed.
     if (changed || currentRoute()!==renderedRoute) render();
   } catch(error) {
-    if(error instanceof api.ApiError && error.status===401) { api.clearSession();reset();go('auth'); }
-    else if(error instanceof api.ApiError && error.status!==404 && error.status!==409) {
-      state.notice=`Sincronização: ${error.message}`;state.error=true;render();
+    if(error instanceof api.ApiError && error.status===401) {
+      api.clearSession();reset();go('auth');notice('Sua sessão foi encerrada. Entre novamente.',true,{duration:null});
+    }else if(error instanceof api.ApiError && error.status!==404 && error.status!==409){
+      const message=`Sincronização: ${error.message}`;
+      if(lastSyncNotice!==message){lastSyncNotice=message;notice(message,true);}
     }
   } finally {loading=false;}
 }
@@ -806,7 +843,7 @@ function render(){ if (!root) return;
     dialog?.addEventListener('cancel',event=>{
       event.preventDefault();
       const currency=state.walletDialog;
-      state.walletDialog=null;state.notice='';state.error=false;
+      state.walletDialog=null;clearNotice();
       dialog.close();
       render();
       root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();
@@ -845,6 +882,7 @@ async function joinFromModal(form, code) {
   const input=form.querySelector('input[name="code"]');
   const submit=form.querySelector('button[type="submit"]');
   const feedback=form.querySelector('.tp-modal-feedback');
+  joinNoticeLifetime.clear();
   if (feedback) feedback.textContent='';
   if (submit) submit.disabled=true;
   state.busy=true;
@@ -855,10 +893,13 @@ async function joinFromModal(form, code) {
     go('matchmaking');
   } catch(error) {
     if (error instanceof api.ApiError && error.status===401) {
-      api.clearSession();reset();go('auth');
+      api.clearSession();reset();go('auth');notice('Sua sessão foi encerrada. Entre novamente.',true,{duration:null});
     } else {
       const alert=form.querySelector('.tp-modal-feedback');
-      if (alert) alert.textContent=error?.message||'Não foi possível entrar nesta sala.';
+      if(alert){
+        alert.textContent=error?.message||'Não foi possível entrar nesta sala.';
+        joinNoticeLifetime.start(NOTICE_DURATION.error,()=>{if(alert.isConnected)alert.textContent='';});
+      }
       input?.focus();
     }
   } finally {state.busy=false;if (submit?.isConnected) submit.disabled=false;}
@@ -881,21 +922,21 @@ async function runAction(action,itemId=null) {
   switch(action) {
     case 'open-wallet':
       if(!['lobby','store'].includes(currentRoute()))break;
-      state.walletDialog=itemId==='free'?'free':'premium';state.notice='';state.error=false;render();
+      state.walletDialog=itemId==='free'?'free':'premium';clearNotice();render();
       if(!state.store)void loadStore();
       break;
     case 'wallet-currency':
       if(state.walletDialog&&['free','premium'].includes(itemId)){state.walletDialog=itemId;render();}
       break;
     case 'close-wallet': {
-      const currency=state.walletDialog;state.walletDialog=null;state.notice='';state.error=false;render();
+      const currency=state.walletDialog;state.walletDialog=null;clearNotice();render();
       root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();break;
     }
     case 'fleet-select':
-      if(currentRoute()==='fleet'&&equipmentCategory(itemId)){state.notice='';state.error=false;location.hash='fleet?equipment='+encodeURIComponent(itemId);}
+      if(currentRoute()==='fleet'&&equipmentCategory(itemId)){clearNotice();location.hash='fleet?equipment='+encodeURIComponent(itemId);}
       break;
     case 'fleet-back':
-      if(currentRoute()==='fleet'){state.notice='';state.error=false;go('fleet');}
+      if(currentRoute()==='fleet'){clearNotice();go('fleet');}
       break;
     case 'fleet-reload':
       if(currentRoute()==='fleet')void loadStore();
@@ -1061,9 +1102,9 @@ async function runAction(action,itemId=null) {
       document.body.dataset.shipSkin=state.store?.items?.find(item=>item.category==='SKIN' && item.equipped)?.id || 'skin_default';
       notice('Item equipado com sucesso.');
     });break;
-    case 'dismiss':state.notice='';updateNotice();break;
+    case 'dismiss':clearNotice();break;
     case 'open-join-modal': { const dialog=root.querySelector('#tp-join-dialog'); if (dialog && !dialog.open) { dialog.showModal(); dialog.querySelector('input[name=code]')?.focus(); } break; }
-    case 'close-join-modal':root.querySelector('#tp-join-dialog')?.close();break;
+    case 'close-join-modal':joinNoticeLifetime.clear();{const dialog=root.querySelector('#tp-join-dialog');const feedback=dialog?.querySelector('.tp-modal-feedback');if(feedback)feedback.textContent='';dialog?.close();}break;
     case 'logout':await guard(async()=>{await api.logout();reset();clearInterval(refreshTimer);refreshTimer=null;go('auth');});break;
     case 'find-public-match':await guard(async()=>{
       const search=await api.post('/matchmaking/queue',{modeId:state.modeId});
@@ -1085,13 +1126,13 @@ async function runAction(action,itemId=null) {
       state.lobby=await api.post('/matchmaking/lobbies',{modeId:state.modeId});
       state.queue=null;go('matchmaking');
     });break;
-    case 'copy-code':if(state.lobby){try{await navigator.clipboard.writeText(state.lobby.code);notice('Código copiado para a área de transferência.');}catch{notice(`Código da sala: ${state.lobby.code}`);}}break;
+    case 'copy-code':if(state.lobby){try{await navigator.clipboard.writeText(state.lobby.code);notice('Código copiado para a área de transferência.');}catch{notice(`Código da sala: ${state.lobby.code}`,false,{duration:NOTICE_DURATION.reading});}}break;
     case 'copy-award':{
       if(currentRoute()!=='result'||!state.battle)return;
       const award=ridiculousAward(buildMatchReport(state.battle,state.profile?.id));
       const share=`🏆 ${award.emoji} ${award.title} — ${award.description} #BatalhaNaval`;
       try {await navigator.clipboard.writeText(share);notice('Prêmio copiado para compartilhar!');}
-      catch {notice(share);}
+      catch {notice(share,false,{duration:NOTICE_DURATION.reading});}
       break;
     }
     case 'ready':await guard(async()=>{const me=state.lobby?.players.find(p=>p.id===state.profile.id);state.lobby=await api.put('/matchmaking/lobbies/me/ready',{ready:!me?.ready});await reconcile();});break;
@@ -1192,7 +1233,7 @@ async function runAction(action,itemId=null) {
       notice(`${chosenName} ativada com sucesso.`);
       const last=state.battle.yourRadarReports?.at(-1);
       if(last&&state.battle.yourRadarReports.length>oldReports)
-        notice(`Radar em ${coordLabel(last)}: ${last.contacts} contato(s) no setor 3×3.`);
+        notice(`Radar em ${coordLabel(last)}: ${last.contacts} contato(s) no setor 3×3.`,false,{duration:NOTICE_DURATION.error});
       await reconcile();
     });break;
     case 'desperation-shot':{
@@ -1267,7 +1308,7 @@ function selectCell(row,col,side='ENEMY'){
     state.placementHover=null;
     audio.play('ship_placement');
     state.placementShip=mode.fleet.find(s=>!plan.proposed.some(d=>d.type===s.id))?.id||null;
-    state.notice='';render();
+    clearNotice();render();
   }
 }
 function bindEvents() {
