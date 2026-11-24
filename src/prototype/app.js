@@ -126,7 +126,7 @@ let supportsMatchmakingState=true; // Old API builds still use legacy lookups.
 let renderedRoute='';
 function updateNotice() {
   const node=root?.querySelector?.('#tp-notice-root');
-  if (node) node.innerHTML=alertNode();
+  if (node) node.innerHTML=state.walletDialog?'':alertNode();
 }
 function updateConnectionIndicator() {
   const badge=root?.querySelector('[data-socket-status]');
@@ -702,7 +702,7 @@ function render(){ if (!root) return;
     dialog?.addEventListener('cancel',event=>{
       event.preventDefault();
       const currency=state.walletDialog;
-      state.walletDialog=null;
+      state.walletDialog=null;state.notice='';state.error=false;
       dialog.close();
       render();
       root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();
@@ -782,7 +782,7 @@ async function runAction(action,itemId=null) {
       if(state.walletDialog&&['free','premium'].includes(itemId)){state.walletDialog=itemId;render();}
       break;
     case 'close-wallet': {
-      const currency=state.walletDialog;state.walletDialog=null;render();
+      const currency=state.walletDialog;state.walletDialog=null;state.notice='';state.error=false;render();
       root.querySelector('.bn-wallet-add[data-item-id="'+(currency==='free'?'free':'premium')+'"]')?.focus();break;
     }
     case 'store-category':

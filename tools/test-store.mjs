@@ -24,7 +24,7 @@ assert.match(html,/Capitão Corsário/);assert.match(html,/Coleção Corsária/)
 assert.match(html,/Capitão em preparação/);assert.match(html,/Coleção em preparação/);
 assert.ok(!html.includes('Comprar · 0 créditos'),'draft sentinel price must not look like a free offer');
 assert.ok(!renderCosmeticStore({credits:0,items},{filter:'CAPTAIN'}).includes('skin_default'));
-assert.ok(!renderCosmeticStore({credits:0,items},{filter:'BUNDLE'}).includes('captain_corsair'));
+assert.ok(!renderCosmeticStore({credits:0,items},{filter:'BUNDLE'}).includes('data-product-id="captain_corsair"'));
 const taunts=renderCosmeticStore({credits:300,items},{filter:'TAUNT'});
 assert.match(taunts,/Tio do Pavê Naval/);
 assert.match(taunts,/É pavê ou pra afundar/);

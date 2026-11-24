@@ -172,10 +172,11 @@ try {
   await page.waitForFunction(()=>!document.querySelector('#bn-wallet-dialog [data-action="store-demo-topup"]')?.disabled);
   await page.keyboard.press('Escape');
   await page.locator('#bn-wallet-dialog').waitFor({state:'detached'});
+  assert.equal(await page.locator('#tp-notice-root .tp-notice').count(),0,'Wallet feedback must not block the header after closing');
   await page.locator('[data-action="store-category"][data-item-id="SKIN"]').click();
   assert.equal(await page.locator('[data-action="store-category"][data-item-id="SKIN"]').getAttribute('aria-pressed'),'true');
   await page.locator('[data-action="store-category"][data-item-id="ALL"]').click();
-  if(viewport.width===375)await page.screenshot({path:'artifacts/figma-responsive/store-375.png',fullPage:true});
+  if(viewport.width===375||viewport.width===1366)await page.screenshot({path:'artifacts/figma-responsive/store-'+viewport.width+'.png',fullPage:true});
   await page.locator('.bn-header-identity').click();
   await page.locator('.bn-profile-stage').waitFor();
   await horizontalFit('profile');
