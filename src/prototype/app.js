@@ -30,7 +30,7 @@ const state = {
   roomExitNotice: null, leavingRoom: false,
   skillMode: null, skillTargets: [], skillArea: [], skillAnchor: null, skillDirection: 'RIGHT', skillDialog: false,
   adminModes: null, adminLoading: false, adminError: '',
-  store: null, storeLoading: false, storeFilter: 'ALL', profileEditorOpen: false, profileSecurityOpen: false,
+  store: null, demoTopupRequests: new Map(), storeLoading: false, storeFilter: 'ALL', profileEditorOpen: false, profileSecurityOpen: false,
   preferences: loadPreferences(),
 };
 const audio=new AudioManager({packs:audioPacks});
@@ -182,7 +182,7 @@ async function guard(action) {
     if (error instanceof api.ApiError && error.status===401) {api.clearSession(); reset();go('auth');}
   } finally {state.busy=false;render();}
 }
-function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
+function reset(){storeLoadGeneration++;rewardReceipts.clear();rewardRequests.clear();shownTaunts.clear();clearTimeout(chaosToastTimer);activeChaosToast=null;audio.stop();audioEvents.reset();audioRoute='';state.skillMode=null;state.skillTargets=[];state.skillDialog=false;state.profile=null;state.modes=[];state.lobby=null;state.queue=null;state.queueStartedAt=null;state.preparation=null;state.battle=null;state.draft=null;state.placementShip=null;state.selected=null;state.socketOnline=false;state.roomExitNotice=null;state.leavingRoom=false;state.adminModes=null;state.adminLoading=false;state.adminError='';state.store=null;state.demoTopupRequests.clear();state.storeLoading=false;state.storeFilter='ALL';state.profileEditorOpen=false;state.profileSecurityOpen=false;state.preferences=loadPreferences();}
 async function sessionInit() {
   state.profile=await api.get('/users/me');
   state.modes=await api.get('/game-modes');
@@ -597,7 +597,7 @@ function fleetScreen(){
   </div>`,{active:'fleet'});
 }
 function storeScreen(){
-  return mainContent(renderCosmeticStore(state.store,{loading:state.storeLoading,filter:state.storeFilter}),{active:'store'});
+  return mainContent(renderCosmeticStore(state.store,{loading:state.storeLoading||state.busy,filter:state.storeFilter}),{active:'store'});
 }
 async function loadStore({quiet=false}={}){
   if(!api.isAuthenticated() || state.storeLoading) return;
@@ -842,6 +842,24 @@ async function runAction(action,itemId=null) {
       audio.play('purchase_success');
       notice('Item adquirido. Você pode equipá-lo no catálogo.');
     });break;
+    case 'store-buy-premium':await guard(async()=>{
+      if(!itemId||state.store?.demoPremiumEnabled!==true) return;
+      state.store=await api.post('/store/purchase/'+encodeURIComponent(itemId)+'?premium=true');
+      audio.play('purchase_success');
+      notice('Item adquirido com créditos premium de demonstração.');
+    });break;
+    case 'store-demo-topup':{
+      if(!['demo_100','demo_300','demo_700'].includes(itemId)||state.store?.demoPremiumEnabled!==true||state.busy)break;
+      const amount=itemId.split('_')[1];
+      if(!window.confirm('Simular a aquisição de '+amount+' créditos premium? Nenhum dinheiro real será cobrado.'))break;
+      await guard(async()=>{
+        const requestId=state.demoTopupRequests.get(itemId)||crypto.randomUUID();
+        state.demoTopupRequests.set(itemId,requestId);
+        state.store=await api.post('/store/demo-premium',{packId:itemId,requestId});
+        state.demoTopupRequests.delete(itemId);
+        notice('Compra simulada concluída. Nenhum dinheiro real foi usado.');
+      });break;
+    }
     case 'store-equip':await guard(async()=>{
       if(!itemId) return;
       state.store=await api.put('/store/equip/'+encodeURIComponent(itemId));

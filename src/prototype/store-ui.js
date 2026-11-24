@@ -68,6 +68,8 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
       '<span class="tp-store-tag">Disponível</span>';
     const unavailableReason=item.category==='BUNDLE'?'Coleção em preparação':
       item.category==='CAPTAIN'?'Capitão em preparação':'Aguardando recursos do Game Design';
+    const premiumAction=available&&!owned&&!equipped&&catalog?.demoPremiumEnabled===true&&Number.isSafeInteger(item.premiumPrice)&&item.premiumPrice>0
+      ? `<button class="btn btn-ghost" type="button" data-action="store-buy-premium" data-item-id="${esc(item.id)}" ${loading?'disabled':''}>Comprar · ${item.premiumPrice} premium</button>` : '';
     const action=!available?`<span class="tp-store-unavailable">${unavailableReason}</span>`:
       equipped?'<button class="btn btn-ghost" type="button" disabled>Em uso</button>':
       owned?`<button class="btn btn-primary" type="button" data-action="store-equip" data-item-id="${esc(item.id)}">Equipar</button>`:
@@ -76,7 +78,7 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
       ${renderProductCover(item)}
       <div class="tp-store-card-text"><div class="tp-store-card-meta"><span>${type}</span>${tags}</div>
       <h3>${esc(item.name)}</h3><p>${description}</p>${phrases}</div>
-      <div class="tp-store-card-footer"><span class="tp-store-price">${available?(item.price===0?'Grátis':item.price+' créditos'):'Indisponível'}</span>${action}</div>
+      <div class="tp-store-card-footer"><span class="tp-store-price">${available?(item.price===0?'Grátis':item.price+' créditos'):'Indisponível'}</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0">${action}${premiumAction}</div></div>
     </article>`;
   }).join('');
   return `<section class="bn-page bn-store-page tp-store-page" aria-label="Loja de cosméticos">
@@ -88,6 +90,7 @@ export function renderCosmeticStore(catalog, {loading=false,filter='ALL'}={}) {
       <span class="tp-store-beta">Economia beta · sem dinheiro real</span>
     </div>
     <div class="tp-store-grid" aria-live="polite">
+      ${catalog?.demoPremiumEnabled===true?`<article class="tp-store-card" style="grid-column:1/-1;min-height:0"><div class="tp-store-card-text"><h3>Créditos premium de demonstração</h3><p>Simule uma compra para experimentar a loja. Nenhum pagamento ou dado financeiro será solicitado.</p><div style="display:flex;flex-wrap:wrap;gap:8px">${[100,300,700].map(amount=>`<button class="btn btn-primary" type="button" data-action="store-demo-topup" data-item-id="demo_${amount}" ${loading?'disabled':''}>+ ${amount} premium</button>`).join('')}</div></div></article>`:''}
       ${loading&&!catalog?'<p class="tp-store-loading">Carregando catálogo...</p>':
         !catalog?'<p class="tp-store-loading">A loja não está disponível no momento.</p>':
         cards||'<p class="tp-store-loading">Nenhum item nesta categoria.</p>'}
