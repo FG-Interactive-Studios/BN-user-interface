@@ -48,16 +48,18 @@ try{
    await page.locator('body[data-route="settings"] .bn-settings-stage').waitFor({timeout:15000});
   }
   await page.goto('http://127.0.0.1:4185/',{waitUntil:'domcontentloaded'});
+  await page.evaluate(()=>localStorage.setItem('bn.ui.preferences.v1',JSON.stringify({vibration:true})));
   await login();
   await openSettings();
 
   assert.equal(await page.locator('#bn-settings-title').innerText(),'Configurações');
   for(const x of ['sound','game','account'])
    assert.equal(await page.locator('.bn-settings-'+x).count(),1,'Missing Figma section '+x);
-  assert.equal(await page.locator('.bn-settings-switch').count(),4);
+  assert.equal(await page.locator('.bn-settings-switch').count(),3);
+  assert.equal(await page.locator('[data-item-id="vibration"]').count(),0);
   assert.equal(await page.locator('.bn-settings-account-link small').innerText(),profile.email);
   assert.equal(await page.locator('.bn-settings-footer p').innerText(),'Versão 0.1.0');
-  for(const [key,expected] of [['music','true'],['effects','true'],['vibration','true'],['notifications','false']])
+  for(const [key,expected] of [['music','true'],['effects','true'],['notifications','false']])
    assert.equal(await page.locator('[data-action="toggle-setting"][data-item-id="'+key+'"]').getAttribute('aria-checked'),expected);
 
   const geometry=await page.evaluate(()=>{
@@ -101,6 +103,7 @@ try{
   await page.locator('[data-action="toggle-setting"][data-item-id="music"]').click();
   assert.equal(await page.locator('[data-item-id="music"]').getAttribute('aria-checked'),'false');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('bn.ui.preferences.v1')).music),false);
+  assert.equal(await page.evaluate(()=>Object.hasOwn(JSON.parse(localStorage.getItem('bn.ui.preferences.v1')),'vibration')),false);
   await page.locator('[data-action="toggle-setting"][data-item-id="notifications"]').click();
   assert.equal(await page.locator('[data-item-id="notifications"]').getAttribute('aria-checked'),'true');
   await page.locator('[data-action="settings-language"]').click();
