@@ -20,17 +20,25 @@ const errors=[];
 try {
  for(const viewport of [{width:320,height:568},{width:375,height:667},{width:390,height:844},{width:1361,height:597},{width:1366,height:768}]){
   const page=await browser.newPage({viewport,deviceScaleFactor:1});
+  let premiumCredits=0,topups=0,lastWallet=null;
+  page.on('dialog',dialog=>dialog.accept());
   page.on('pageerror',error=>errors.push(String(viewport.width)+': '+error.message));
   await page.route('**/api/**',async route=>{
    const path=new URL(route.request().url()).pathname;
+   if(path==='/api/store/demo-premium'&&route.request().method()==='POST'){
+    const payload=route.request().postDataJSON();assert.equal(payload.packId,'demo_100');assert.ok(payload.requestId);
+    topups++;premiumCredits+=100;lastWallet={...lastWallet,premiumCredits};
+    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(lastWallet)});
+   }
    const body=path==='/api/auth/login'?{tokenType:'Bearer',accessToken:'test-token',refreshToken:'test-refresh',expiresIn:900,user:player}:
      path==='/api/users/me'?player:
      path==='/api/game-modes'?modes:
-     path==='/api/store'?{credits:300,items:[
+     path==='/api/store'?{credits:300,premiumCredits,demoPremiumEnabled:true,items:[
        {id:'skin_default',category:'SKIN',name:'Frota Original',description:'Visual padrão',price:0,enabled:true,owned:true,equipped:true},
        {id:'skin_coral',category:'SKIN',name:'Coral',description:'Personalização',price:90,enabled:true,owned:false,equipped:false},
        {id:'sound_sonar',category:'SOUND',name:'Sonar',description:'Em breve',price:90,enabled:false,owned:false,equipped:false}
      ]}:null;
+   if(path==='/api/store')lastWallet=body;
    if(body!==null)return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
    if(path==='/api/matchmaking/lobbies/me')return route.fulfill({status:404,contentType:'application/json',body:'{"code":"NOT_FOUND"}'});
    if(path==='/api/realtime/ticket')return route.fulfill({status:503,contentType:'application/json',body:'{"code":"UNAVAILABLE"}'});
@@ -136,7 +144,12 @@ try {
   assert.equal(await page.locator('[data-action="store-demo-topup"]').count(),0);
   await page.locator('[data-action="wallet-currency"][data-item-id="premium"]').click();
   await page.locator('#bn-wallet-dialog[open]').waitFor();
-  assert.match(await page.locator('#bn-wallet-dialog').innerText(),/Moedas Naval/);
+  assert.match(await page.locator('#bn-wallet-dialog').innerText(),/moedas Naval/i);
+  assert.equal(await page.locator('#bn-wallet-dialog [data-action="store-demo-topup"]').count(),3);
+  await page.locator('#bn-wallet-dialog [data-item-id="demo_100"]').click();
+  await page.waitForFunction(()=>document.querySelector('.bn-wallet-pill.is-premium strong')?.textContent==='100');
+  assert.equal(topups,1,'Top-up should call the server exactly once');
+  assert.equal(await page.locator('#bn-wallet-dialog[open]').count(),1,'Wallet dialog stays open after purchase');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#bn-wallet-dialog[open]').count(),0);
   await page.locator('[data-action="store-category"][data-item-id="SKIN"]').click();
