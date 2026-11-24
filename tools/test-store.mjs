@@ -7,7 +7,9 @@ const items=[
  {id:'captain_corsair',category:'CAPTAIN',name:'Capitão Corsário',description:'Piloto',price:0,enabled:false,owned:false,equipped:false},
  {id:'bundle_corsair',category:'BUNDLE',name:'Coleção Corsária',description:'Pacote planejado',price:0,enabled:false,owned:false,equipped:false},
  {id:'taunt_default',category:'TAUNT',name:'Provocações Gratuitas',description:'Base',price:0,enabled:true,owned:true,equipped:true},
- {id:'taunt_banter',category:'TAUNT',name:'Tio do Pavê Naval',description:'Piadas ruins',price:90,enabled:true,owned:false,equipped:false}
+ {id:'taunt_banter',category:'TAUNT',name:'Tio do Pavê Naval',description:'Piadas ruins',price:90,enabled:true,owned:false,equipped:false},
+ {id:'taunt_support',category:'TAUNT',name:'Atendimento Naval',description:'Suporte',price:120,enabled:true,owned:false,equipped:false},
+ {id:'taunt_meme',category:'TAUNT',name:'Almirante dos Memes',description:'Meme',price:180,enabled:true,owned:false,equipped:false}
 ];
 const html=renderCosmeticStore({credits:300,premiumCredits:0,items});
 assert.ok(!html.includes('bn-store-wallet'),'Store must not repeat the currency display from sticky header');
@@ -26,6 +28,12 @@ const taunts=renderCosmeticStore({credits:300,items},{filter:'TAUNT'});
 assert.match(taunts,/Tio do Pavê Naval/);
 assert.match(taunts,/É pavê ou pra afundar/);
 assert.match(taunts,/data-item-id="taunt_banter"/);
+assert.match(taunts,/Atendimento Naval/);
+assert.match(taunts,/Almirante dos Memes/);
+assert.match(taunts,/Nosso prazo é de três marés úteis/);
+assert.match(taunts,/Esse tiro foi patrocinado pelo acaso/);
+assert.match(taunts,/Comprar · 120 créditos/);
+assert.match(taunts,/Comprar · 180 créditos/);
 assert.ok(!taunts.includes('skin_coral'),'Taunt filter must exclude unrelated cosmetics');
 assert.ok(!renderCosmeticStore({credits:0,items:[{...items[3],enabled:true}]})
     .includes('data-action="store-buy"'),'unsupported category cannot be purchased even if enabled');
