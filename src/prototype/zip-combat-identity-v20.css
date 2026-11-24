@@ -128,29 +128,73 @@ body[data-route="match"] .bn-zip-battle .zip-attack-buttons .zip-fire-button {
   margin:0!important;width:100%!important;min-width:0!important;
 }
 body[data-route="match"] .bn-zip-battle .zip-attack-buttons .zip-fire-button small {white-space:normal!important;}
+
+/* The score follows the same left/right order as the arena. */
+body[data-route="match"] .bn-zip-battle .zip-score-value {
+  display:flex;align-items:center;justify-content:center;gap:.25em;
+}
+body[data-route="match"] .bn-zip-battle .zip-captain-portrait[data-mood="hit"] {
+  border-color:#72e5bf;box-shadow:0 0 12px #52d4ab70;
+}
+body[data-route="match"] .bn-zip-battle .zip-captain-portrait[data-mood="damage"] {
+  border-color:#ff8d7f;box-shadow:0 0 12px #fc766270;
+}
 @media(min-width:850px) {
   body[data-route="match"] .bn-zip-battle .zip-game-layout {
-    width:min(100%,1240px)!important;max-width:1240px!important;
+    width:min(100%,1440px)!important;max-width:1440px!important;
+    padding-inline:clamp(6px,1vw,14px)!important;
   }
+  body[data-route="match"] .bn-zip-battle .zip-scoreboard>.zip-score-side:first-child {
+    grid-column:3;grid-row:1;text-align:right;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-scoreboard>.zip-score-opponent {
+    grid-column:1;grid-row:1;text-align:left;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-score-value {grid-column:2;grid-row:1;flex-direction:row-reverse;}
   body[data-route="match"] .bn-zip-battle .zip-battle-center {
-    --zip-stack-board-side:max(90px,min(calc(100cqh - 92px),calc((100cqw - 190px)/2 - 24px),440px));
-    grid-template-columns:minmax(0,1fr) clamp(118px,12vw,160px) minmax(0,1fr)!important;
-    grid-template-rows:minmax(0,1fr)!important;gap:10px!important;
+    --zip-portrait-side:clamp(64px,10cqw,144px);
+    --zip-turn-side:clamp(112px,10.5cqw,146px);
+    --zip-stack-board-side:max(90px,min(calc(100cqh - 68px),calc((100cqw - var(--zip-turn-side) - 8px)/2 - var(--zip-portrait-side) - 16px),480px));
+    grid-template-columns:minmax(0,1fr) var(--zip-turn-side) minmax(0,1fr)!important;
+    grid-template-rows:minmax(0,1fr)!important;gap:4px!important;
   }
   body[data-route="match"] .bn-zip-battle .zip-enemy-section,
   body[data-route="match"] .bn-zip-battle .zip-own-section {
-    grid-template-columns:56px minmax(0,1fr)!important;
-    grid-template-rows:56px auto 14px!important;
-    grid-template-areas:"portrait heading" "board board" "target target";
-    height:100%!important;align-self:stretch!important;padding:8px!important;
-    column-gap:10px!important;row-gap:5px!important;
+    grid-template-columns:var(--zip-portrait-side) minmax(0,1fr)!important;
+    grid-template-rows:auto auto 14px!important;
+    grid-template-areas:"heading heading" "portrait board" "target target";
+    height:100%!important;align-self:stretch!important;padding:4px!important;
+    column-gap:6px!important;row-gap:4px!important;
+    align-content:center!important;
   }
-  body[data-route="match"] .bn-zip-battle .zip-captain-portrait {width:56px;height:56px;}
+  body[data-route="match"] .bn-zip-battle .zip-enemy-section {grid-column:1!important;}
+  body[data-route="match"] .bn-zip-battle .zip-own-section {
+    grid-column:3!important;
+    grid-template-columns:minmax(0,1fr) var(--zip-portrait-side)!important;
+    grid-template-areas:"heading heading" "board portrait" "target target";
+  }
+  body[data-route="match"] .bn-zip-battle .zip-own-section .zip-board-heading {align-items:flex-end;text-align:right!important;}
+  body[data-route="match"] .bn-zip-battle .zip-captain-portrait {
+    width:var(--zip-portrait-side);max-width:none;
+    height:min(calc(var(--zip-portrait-side)*1.5),var(--zip-stack-board-side));
+    align-self:center;
+  }
   body[data-route="match"] .bn-zip-battle .zip-primary-board .board-main,
   body[data-route="match"] .bn-zip-battle .zip-own-board .board-preview {
     width:var(--zip-stack-board-side)!important;height:var(--zip-stack-board-side)!important;
     max-width:none!important;
   }
+  body[data-route="match"] .bn-zip-battle .zip-turn-panel {
+    width:100%!important;min-height:0!important;padding:9px 4px!important;
+    border-top:2px solid var(--turn-accent)!important;gap:9px;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-turn-copy {width:100%;min-width:0;gap:4px;}
+  body[data-route="match"] .bn-zip-battle .zip-turn-headline {
+    width:100%;max-width:100%;font-size:clamp(15px,1.6vw,22px)!important;
+    overflow-wrap:anywhere;white-space:normal!important;text-wrap:balance;
+  }
+  body[data-route="match"] .bn-zip-battle .zip-turn-eyebrow {font-size:9px!important;letter-spacing:.06em;}
+  body[data-route="match"] .bn-zip-battle .zip-turn-hint {font-size:10px!important;}
   body[data-route="match"] .bn-zip-battle .zip-battle-footer {max-width:min(100%,760px)!important;}
 }
 @media(max-width:849px) {
