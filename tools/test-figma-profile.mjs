@@ -22,6 +22,7 @@ try{
  ]){
    let profile={id:13,nickname:'Almirante Vitão',email:'capitao@example.test',avatarId:'captain',createdAt:'2026-11-01T00:00:00Z'};
    const requests={profile:[],password:[]},errors=[];
+   const statistics={totalMatches:15,wins:9,losses:5,draws:1,currentWinStreak:2,bestWinStreak:4,recentMatches:Array.from({length:10},(_,i)=>({matchId:'match-'+i,opponentNickname:'Capitão '+i,modeId:'classic',modeName:'Clássico',result:i%2?'LOSS':'WIN',finishReason:'ALL_SHIPS_SUNK',finishedAt:'2026-11-24T15:00:00Z',hits:8,hitsReceived:4}))};
    const page=await browser.newPage({viewport,deviceScaleFactor:1});
    page.on('pageerror',e=>errors.push(e.message));
    await page.route('**/api/**',async route=>{
@@ -39,6 +40,7 @@ try{
      }
      const result=pathname==='/api/auth/login'
        ?{tokenType:'Bearer',accessToken:'test-token',refreshToken:'test-refresh',expiresIn:900,user:profile}
+       :pathname==='/api/users/me/statistics'?statistics
        :pathname==='/api/users/me'?profile
        :pathname==='/api/game-modes'?[mode]
        :null;
@@ -66,10 +68,15 @@ try{
      return {fits:image.width<=frame.width&&image.height<=frame.height&&image.left>=frame.left&&image.right<=frame.right, separate:frame.right<=identity.left+1, square:Math.abs(frame.width-frame.height)<1, width:frame.width};
    });
    assert.ok(portraitGeometry.fits&&portraitGeometry.separate&&portraitGeometry.square&&portraitGeometry.width<=132,'Captain portrait overlaps profile: '+JSON.stringify(portraitGeometry));
-   assert.equal(await page.locator('.bn-profile-stat').count(),4);
+   await page.locator('.bn-profile-match').first().waitFor();
+   assert.equal(await page.locator('.bn-profile-stat').count(),7);
    assert.equal(await page.locator('.bn-profile-achievement').count(),4);
-   assert.equal(await page.locator('.bn-profile-stat strong').first().innerText(),'—');
-   assert.match(await page.locator('.bn-profile-history-empty').innerText(),/indisponível/);
+   assert.equal(await page.locator('.bn-profile-stat.total strong').innerText(),'15');
+   assert.equal(await page.locator('.bn-profile-stat.victories strong').innerText(),'9');
+   assert.equal(await page.locator('.bn-profile-stat.defeats strong').innerText(),'5');
+   assert.equal(await page.locator('.bn-profile-stat.rate strong').innerText(),'60%');
+   assert.equal(await page.locator('.bn-profile-match').count(),10);
+   assert.match(await page.locator('.bn-profile-match').first().innerText(),/Vitória.*Capitão 0/s);
    assert.equal(await page.locator('.topbar').count(),0,'No extra account header in approved profile');
    const geo=await page.evaluate(()=>{
      const r=s=>{const box=document.querySelector(s).getBoundingClientRect();return {left:box.left,right:box.right,top:box.top,bottom:box.bottom,width:box.width,height:box.height}};

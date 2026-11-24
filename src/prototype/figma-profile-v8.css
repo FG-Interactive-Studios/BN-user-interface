@@ -398,3 +398,19 @@ body[data-route="profile"] .screen.bn-profile-stage::after{display:none!importan
 @media(prefers-reduced-motion:reduce){
   .bn-profile-stage *{animation:none!important;transition:none!important;}
 }
+
+/* Seven authoritative lifetime totals and a bounded, scrollable history. */
+body[data-route="profile"] .bn-profile-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+body[data-route="profile"] .bn-profile-stat{min-height:64px}
+body[data-route="profile"] .bn-profile-stat strong{font-size:clamp(20px,4vw,32px);overflow-wrap:anywhere}
+.bn-profile-match-list{display:grid;gap:7px;min-width:0}
+.bn-profile-match{display:grid;grid-template-columns:minmax(68px,.55fr) minmax(0,1.7fr) minmax(0,1fr);align-items:center;gap:10px;padding:10px 12px;background:#0b1b25;border:1px solid #34505b;border-radius:10px;color:#e9f4f7;min-width:0}
+.bn-profile-match-result{font:700 12px 'Lexend',sans-serif;color:#e4d5a0}
+.bn-profile-match[data-result="WIN"] .bn-profile-match-result{color:#80e7b1}
+.bn-profile-match[data-result="LOSS"] .bn-profile-match-result{color:#ff978c}
+.bn-profile-match-info,.bn-profile-match-score{display:grid;gap:4px;min-width:0;overflow-wrap:anywhere}
+.bn-profile-match-info strong,.bn-profile-match-score strong{font-size:13px}
+.bn-profile-match small{font-size:10px;color:#b5cbd4}
+.bn-profile-match-score{text-align:right}
+.bn-profile-retry{background:#194551;border:1px solid #79b7c1;border-radius:8px;color:white;padding:8px;cursor:pointer}
+@media(max-width:500px){.bn-profile-match{grid-template-columns:64px minmax(0,1fr);gap:5px 9px;padding:9px}.bn-profile-match-score{grid-column:2;text-align:left;display:flex;align-items:baseline;flex-wrap:wrap;gap:5px}.bn-profile-match-result{grid-row:1/3}}
