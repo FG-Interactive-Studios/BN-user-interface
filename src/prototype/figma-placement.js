@@ -37,7 +37,7 @@ export function renderFigmaPlacement({ preparation, mode, draft, selectedShipId,
   const hint = preparation.fleetConfirmed
     ? 'Sua frota está confirmada. Aguarde a confirmação do adversário.'
     : canManual
-      ? 'Passe o mouse no tabuleiro para prever; clique ou toque para posicionar. R gira o navio.'
+      ? 'Passe o mouse para prever. Clique ou toque para posicionar.'
       : 'Use Aleatório para posicionar a frota neste modo de jogo.';
 
   const cards = mode.fleet.map(def => {
